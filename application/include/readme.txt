@@ -1,0 +1,1 @@
+把需要适配luatos的接口头文件放在本目录，比如luat_air105_xxx.h

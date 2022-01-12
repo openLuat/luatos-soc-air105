@@ -1,0 +1,24 @@
+#ifndef __APP_INTERFACE_H__
+#define __APP_INTERFACE_H__
+#include "global_config.h"
+#include "platform_define.h"
+#include "resource_map.h"
+#include "bsp_common.h"
+#include "core_flash.h"
+#include "core_debug.h"
+#include "core_tick.h"
+#include "core_otp.h"
+#include "core_timer.h"
+#include "core_i2c.h"
+#include "core_spi.h"
+#include "core_wdt.h"
+#include "core_rtc.h"
+#include "core_hwtimer.h"
+#include "core_service.h"
+#include "core_keyboard.h"
+#include "core_dcmi.h"
+#include "core_rng.h"
+#include "core_task.h"
+#include "lfs.h"
+void FileSystem_Init(void);
+#endif
