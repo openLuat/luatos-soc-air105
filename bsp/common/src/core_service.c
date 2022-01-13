@@ -1129,7 +1129,10 @@ void Core_VHIDUploadStop(uint8_t USB_ID)
 static void prvCore_LCDCmd(LCD_DrawStruct *Draw, uint8_t Cmd)
 {
     GPIO_Output(Draw->DCPin, 0);
-    SysTickDelay(300);
+    if (Draw->DCDelay)
+    {
+    	SysTickDelay(Draw->DCDelay * CORE_TICK_1US);
+    }
     GPIO_Output(Draw->CSPin, 0);
     SPI_BlockTransfer(Draw->SpiID, &Cmd, NULL, 1);
     GPIO_Output(Draw->CSPin, 1);
@@ -1178,7 +1181,10 @@ static void prvHW_Task(void* params)
 		case SERVICE_LCD_DRAW:
 
 			Draw = (LCD_DrawStruct *)Event.Param1;
-			SPI_SetTxOnlyFlag(Draw->SpiID, 1);
+			if (Draw->Speed > 30000000)
+			{
+				SPI_SetTxOnlyFlag(Draw->SpiID, 1);
+			}
 			SPI_SetNewConfig(Draw->SpiID, Draw->Speed, Draw->Mode);
 			SPI_DMATxInit(Draw->SpiID, LCD_SPI_TX_DMA_STREAM, 0);
 			SPI_DMARxInit(Draw->SpiID, LCD_SPI_RX_DMA_STREAM, 0);
@@ -1282,25 +1288,34 @@ static void prvService_Task(void* params)
 			}
 			break;
 		case SERVICE_DECODE_QR:
-			uPV.u32 = Event.Param2;
-			zbar_scanner = zbar_image_scanner_create();
-			zbar_image_scanner_set_config(zbar_scanner, 0, ZBAR_CFG_ENABLE, 1);
-			zbar_image = zbar_image_create();
-			zbar_image_set_format(zbar_image, *(int*)"Y800");
-			zbar_image_set_size(zbar_image, uPV.u16[0], uPV.u16[1]);
-			zbar_image_set_data(zbar_image, Event.Param1, uPV.u16[0] * uPV.u16[1], zbar_image_free_data);
-			if (zbar_scan_image(zbar_scanner, zbar_image) > 0)
-			{
-				zbar_symbol = (zbar_symbol_t *)zbar_image_first_symbol(zbar_image);
-			}
 			if (Event.Param3)
 			{
 				CBDataFun = (CBDataFun_t)(Event.Param3);
-				CBDataFun(zbar_symbol->data, zbar_symbol->datalen);
+				uPV.u32 = Event.Param2;
+				zbar_scanner = zbar_image_scanner_create();
+				zbar_image_scanner_set_config(zbar_scanner, 0, ZBAR_CFG_ENABLE, 1);
+				zbar_image = zbar_image_create();
+				zbar_image_set_format(zbar_image, *(int*)"Y800");
+				zbar_image_set_size(zbar_image, uPV.u16[0], uPV.u16[1]);
+				zbar_image_set_data(zbar_image, Event.Param1, uPV.u16[0] * uPV.u16[1], zbar_image_free_data);
+				if (zbar_scan_image(zbar_scanner, zbar_image) > 0)
+				{
+					zbar_symbol = (zbar_symbol_t *)zbar_image_first_symbol(zbar_image);
+					free(Event.Param1);
+					CBDataFun(zbar_symbol->data, zbar_symbol->datalen);
+				}
+				else
+				{
+					free(Event.Param1);
+					CBDataFun(NULL, 0);
+				}
+				zbar_image_destroy(zbar_image);
+				zbar_image_scanner_destroy(zbar_scanner);
 			}
-			free(zbar_image);
-			free(zbar_scanner);
-			free(Event.Param1);
+			else
+			{
+				free(Event.Param1);
+			}
 			break;
 		}
 	}

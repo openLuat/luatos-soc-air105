@@ -6,15 +6,15 @@
 #define LUAT_LOG_TAG "keyboard"
 #include "luat_log.h"
 
-static luat_keyboard_irq_cb cb = NULL;
 
 static int32_t kb_cb(void *pData, void *pParam) {
+	luat_keyboard_irq_cb cb = (luat_keyboard_irq_cb)pParam;
     if (cb) {
         luat_keyboard_ctx_t ctx;
         ctx.port = 0;
         ctx.pin_data = (uint16_t) pData;
         ctx.state = (((uint32_t)pData) >> 16) & 0x1;
-        //cb(&ctx);
+        cb(&ctx);
     }
 }
 
@@ -39,8 +39,7 @@ int luat_keyboard_init(luat_keyboard_conf_t *conf) {
     if (conf->pin_conf & (1 << 8))
         GPIO_Iomux(GPIOD_11, 2); // keyboard8
     //---------------------------
-    cb = conf->cb;
-    KB_Setup(conf->pin_map, 7, kb_cb, NULL);
+    KB_Setup(conf->pin_map, 7, kb_cb, conf->cb);
     return 0;
 }
 

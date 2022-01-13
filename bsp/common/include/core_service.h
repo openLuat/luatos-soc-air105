@@ -33,6 +33,7 @@ typedef struct
 	uint32_t xoffset;
 	uint32_t yoffset;
 	uint32_t Size;
+	uint32_t DCDelay;
 	uint8_t *Data;
 	uint8_t SpiID;
 	uint8_t Mode;

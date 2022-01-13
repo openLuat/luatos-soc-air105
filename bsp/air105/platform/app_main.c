@@ -28,7 +28,7 @@ extern const uint32_t __os_heap_start;
 extern const uint32_t __ram_end;
 
 const uint32_t __attribute__((section (".app_info")))
-    g_CAppInfo[32] =
+    g_CAppInfo[256] =
 {
 	__APP_START_MAGIC__,
 	sizeof(g_CAppInfo),

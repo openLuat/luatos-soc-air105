@@ -786,7 +786,7 @@ int32_t SPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData,
 		DBG("!");
 		return Result;
 	}
-	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, 2 * Time + 10))
+	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 10))
 	{
 		DBG("!!!");
 		DMA_StopStream(prvSPI[SpiID].DMATxStream);
@@ -964,7 +964,7 @@ int32_t SPI_FlashBlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint32_t WL
 		free(Temp);
 		return Result;
 	}
-	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, 2 * Time + 10))
+	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 10))
 	{
 		free(Temp);
 		DBG("!!!");
@@ -1026,7 +1026,7 @@ void SPI_DMARxInit(uint8_t SpiID, uint8_t Stream, uint32_t Channel)
 	DMA_InitTypeDef DMA_InitStruct;
 	DMA_BaseConfig(&DMA_InitStruct);
 	DMA_InitStruct.DMA_Peripheral = prvSPI[SpiID].DMARxChannel;
-	DMA_InitStruct.DMA_Priority = DMA_Priority_3;
+	DMA_InitStruct.DMA_Priority = DMA_Priority_2;
 	prvSPI[SpiID].DMARxStream = Stream;
 	switch(SpiID)
 	{

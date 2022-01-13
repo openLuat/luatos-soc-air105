@@ -186,7 +186,7 @@ int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint
 		{
 			LLOGD("lcd flush delay %ums, status %u,%u,%u,%d", retry_cnt, cache_len, x2-x1+1, y2-y1+1, last_flush);
 		}
-		LCD_DrawStruct *draw = OS_Malloc(sizeof(LCD_DrawStruct));
+		LCD_DrawStruct *draw = OS_Zalloc(sizeof(LCD_DrawStruct));
 		if (!draw)
 		{
 			LLOGE("lcd flush no memory");
@@ -198,7 +198,7 @@ int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint
 	    if(spi_dev->spi_config.CPHA&&spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_3;
 	    else if(spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_1;
 	    else if(spi_dev->spi_config.CPHA)spi_mode = SPI_MODE_2;
-
+	    draw->DCDelay = conf->dc_delay_us;
 	    draw->Mode = spi_mode;
 	    draw->Speed = spi_dev->spi_config.bandrate;
 	    draw->SpiID = luat_spi[spi_id].id;

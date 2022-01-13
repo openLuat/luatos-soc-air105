@@ -464,7 +464,7 @@ static void zbar_task(void *pData)
 	Core_VHIDInit(USB_ID0, prvTest_VHIDCB);
 	while (1) {
 		Task_GetEvent(prvDecodeQR.NotifyTaskHandler, DECODE_DONE, &Event, NULL, 0);
-		draw = malloc(sizeof(LCD_DrawStruct));
+		draw = zalloc(sizeof(LCD_DrawStruct));
 		draw->Mode = SPI_MODE_0;
 		draw->Speed = 48000000;
 		draw->SpiID = HSPI_ID0;

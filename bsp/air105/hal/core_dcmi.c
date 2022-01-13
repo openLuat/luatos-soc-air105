@@ -43,7 +43,7 @@ static void prvDCMI_IrqHandler(int32_t Line, void *pData)
 	uint32_t SR = DCMI->RISR;
 
 	DCMI->ICR = 0xff;
-	if (SR & DCMI_IER_FRAME_IE)
+	if (SR & DCMI_IER_VSYNC_IE)
 	{
 		prvDCMI.RxDMASn = (prvDCMI.RxDMASn + 1)%DCMI_RXBUF_BAND;
 		DMA_ClearStreamFlag(DCMI_RX_DMA_STREAM);
@@ -75,7 +75,7 @@ void DCMI_Setup(uint8_t VsyncLevel, uint8_t HsyncLevel, uint8_t PclkPOL, uint8_t
 	Ctrl |= (FrameRate & 0x03 ) << 8;
 	SYSCTRL->DBG_CR |= DCMI_FROM_OUT;
 	DCMI->CR = Ctrl | (1 << 21);
-	DCMI->IER = DCMI_IER_FRAME_IE|DCMI_IER_OVF_IE|DCMI_IER_ERR_IE;
+	DCMI->IER = DCMI_IER_VSYNC_IE|DCMI_IER_OVF_IE|DCMI_IER_ERR_IE;
 	DCMI->ICR = 0xff;
 	ISR_OnOff(DCMI_IRQn, 0);
 	ISR_SetHandler(DCMI_IRQn, prvDCMI_IrqHandler, NULL);
@@ -157,9 +157,9 @@ void DCMI_CaptureSwitch(uint8_t OnOff, uint32_t BufLen, uint32_t ImageW, uint32_
 			{
 				HLen = ImageH >> 1;
 			}
-			while( (WDataLen * HLen) < 2048)
+			while( (WDataLen * HLen) > 2048)
 			{
-				HLen *= 2;
+				HLen >>= 1;
 			}
 			BufLen = WDataLen * HLen;
 			DBG("buf %u, H %u", BufLen, HLen);

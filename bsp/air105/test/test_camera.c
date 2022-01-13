@@ -665,7 +665,7 @@ static int32_t prvCamera_DCMICB(void *pData, void *pParam)
 		prvVLen = 0;
 		return 0;
 	}
-	LCD_DrawStruct *draw = OS_Malloc(sizeof(LCD_DrawStruct));
+	LCD_DrawStruct *draw = zalloc(sizeof(LCD_DrawStruct));
 	if (!draw)
 	{
 		DBG("lcd flush no memory");
