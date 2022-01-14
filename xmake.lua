@@ -7,11 +7,11 @@ add_rules("mode.debug", "mode.release")
 local AIR105_VERSION
 local luatos = "../LuatOS/"
 
-local sdk_dir = "E:\\gcc-arm-none-eabi-10.3-2021.10\\"
+local sdk_dir = "C:\\gcc-arm-none-eabi-10.3-2021.10\\"
 if is_plat("linux") then
     sdk_dir = "/opt/gcc-arm-none-eabi-10.3-2021.10/"
 elseif is_plat("windows") then
-    sdk_dir = "D:\\gcc-arm-none-eabi-10.3-2021.10\\"
+    sdk_dir = "C:\\gcc-arm-none-eabi-10.3-2021.10\\"
 end
 
 toolchain("arm_toolchain")
