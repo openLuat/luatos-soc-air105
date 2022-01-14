@@ -24,6 +24,7 @@
 #define _REFCNT_H_
 
 #include <config.h>
+#include "debug.h"
 //#include <assert.h>
 
 #if defined(_WIN32)
