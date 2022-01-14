@@ -193,7 +193,7 @@ int luat_camera_init(luat_camera_conf_t *conf){
 	GPIO_Iomux(GPIOE_02, 3);
 	GPIO_Iomux(GPIOE_03, 3);
 
-    camera_conf = *conf;
+    memcpy(&camera_conf, conf, sizeof(luat_camera_conf_t));
     lcd_conf = conf->lcd_conf;
     draw_lcd = conf->draw_lcd;
 
@@ -217,14 +217,14 @@ int luat_camera_init(luat_camera_conf_t *conf){
     DCMI_Setup(0, 0, 0, 8, 0);
 	DCMI_SetCallback(prvCamera_DCMICB, conf->zbar_scan);
 
-    if (conf->zbar_scan == 0){
-        DCMI_SetCROPConfig(1, (conf->sensor_height-lcd_conf->h)/2, ((conf->sensor_width-lcd_conf->w)/2)*2, lcd_conf->h - 1, 2*lcd_conf->w - 1);
-        DCMI_CaptureSwitch(1, 0,lcd_conf->w, lcd_conf->h, 2, &prvCamera.drawVLen);
-        prvCamera.VLen = 0;
-    }else if(conf->zbar_scan == 1){
-        DCMI_SetCROPConfig(1, (conf->sensor_height-prvCamera.Height)/2, ((conf->sensor_width-prvCamera.Width)/2)*prvCamera.DataBytes, prvCamera.Height - 1, prvCamera.DataBytes*prvCamera.Width - 1);
-        DCMI_CaptureSwitch(1, 0,lcd_conf->w, lcd_conf->h, prvCamera.DataBytes, &prvCamera.drawVLen);
-    }
+//    if (conf->zbar_scan == 0){
+//        DCMI_SetCROPConfig(1, (conf->sensor_height-lcd_conf->h)/2, ((conf->sensor_width-lcd_conf->w)/2)*2, lcd_conf->h - 1, 2*lcd_conf->w - 1);
+//        DCMI_CaptureSwitch(1, 0,lcd_conf->w, lcd_conf->h, 2, &prvCamera.drawVLen);
+//        prvCamera.VLen = 0;
+//    }else if(conf->zbar_scan == 1){
+//        DCMI_SetCROPConfig(1, (conf->sensor_height-prvCamera.Height)/2, ((conf->sensor_width-prvCamera.Width)/2)*prvCamera.DataBytes, prvCamera.Height - 1, prvCamera.DataBytes*prvCamera.Width - 1);
+//        DCMI_CaptureSwitch(1, 0,lcd_conf->w, lcd_conf->h, prvCamera.DataBytes, &prvCamera.drawVLen);
+//    }
     return 0;
 }
 
@@ -234,7 +234,6 @@ int luat_camera_start(int id)
 	{
 		DCMI_CaptureSwitch(0, 0, 0, 0, 0, NULL);
 		free(prvCamera.DataCache);
-		prvCamera.IsDecode = 0;
 	}
     if (camera_conf.zbar_scan == 0){
         DCMI_SetCROPConfig(1, (camera_conf.sensor_height-lcd_conf->h)/2, ((camera_conf.sensor_width-lcd_conf->w)/2)*2, lcd_conf->h - 1, 2*lcd_conf->w - 1);
@@ -253,6 +252,7 @@ int luat_camera_stop(int id)
 	if (prvCamera.DataCache)
 	{
 		free(prvCamera.DataCache);
+		prvCamera.DataCache = NULL;
 	}
     return 0;
 }
