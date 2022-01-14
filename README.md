@@ -10,3 +10,5 @@ Air105 SDK源码 for LuatOS
 https://wiki.luatos.com/develop/compile/Air105.html
 
 [![asciicast](https://asciinema.org/a/461295.svg)](https://asciinema.org/a/461295)
+
+寄存器手册: https://luatos.com/t/air105 硬件资料
