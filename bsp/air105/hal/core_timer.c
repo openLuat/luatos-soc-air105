@@ -84,7 +84,7 @@ static void Timer_SetNextIsr(void)
 		}
 		prvTimerCtrl.NextTick = Timer->TargetTick;
 		ISR_Clear(SYS_TIMER_IRQ);
-		TIMM0->TIM[SYS_TIMER_TIM].LoadCount = (uint32_t)PassTick;
+		TIMM0->TIM[SYS_TIMER_TIM].LoadCount = (uint32_t)PassTick - 1;
 		TIMM0->TIM[SYS_TIMER_TIM].ControlReg = TIMER_CONTROL_REG_TIMER_ENABLE|TIMER_CONTROL_REG_TIMER_MODE;
 	}
 	OS_ExitCritical(Critical);

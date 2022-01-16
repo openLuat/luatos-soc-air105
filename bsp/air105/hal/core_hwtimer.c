@@ -239,7 +239,7 @@ START_HWTIMER:
 	TIMM0->TIM[HWTimerID].ControlReg = 0;
 	Period = HWTimer->Cmd[HWTimer->CurCount].uArg.Time;
 	Period = Period * SYS_TIMER_1US + HWTimer->Cmd[HWTimer->CurCount].Arg1;
-	TIMM0->TIM[HWTimerID].LoadCount = Period;
+	TIMM0->TIM[HWTimerID].LoadCount = Period - 1;
 	TIMM0->TIM[HWTimerID].ControlReg = TIMER_CONTROL_REG_TIMER_ENABLE|TIMER_CONTROL_REG_TIMER_MODE;
 	HWTimer->CurCount++;
 	return ;

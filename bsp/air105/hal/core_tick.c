@@ -76,7 +76,7 @@ void CoreTick_Init(void)
 {
 	prvPeriod = SystemCoreClock;
 	TIMM0->TIM[CORE_TICK_TIM].ControlReg = 0;
-	TIMM0->TIM[CORE_TICK_TIM].LoadCount = prvPeriod;
+	TIMM0->TIM[CORE_TICK_TIM].LoadCount = prvPeriod - 1;
 	TIMM0->TIM[CORE_TICK_TIM].ControlReg = TIMER_CONTROL_REG_TIMER_ENABLE|TIMER_CONTROL_REG_TIMER_MODE;
 	ISR_OnOff(CORE_TICK_IRQ, 0);
 	ISR_SetHandler(CORE_TICK_IRQ, SystemTickIrqHandler, NULL);
