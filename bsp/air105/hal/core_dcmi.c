@@ -162,7 +162,7 @@ void DCMI_CaptureSwitch(uint8_t OnOff, uint32_t BufLen, uint32_t ImageW, uint32_
 				HLen >>= 1;
 			}
 			BufLen = WDataLen * HLen;
-			DBG("buf %u, H %u", BufLen, HLen);
+//			DBG("buf %u, H %u", BufLen, HLen);
 			*OutH = HLen;
 		}
 		for(i = 0; i < DCMI_RXBUF_BAND; i++)

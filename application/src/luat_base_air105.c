@@ -9,6 +9,9 @@
 #include "app_interface.h"
 
 
+#define LUAT_LOG_TAG "base"
+#include "luat_log.h"
+
 #ifdef LUAT_USE_LVGL
 #include "lvgl.h"
 void luat_lv_fs_init(void);
@@ -112,7 +115,9 @@ static const luaL_Reg loadedlibs[] = {
 #endif
   // {"mqttcore",luaopen_mqttcore},          // MQTT 协议封装
   // {"libcoap", luaopen_libcoap},           // 处理COAP消息
-
+#ifdef LUAT_USE_FATFS
+  {"fatfs", luaopen_fatfs},           // 处理GNSS定位数据
+#endif
 #ifdef LUAT_USE_GNSS
   {"libgnss", luaopen_libgnss},           // 处理GNSS定位数据
 #endif
@@ -166,6 +171,7 @@ static const luaL_Reg loadedlibs[] = {
 #endif
   {NULL, NULL}
 };
+
 
 // 按不同的rtconfig加载不同的库函数
 void luat_openlibs(lua_State *L) {
@@ -224,6 +230,9 @@ void luat_shell_poweron(int _drv);
 void luat_base_init(void)
 {
 	luat_gpio_init();
+
+
+
 #ifdef LUAT_USE_SHELL
   luat_shell_poweron(0);
 #endif

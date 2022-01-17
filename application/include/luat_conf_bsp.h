@@ -39,6 +39,7 @@
 // #define LUAT_USE_FDB 1
 // #define LUAT_USE_ZLIB 
 #define LUAT_USE_CAMERA  1
+#define LUAT_USE_FATFS 1
 
 //----------------------------
 // 高通字体, 需配合芯片使用
