@@ -6,6 +6,7 @@
 
 #define LUAT_LOG_TAG "luat.pwm"
 #include "luat_log.h"
+#include "luat_gpio.h"
 
 int luat_pwm_setup(luat_pwm_conf_t* conf) {
     int channel = conf->channel;
@@ -53,7 +54,48 @@ int luat_pwm_setup(luat_pwm_conf_t* conf) {
 	//uint32_t hz = 48000000 / period / precision;
 
 	//HWTimer_StartPWM(channel, hz * pulse, hz * (precision - pulse), pnum);
-	HWTimer_SetPWM(channel, period, pulse * (1000 / precision), pnum);
+	if(pulse * (1000 / precision) == 1000)//HWTimer_SetPWM传入duty大于999会不执行
+	{
+		switch (channel)
+		{
+			case 0:
+				luat_gpio_mode(GPIOB_00, Luat_GPIO_OUTPUT, Luat_GPIO_PULLUP, 1);
+				luat_gpio_set(GPIOB_00, Luat_GPIO_HIGH);
+				break;
+			case 1:
+				luat_gpio_mode(GPIOB_01, Luat_GPIO_OUTPUT, Luat_GPIO_PULLUP, 1);
+				luat_gpio_set(GPIOB_01, Luat_GPIO_HIGH);
+				break;
+			case 2:
+				luat_gpio_mode(GPIOA_02, Luat_GPIO_OUTPUT, Luat_GPIO_PULLUP, 1);
+				luat_gpio_set(GPIOA_02, Luat_GPIO_HIGH);
+				break;
+			case 3:
+				luat_gpio_mode(GPIOA_03, Luat_GPIO_OUTPUT, Luat_GPIO_PULLUP, 1);
+				luat_gpio_set(GPIOA_03, Luat_GPIO_HIGH);
+				break;
+			case 4:
+				luat_gpio_mode(GPIOC_06, Luat_GPIO_OUTPUT, Luat_GPIO_PULLUP, 1);
+				luat_gpio_set(GPIOC_06, Luat_GPIO_HIGH);
+				break;
+			case 5:
+				luat_gpio_mode(GPIOC_07, Luat_GPIO_OUTPUT, Luat_GPIO_PULLUP, 1);
+				luat_gpio_set(GPIOC_07, Luat_GPIO_HIGH);
+				break;
+			case 6:
+				luat_gpio_mode(GPIOC_08, Luat_GPIO_OUTPUT, Luat_GPIO_PULLUP, 1);
+				luat_gpio_set(GPIOC_08, Luat_GPIO_HIGH);
+				break;
+			case 7:
+				luat_gpio_mode(GPIOC_09, Luat_GPIO_OUTPUT, Luat_GPIO_PULLUP, 1);
+				luat_gpio_set(GPIOC_09, Luat_GPIO_HIGH);
+				break;
+			default:
+				break;
+		}
+	}
+	else
+		HWTimer_SetPWM(channel, period, pulse * (1000 / precision), pnum);
     return 0;
 }
 
