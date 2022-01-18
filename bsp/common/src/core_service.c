@@ -113,7 +113,6 @@ typedef struct
 	uint64_t LCDDrawDoneByte;
 	uint32_t InitAllocMem;
 	uint32_t LastAllocMem;
-	uint8_t IsUSBOpen;
 	uint8_t SleepEnable;
 
 }Service_CtrlStruct;
@@ -869,16 +868,16 @@ void Core_VHIDInit(uint8_t USB_ID, CBFuncEx_t CB)
 void Core_VUartInit(uint8_t UartID, uint32_t BaudRate, uint8_t IsRxCacheEnable, uint8_t DataBits, uint8_t Parity, uint8_t StopBits, CBFuncEx_t CB)
 {
 	Virtual_UartCtrlStruct *pVUart = &prvLuatOS_VirtualUart[UartID];
-	switch(UartID)
-	{
-	case VIRTUAL_UART0:
-		if (!prvService.IsUSBOpen)
-		{
-			Core_USBDefaultDeviceStart(USB_ID0);
-			prvService.IsUSBOpen = 1;
-		}
-		break;
-	}
+//	switch(UartID)
+//	{
+//	case VIRTUAL_UART0:
+//		if (!prvService.IsUSBOpen)
+//		{
+//			Core_USBDefaultDeviceStart(USB_ID0);
+//			prvService.IsUSBOpen = 1;
+//		}
+//		break;
+//	}
 	if (CB)
 	{
 		pVUart->CB = CB;

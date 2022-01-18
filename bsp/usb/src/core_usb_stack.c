@@ -311,10 +311,11 @@ void USB_StackClearSetup(uint8_t USB_ID)
 	for(i = 0; i < USB_EP_MAX; i++)
 	{
 		prvUSB_ResetEpCtrl(USB_ID, i);
-		prvUSBCore[USB_ID].pEpCtrl[i].CB = prvUSB_StackDummyEpCB;
+//		prvUSBCore[USB_ID].pEpCtrl[i].CB = prvUSB_StackDummyEpCB;
 	}
 	prvUSBCore[USB_ID].Ep0Stage = USB_EP0_STAGE_SETUP;
 	prvUSBCore[USB_ID].pEpCtrl[0].ForceZeroPacket = 1;
+	prvUSBCore[USB_ID].Setup.CB = prvUSB_StackDummyStateCB;
 }
 
 void USB_StackDeviceAfterDisconnect(uint8_t USB_ID)

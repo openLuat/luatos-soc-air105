@@ -93,6 +93,7 @@ target("lvgl")
 
     add_includedirs("application/include")
     add_includedirs("bsp/air105/include",{public = true})
+    add_includedirs("bsp/usb/include",{public = true})
     --add_includedirs("bsp/common",{public = true})
 	add_includedirs("bsp/common/include",{public = true})
     add_includedirs("bsp/cmsis/include",{public = true})
@@ -110,6 +111,34 @@ target("lvgl")
     set_targetdir("$(buildir)/lib")
 target_end()
 
+---//-----------------------------
+-- target("tflm")
+--     tfroot = "Third_Party/tflm-cmsis/"
+--     set_kind("static")
+--     set_languages("c99", "c++11")
+
+--     add_defines("CMSIS_NN=1")
+
+--     add_files(tfroot .. "tensorflow/**.c")
+--     add_files(tfroot .. "tensorflow/**.cc")
+--     add_files(tfroot .. "apps/person_detection/**.cc")
+    
+--     add_files(tfroot .. "third_party/**.c")
+
+--     add_includedirs(tfroot .. ".", 
+--     tfroot .. "third_party/ruy", 
+--     tfroot .. "third_party/kissfft", 
+--     tfroot .. "third_party/gemmlowp", 
+--     tfroot .. "third_party/flatbuffers/include",
+--     tfroot .. "third_party/cmsis/CMSIS/Core/Include",
+--     tfroot .. "third_party/cmsis/CMSIS/DSP/Include",
+--     tfroot .. "third_party/cmsis/CMSIS/NN/Include",
+--     tfroot .. "third_party/cmsis"
+--                         )
+
+-- target_end()
+---//-----------------------------
+
 target("app.elf")
     -- set kind
     set_kind("binary")
@@ -122,6 +151,8 @@ target("app.elf")
         local LVGL_CONF = conf_data:find("// #define LUAT_USE_LVGL\n")
         if LVGL_CONF == nil then target:add("deps", "lvgl") end
     end)
+
+    -- add_deps("tflm")
     
     -- add deps
     add_files("Third_Party/cm_backtrace/*.c",{public = true})
@@ -157,6 +188,7 @@ target("app.elf")
     add_includedirs("os/FreeRTOS_v10/include",{public = true})
 
     add_includedirs("bsp/cmsis/include",{public = true})
+    add_includedirs("bsp/usb/include",{public = true})
     add_includedirs("bsp/air105/chip/include",{public = true})
     add_includedirs("bsp/air105/include",{public = true})
 
@@ -218,8 +250,8 @@ target("app.elf")
     add_files(luatos.."components/mbedtls/library/*.c")
     add_includedirs(luatos.."components/mbedtls/include")
 
-    add_files(luatos.."luat/packages/zlib/*.c")
-    add_includedirs(luatos.."luat/packages/zlib")
+    add_files(luatos.."components/zlib/*.c")
+    add_includedirs(luatos.."components/zlib")
 
     add_files(luatos.."components/camera/*.c")
     add_includedirs(luatos.."components/camera")
