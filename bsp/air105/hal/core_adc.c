@@ -88,7 +88,7 @@ void ADC_GlobalInit(void)
 	ADC0->ADC_CR2 &= ~(1 << 13);
     ISR_SetHandler(ADC0_IRQn, ADC_IrqHandle, NULL);
 #ifdef __BUILD_OS___
-	ISR_SetPriority(ADC0_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY);
+	ISR_SetPriority(ADC0_IRQn, IRQ_LOWEST_PRIORITY);
 #else
 	ISR_SetPriority(ADC0_IRQn, 6);
 #endif
@@ -180,7 +180,7 @@ void ADC_GlobalInit(void)
 	ADC0->ADC_CR1 = 0;
     ISR_SetHandler(ADC0_IRQn, ADC_IrqHandle, NULL);
 #ifdef __BUILD_OS___
-	ISR_SetPriority(ADC0_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1);
+	ISR_SetPriority(ADC0_IRQn, IRQ_LOWEST_PRIORITY - 1);
 #else
 	ISR_SetPriority(ADC0_IRQn, 6);
 #endif

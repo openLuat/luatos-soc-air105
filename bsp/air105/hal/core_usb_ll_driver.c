@@ -1495,7 +1495,7 @@ void USB_GlobalInit(void)
 
     ISR_SetHandler(prvUSB.IrqLine, prvUSB_IrqHandle, USB_ID0);
 #ifdef __BUILD_OS__
-	ISR_SetPriority(prvUSB.IrqLine, configLIBRARY_LOWEST_INTERRUPT_PRIORITY);
+	ISR_SetPriority(prvUSB.IrqLine, IRQ_LOWEST_PRIORITY);
 #else
 	ISR_SetPriority(prvUSB.IrqLine, 7);
 #endif

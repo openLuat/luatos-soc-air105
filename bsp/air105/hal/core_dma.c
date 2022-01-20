@@ -364,7 +364,7 @@ void DMA_GlobalInit(void)
 {
 	ISR_SetHandler(DMA_IRQn, DMA_IrqHandle, NULL);
 #ifdef __BUILD_OS__
-	ISR_SetPriority(DMA_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 2);
+	ISR_SetPriority(DMA_IRQn, IRQ_MAX_PRIORITY + 2);
 #else
 	ISR_SetPriority(DMA_IRQn, 3);
 #endif

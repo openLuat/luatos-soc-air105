@@ -80,7 +80,7 @@ void DCMI_Setup(uint8_t VsyncLevel, uint8_t HsyncLevel, uint8_t PclkPOL, uint8_t
 	ISR_OnOff(DCMI_IRQn, 0);
 	ISR_SetHandler(DCMI_IRQn, prvDCMI_IrqHandler, NULL);
 #ifdef __BUILD_OS__
-	ISR_SetPriority(DCMI_IRQn, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 2);
+	ISR_SetPriority(DCMI_IRQn, IRQ_LOWEST_PRIORITY - 2);
 #else
 	ISR_SetPriority(DCMI_IRQn, 5);
 #endif

@@ -109,7 +109,7 @@ void GPIO_GlobalInit(CBFuncEx_t Fun)
 		GPIO->INTP_TYPE_STA[i].INTP_TYPE = 0;
 		GPIO->INTP_TYPE_STA[i].INTP_STA = 0xffff;
 #ifdef __BUILD_OS__
-		ISR_SetPriority(prvGPIO_Resource[i].IrqLine, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
+		ISR_SetPriority(prvGPIO_Resource[i].IrqLine, IRQ_MAX_PRIORITY + 1);
 #else
 		ISR_SetPriority(prvGPIO_Resource[i].IrqLine, 3);
 #endif

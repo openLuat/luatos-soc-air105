@@ -80,7 +80,7 @@ void KB_Setup(uint16_t PinConfigMap, uint16_t Debounce, CBFuncEx_t CB, void *pPa
 	KCU->KCU_CTRL1 |= (KCU_CTRL1_KBD_EN|KCU_CTRL1_PUSH_IT|KCU_CTRL1_RELEASE_IT|KCU_CTRL1_OVERRUN_IT);
 	ISR_SetHandler(prvKB.IrqLine, KB_IrqHandle, NULL);
 #ifdef __BUILD_OS__
-	ISR_SetPriority(prvKB.IrqLine, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1);
+	ISR_SetPriority(prvKB.IrqLine, IRQ_LOWEST_PRIORITY - 1);
 #else
 	ISR_SetPriority(prvKB.IrqLine, 7);
 #endif

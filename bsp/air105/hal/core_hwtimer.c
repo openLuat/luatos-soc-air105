@@ -224,7 +224,7 @@ static void __FUNC_IN_RAM__ prvHWTimer_StartOperationQueue(uint8_t HWTimerID, HW
 
 				ISR_SetHandler(prvHWTimer[HWTimerID].IrqLine, prvHWTimer_IrqHandlerEndOperationQueue, HWTimerID);
 #ifdef __BUILD_OS__
-				ISR_SetPriority(prvHWTimer[HWTimerID].IrqLine, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1);
+				ISR_SetPriority(prvHWTimer[HWTimerID].IrqLine, IRQ_LOWEST_PRIORITY - 1);
 #else
 				ISR_SetPriority(prvHWTimer[HWTimerID].IrqLine, 6);
 #endif

@@ -374,7 +374,7 @@ static void HSPI_MasterInit(uint8_t SpiID, uint8_t Mode, uint32_t Speed)
 
 	ISR_SetHandler(prvSPI[SpiID].IrqLine, HSPI_IrqHandle, (uint32_t)SpiID);
 #ifdef __BUILD_OS__
-	ISR_SetPriority(prvSPI[SpiID].IrqLine, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1);
+	ISR_SetPriority(prvSPI[SpiID].IrqLine, IRQ_MAX_PRIORITY + 1);
 #else
 	ISR_SetPriority(prvSPI[SpiID].IrqLine, 3);
 #endif
@@ -428,7 +428,7 @@ void SPI_MasterInit(uint8_t SpiID, uint8_t DataBit, uint8_t Mode, uint32_t Speed
 		SPI->DMARDLR = 0;
 		ISR_SetHandler(prvSPI[SpiID].IrqLine, SPI_IrqHandle, (uint32_t)SpiID);
 #ifdef __BUILD_OS__
-		ISR_SetPriority(prvSPI[SpiID].IrqLine, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 2);
+		ISR_SetPriority(prvSPI[SpiID].IrqLine, IRQ_LOWEST_PRIORITY - 2);
 #else
 		ISR_SetPriority(prvSPI[SpiID].IrqLine, 5);
 #endif

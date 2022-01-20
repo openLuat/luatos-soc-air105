@@ -183,7 +183,7 @@ void Timer_Init(void)
 	ISR_OnOff(SYS_TIMER_IRQ, 0);
 	ISR_SetHandler(SYS_TIMER_IRQ, SystemTimerIrqHandler);
 #ifdef __BUILD_OS__
-	ISR_SetPriority(SYS_TIMER_IRQ, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1);
+	ISR_SetPriority(SYS_TIMER_IRQ, IRQ_LOWEST_PRIORITY - 1);
 #else
 	ISR_SetPriority(SYS_TIMER_IRQ, SYS_TIMER_IRQ_LEVEL);
 #endif

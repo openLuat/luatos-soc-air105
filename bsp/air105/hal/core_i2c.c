@@ -217,7 +217,7 @@ void I2C_GlobalInit(void)
     ISR_SetHandler(prvI2C.IrqLine, I2C_IrqHandle, NULL);
 #ifdef __BUILD_OS__
     prvI2C.Sem = OS_MutexCreate();
-	ISR_SetPriority(prvI2C.IrqLine, configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1);
+	ISR_SetPriority(prvI2C.IrqLine, IRQ_LOWEST_PRIORITY - 1);
 #else
 	ISR_SetPriority(prvI2C.IrqLine, 7);
 #endif

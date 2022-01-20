@@ -202,7 +202,7 @@ void Uart_BaseInit(uint8_t UartID, uint32_t BaudRate, uint8_t IsRxCacheEnable, u
 
     ISR_SetHandler(prvUart[UartID].IrqLine, prvUart_IrqHandle, (void *)UartID);
 #ifdef __BUILD_OS__
-	ISR_SetPriority(prvUart[UartID].IrqLine, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 2);
+	ISR_SetPriority(prvUart[UartID].IrqLine, IRQ_MAX_PRIORITY + 2);
 #else
 	ISR_SetPriority(prvUart[UartID].IrqLine, 5);
 #endif
