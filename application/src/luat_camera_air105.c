@@ -80,8 +80,8 @@ static int32_t Camera_DrawLcd(void *DrawData, uint8_t Scan){
     draw->DCDelay = lcd_conf->dc_delay_us;
     draw->Mode = SPI_MODE_0;
     if(CPHA&&CPOL)draw->Mode = SPI_MODE_3;
-    else if(CPOL)draw->Mode = SPI_MODE_1;
-    else if(CPHA)draw->Mode = SPI_MODE_2;
+    else if(CPOL)draw->Mode = SPI_MODE_2;
+    else if(CPHA)draw->Mode = SPI_MODE_1;
     draw->Speed = ((luat_spi_device_t*)(lcd_conf->userdata))->spi_config.bandrate;
     if (((luat_spi_device_t*)(lcd_conf->userdata))->bus_id == 5) draw->SpiID = HSPI_ID0;
     else draw->SpiID = ((luat_spi_device_t*)(lcd_conf->userdata))->bus_id;

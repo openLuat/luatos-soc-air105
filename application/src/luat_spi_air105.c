@@ -62,8 +62,8 @@ int32_t luat_spi_cb(void *pData, void *pParam){
 int luat_spi_device_config(luat_spi_device_t* spi_dev) {
     uint8_t spi_mode = SPI_MODE_0;
     if(spi_dev->spi_config.CPHA&&spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_3;
-    else if(spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_1;
-    else if(spi_dev->spi_config.CPHA)spi_mode = SPI_MODE_2;
+    else if(spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_2;
+    else if(spi_dev->spi_config.CPHA)spi_mode = SPI_MODE_1;
     SPI_SetNewConfig(luat_spi[spi_dev->bus_id].id, spi_dev->spi_config.bandrate, spi_mode);
     return 0;
 }
@@ -99,8 +99,8 @@ int luat_spi_bus_setup(luat_spi_device_t* spi_dev){
     }
     uint8_t spi_mode = SPI_MODE_0;
     if(spi_dev->spi_config.CPHA&&spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_3;
-    else if(spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_1;
-    else if(spi_dev->spi_config.CPHA)spi_mode = SPI_MODE_2;
+    else if(spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_2;
+    else if(spi_dev->spi_config.CPHA)spi_mode = SPI_MODE_1;
     luat_spi[bus_id].mode=spi_dev->spi_config.mode;
     // LLOGD("SPI_MasterInit luat_bus_%d:%d dataw:%d spi_mode:%d bandrate:%d ",bus_id,luat_spi[bus_id].id, spi_dev->spi_config.dataw, spi_mode, spi_dev->spi_config.bandrate);
     SPI_MasterInit(luat_spi[bus_id].id, spi_dev->spi_config.dataw, spi_mode, spi_dev->spi_config.bandrate, luat_spi_cb, NULL);
@@ -148,8 +148,8 @@ int luat_spi_setup(luat_spi_t* spi) {
     }
     uint8_t spi_mode = SPI_MODE_0;
     if(spi->CPHA&&spi->CPOL)spi_mode = SPI_MODE_3;
-    else if(spi->CPOL)spi_mode = SPI_MODE_1;
-    else if(spi->CPHA)spi_mode = SPI_MODE_2;
+    else if(spi->CPOL)spi_mode = SPI_MODE_2;
+    else if(spi->CPHA)spi_mode = SPI_MODE_1;
     luat_spi[spi_id].mode=spi->mode;
     // LLOGD("SPI_MasterInit luat_spi%d:%d dataw:%d spi_mode:%d bandrate:%d ",spi_id,luat_spi[spi_id], spi->dataw, spi_mode, spi->bandrate);
     SPI_MasterInit(luat_spi[spi_id].id, spi->dataw, spi_mode, spi->bandrate, luat_spi_cb, NULL);
@@ -217,8 +217,8 @@ int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint
 		int spi_id = spi_dev->bus_id;
 	    uint8_t spi_mode = SPI_MODE_0;
 	    if(spi_dev->spi_config.CPHA&&spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_3;
-	    else if(spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_1;
-	    else if(spi_dev->spi_config.CPHA)spi_mode = SPI_MODE_2;
+	    else if(spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_2;
+	    else if(spi_dev->spi_config.CPHA)spi_mode = SPI_MODE_1;
 	    draw->DCDelay = conf->dc_delay_us;
 	    draw->Mode = spi_mode;
 	    draw->Speed = spi_dev->spi_config.bandrate;

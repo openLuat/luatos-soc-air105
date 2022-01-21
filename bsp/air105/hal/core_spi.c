@@ -358,10 +358,10 @@ static void HSPI_MasterInit(uint8_t SpiID, uint8_t Mode, uint32_t Speed)
 	case SPI_MODE_0:
 		break;
 	case SPI_MODE_1:
-		ctrl |= (1 << HSPIM_CR0_PARAM_CPOL_POS);
+		ctrl |= (1 << HSPIM_CR0_PARAM_CPHA_POS);
 		break;
 	case SPI_MODE_2:
-		ctrl |= (1 << HSPIM_CR0_PARAM_CPHA_POS);
+		ctrl |= (1 << HSPIM_CR0_PARAM_CPOL_POS);
 		break;
 	case SPI_MODE_3:
 		ctrl |= (1 << HSPIM_CR0_PARAM_CPOL_POS)|(1 << HSPIM_CR0_PARAM_CPHA_POS);
@@ -408,10 +408,10 @@ void SPI_MasterInit(uint8_t SpiID, uint8_t DataBit, uint8_t Mode, uint32_t Speed
 		case SPI_MODE_0:
 			break;
 		case SPI_MODE_1:
-			ctrl |= SPI_CTRLR0_SCPOL;
+			ctrl |= SPI_CTRLR0_SCPH;
 			break;
 		case SPI_MODE_2:
-			ctrl |= SPI_CTRLR0_SCPH;
+			ctrl |= SPI_CTRLR0_SCPOL;
 			break;
 		case SPI_MODE_3:
 			ctrl |= SPI_CTRLR0_SCPOL|SPI_CTRLR0_SCPH;
@@ -1112,10 +1112,10 @@ void SPI_SetNewConfig(uint8_t SpiID, uint32_t Speed, uint8_t NewMode)
 
 			break;
 		case SPI_MODE_1:
-			HSPI->CR0 |= (1 << HSPIM_CR0_PARAM_CPOL_POS);
+			HSPI->CR0 |= (1 << HSPIM_CR0_PARAM_CPHA_POS);
 			break;
 		case SPI_MODE_2:
-			HSPI->CR0 |= (1 << HSPIM_CR0_PARAM_CPHA_POS);
+			HSPI->CR0 |= (1 << HSPIM_CR0_PARAM_CPOL_POS);
 			break;
 		case SPI_MODE_3:
 			HSPI->CR0 |= (1 << HSPIM_CR0_PARAM_CPOL_POS)|(1 << HSPIM_CR0_PARAM_CPHA_POS);
@@ -1137,10 +1137,10 @@ void SPI_SetNewConfig(uint8_t SpiID, uint32_t Speed, uint8_t NewMode)
 		case SPI_MODE_0:
 			break;
 		case SPI_MODE_1:
-			SPI->CTRLR0 |= SPI_CTRLR0_SCPOL;
+			SPI->CTRLR0 |= SPI_CTRLR0_SCPH;
 			break;
 		case SPI_MODE_2:
-			SPI->CTRLR0 |= SPI_CTRLR0_SCPH;
+			SPI->CTRLR0 |= SPI_CTRLR0_SCPOL;
 			break;
 		case SPI_MODE_3:
 			SPI->CTRLR0 |= SPI_CTRLR0_SCPOL|SPI_CTRLR0_SCPH;
