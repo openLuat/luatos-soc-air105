@@ -96,7 +96,7 @@
 /**********LVGL FONT*************/
 // #define LV_FONT_OPPOSANS_M_8
 // #define LV_FONT_OPPOSANS_M_10
-
+#define LV_FONT_OPPOSANS_M_16
 //---------------------
 // LVGL
 #define LUAT_USE_LCD
