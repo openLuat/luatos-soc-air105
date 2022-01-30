@@ -44,7 +44,6 @@ static int l_usb_app_vhid_cb(lua_State *L, void* ptr) {
 
 int32_t luat_usb_app_vhid_cb(void *pData, void *pParam)
 {
-	//在这里把底层的HID消息转换为LUAT消息并上传，同时删除本注释
     rtos_msg_t msg;
     msg.handler = l_usb_app_vhid_cb;
 	switch((uint32_t)pParam)
@@ -131,7 +130,7 @@ static int l_usb_vhid_cancel_upload(lua_State* L) {
 static const rotable_Reg reg_usbapp[] =
 {
     { "start",              l_usb_start,                0},
-    { "start",              l_usb_stop,                 0},
+    { "stop",               l_usb_stop,                 0},
     { "vhid_upload",        l_usb_vhid_upload,          0},
     { "vhid_cancel_upload", l_usb_vhid_cancel_upload,   0},
 

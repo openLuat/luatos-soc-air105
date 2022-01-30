@@ -107,9 +107,9 @@ int luat_gpio_get(int pin){
 }
 
 void luat_gpio_close(int pin){
-    if (pin < HAL_GPIO_2 || pin >= HAL_GPIO_MAX) return 0;
+    if (pin < HAL_GPIO_2 || pin >= HAL_GPIO_MAX) return ;
     confs[pin].cb = NULL;
-    return 0;
+    return ;
 }
 
 void luat_gpio_init(void){

@@ -20,14 +20,233 @@
  */
 
 #include "bl_inc.h"
+typedef struct
+{
+    uint8_t Instruction;
+    QSPI_BusModeTypeDef BusMode;
+    QSPI_CmdFormatTypeDef CmdFormat;
+    uint32_t Address;
 
-void CACHE_CleanAll(CACHE_TypeDef *Cache)
+    uint32_t WrData;
+    uint32_t RdData;
+
+}FLASH_CommandTypeDef;
+#define QSPI_FIFO_NUM	32
+void __FUNC_IN_RAM__ CACHE_CleanAll(CACHE_TypeDef *Cache)
 {
 	while (Cache->CACHE_CS & CACHE_IS_BUSY);
 
 	Cache->CACHE_REF = CACHE_REFRESH_ALLTAG;
 	Cache->CACHE_REF |= CACHE_REFRESH;
 	while ((Cache->CACHE_REF & CACHE_REFRESH));
+}
+#define FLASH_QSPI_TIMEOUT_DEFAULT_CNT	(19000) //18944
+#define FLASH_QSPI_ACCESS_REQ_ENABLE	(0x00000001U)
+#define FLASH_QSPI_FLASH_READY_ENABLE	(0x0000006BU)
+static int32_t __FUNC_IN_RAM__ prvQSPI_Command(FLASH_CommandTypeDef *cmd, int32_t timeout)
+{
+	int32_t i;
+	int32_t status = -ERROR_OPERATION_FAILED;
+	QSPI->REG_WDATA = cmd->WrData;
+	QSPI->ADDRES = (QSPI->ADDRES & ~QUADSPI_ADDRESS_ADR) | (cmd->Address << 8);
+	QSPI->FCU_CMD = (QSPI->FCU_CMD & ~(QUADSPI_FCU_CMD_CODE | QUADSPI_FCU_CMD_BUS_MODE | QUADSPI_FCU_CMD_CMD_FORMAT | QUADSPI_FCU_CMD_ACCESS_REQ)) | ((cmd->Instruction << 24) |((uint32_t)( cmd->BusMode<< 8)) |((uint32_t)( cmd->CmdFormat << 4))| (FLASH_QSPI_ACCESS_REQ_ENABLE));
+	//Wait For CMD done
+	for (i = 0; i < timeout; i += 4)
+	{
+		if (QSPI->INT_RAWSTATUS & QUADSPI_INT_RAWSTATUS_DONE_IR)
+		{
+			QSPI->INT_CLEAR = QUADSPI_INT_CLEAR_DONE;
+			status = ERROR_NONE;
+			break;
+		}
+	}
+	cmd->RdData = QSPI->REG_RDATA;
+	return status;
+}
+
+static int32_t __FUNC_IN_RAM__ prvQSPI_WriteEnable(QSPI_BusModeTypeDef bus_mode)
+{
+	FLASH_CommandTypeDef sCommand;
+
+	sCommand.Instruction = SPIFLASH_CMD_WREN;
+	sCommand.CmdFormat = QSPI_CMDFORMAT_CMD8;
+
+	if (QSPI_BUSMODE_444 == bus_mode)
+	{
+		sCommand.BusMode = QSPI_BUSMODE_444;
+	}
+	else
+	{
+		sCommand.BusMode = QSPI_BUSMODE_111;
+	}
+
+	if (prvQSPI_Command(&sCommand, FLASH_QSPI_TIMEOUT_DEFAULT_CNT))
+	{
+		return -ERROR_OPERATION_FAILED;
+	}
+
+	return ERROR_NONE;
+}
+
+//PP,QPP,Sector Erase,Block Erase, Chip Erase, Write Status Reg, Erase Security Reg
+static int32_t __FUNC_IN_RAM__ prvQSPI_IsBusy(QSPI_BusModeTypeDef bus_mode)
+{
+	FLASH_CommandTypeDef sCommand;
+
+	sCommand.Instruction = SPIFLASH_CMD_RDSR;
+	sCommand.CmdFormat = QSPI_CMDFORMAT_CMD8_RREG8;
+
+	if (QSPI_BUSMODE_444 == bus_mode)
+	{
+		sCommand.BusMode = QSPI_BUSMODE_444;
+	}
+	else
+	{
+		sCommand.BusMode = QSPI_BUSMODE_111;
+	}
+
+	if (prvQSPI_Command(&sCommand, FLASH_QSPI_TIMEOUT_DEFAULT_CNT))
+	{
+		return -ERROR_OPERATION_FAILED;
+	}
+
+	if (sCommand.RdData & BIT0)
+	{
+		return -ERROR_DEVICE_BUSY;
+	}
+	return ERROR_NONE;
+}
+
+int32_t __FUNC_IN_RAM__ Flash_Erase(uint32_t Address, uint32_t Length)
+{
+	FLASH_CommandTypeDef sCommand;
+	uint32_t TotalLen = 0;
+	uint32_t FlashAddress, DummyLen;
+	Address &= (uint32_t)(0x00FFFFFF);
+	while (CACHE->CACHE_CS & CACHE_IS_BUSY);
+	sCommand.BusMode = QSPI_BUSMODE_111;
+	sCommand.CmdFormat = QSPI_CMDFORMAT_CMD8_ADDR24;
+	while (TotalLen < Length)
+	{
+		if (prvQSPI_WriteEnable(sCommand.BusMode) != 0)
+		{
+			return -ERROR_OPERATION_FAILED;
+		}
+		FlashAddress = Address + TotalLen;
+		DummyLen = Length - TotalLen;
+		if (!(FlashAddress & SPI_FLASH_BLOCK_MASK) && (DummyLen >= SPI_FLASH_BLOCK_SIZE))
+		{
+			sCommand.Instruction = SPIFLASH_CMD_BE;
+			TotalLen += SPI_FLASH_BLOCK_SIZE;
+		}
+		else
+		{
+			sCommand.Instruction = SPIFLASH_CMD_SE;
+			TotalLen += SPI_FLASH_SECTOR_SIZE;
+		}
+		sCommand.Address = FlashAddress;
+#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+		__disable_irq();
+#endif
+		if (prvQSPI_Command(&sCommand, FLASH_QSPI_TIMEOUT_DEFAULT_CNT))
+		{
+#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+			CACHE_CleanAll(CACHE);
+			__enable_irq();
+#endif
+			return -ERROR_OPERATION_FAILED;
+		}
+
+		while(prvQSPI_IsBusy(sCommand.BusMode));
+#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+		__enable_irq();
+#endif
+
+
+	}
+#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+	CACHE_CleanAll(CACHE);
+#endif
+	return ERROR_NONE;
+}
+
+int32_t __FUNC_IN_RAM__ Flash_Program(uint32_t Address, const uint8_t *pBuf, uint32_t Len)
+{
+	FLASH_CommandTypeDef sCommand;
+	uint32_t FinishLen = 0, DummyLen, ProgramLen, i;
+	int32_t status;
+    /* Initialize the adress variables */
+	sCommand.Instruction = QUAD_INPUT_PAGE_PROG_CMD;
+	sCommand.BusMode = QSPI_BUSMODE_114;
+	sCommand.CmdFormat = QSPI_CMDFORMAT_CMD8_ADDR24_PDAT;
+	Address &= 0x00ffffff;
+	while(FinishLen < Len)
+	{
+        if (prvQSPI_WriteEnable(QSPI_BUSMODE_111))
+        {
+			return -ERROR_OPERATION_FAILED;
+        }
+#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+        __disable_irq();
+        ProgramLen = ((Len - FinishLen) > 128)?128:(Len - FinishLen);
+#else
+        ProgramLen = ((Len - FinishLen) > QSPI_FIFO_NUM)?QSPI_FIFO_NUM:(Len - FinishLen);
+#endif
+
+
+		QSPI->FIFO_CNTL |= QUADSPI_FIFO_CNTL_TFFH;
+		QSPI->BYTE_NUM = (ProgramLen << 16);
+		sCommand.Address = Address + FinishLen;
+
+		DummyLen = 0;
+		while((DummyLen < ProgramLen) && !(QSPI->FIFO_CNTL & QUADSPI_FIFO_CNTL_TFFL))
+		{
+			QSPI->WR_FIFO = pBuf[FinishLen + DummyLen] | (pBuf[FinishLen + DummyLen + 1] << 8) | (pBuf[FinishLen + DummyLen + 2] << 16) | (pBuf[FinishLen + DummyLen + 3] << 24);
+			DummyLen += 4;
+		}
+
+		QSPI->ADDRES = (QSPI->ADDRES & ~QUADSPI_ADDRESS_ADR) | (sCommand.Address << 8);
+		QSPI->FCU_CMD = (QSPI->FCU_CMD & ~(QUADSPI_FCU_CMD_CODE | QUADSPI_FCU_CMD_BUS_MODE | QUADSPI_FCU_CMD_CMD_FORMAT | QUADSPI_FCU_CMD_ACCESS_REQ)) | ((sCommand.Instruction << 24) |((uint32_t)( sCommand.BusMode<< 8)) |((uint32_t)( sCommand.CmdFormat << 4))| (FLASH_QSPI_ACCESS_REQ_ENABLE));
+		while(DummyLen < ProgramLen)
+		{
+			while(QSPI->FIFO_CNTL & QUADSPI_FIFO_CNTL_TFFL)
+			{
+
+			}
+			QSPI->WR_FIFO = pBuf[FinishLen + DummyLen] | (pBuf[FinishLen + DummyLen + 1] << 8) | (pBuf[FinishLen + DummyLen + 2] << 16) | (pBuf[FinishLen + DummyLen + 3] << 24);
+			DummyLen += 4;
+		}
+//		DBG("%u", DummyLen);
+		status = -ERROR_OPERATION_FAILED;
+		for (i = 0; i < FLASH_QSPI_TIMEOUT_DEFAULT_CNT; i += 4)
+		{
+			if (QSPI->INT_RAWSTATUS & QUADSPI_INT_RAWSTATUS_DONE_IR)
+			{
+				QSPI->INT_CLEAR = QUADSPI_INT_CLEAR_DONE;
+				status = ERROR_NONE;
+				break;
+			}
+		}
+
+		if (status)
+		{
+#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+			CACHE_CleanAll(CACHE);
+			__enable_irq();
+			DBGF;
+#endif
+			return status;
+		}
+		while (prvQSPI_IsBusy(QSPI_BUSMODE_111));
+#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+		__enable_irq();
+#endif
+		FinishLen += ProgramLen;
+	}
+#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+	CACHE_CleanAll(CACHE);
+#endif
+	return ERROR_NONE;
 }
 
 /**
@@ -38,7 +257,6 @@ void CACHE_CleanAll(CACHE_TypeDef *Cache)
 uint8_t FLASH_EraseSector(uint32_t sectorAddress)
 {
     uint8_t ret;
-
 	__disable_irq();
 	//__disable_fault_irq();
 
@@ -80,18 +298,21 @@ uint8_t FLASH_ProgramPage(uint32_t addr, uint32_t size, uint8_t *buffer)
 
 int Flash_EraseSector(uint32_t address, uint8_t NeedCheck)
 {
-	uint8_t buf[256];
+	uint8_t buf[__FLASH_PAGE_SIZE__];
 	uint32_t i;
 	uint8_t retry = 1;
 	void *res;
-	memset(buf, 0xff, 256);
+	memset(buf, 0xff, __FLASH_PAGE_SIZE__);
 BL_ERASESECTOR_AGAIN:
 	FLASH_EraseSector(address);
+#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
 	CACHE_CleanAll(CACHE);
+#endif
+
 	if (!NeedCheck) return ERROR_NONE;
-	for(i = 0; i < 4096; i+=256)
+	for(i = 0; i < 4096; i+=__FLASH_PAGE_SIZE__)
 	{
-		res = memcmp(address + i, buf, 256);
+		res = memcmp(address + i, buf, __FLASH_PAGE_SIZE__);
 		if (res)
 		{
 			DBG_INFO("%x", res);
@@ -113,19 +334,19 @@ int Flash_ProgramData(uint32_t address, uint32_t *Data, uint32_t Len, uint8_t Ne
 {
 	void *res;
 	uint32_t size = (Len + (4 - 1)) & (~(4 - 1));
-	if (size > 256)
-	{
-		size = 256;
-	}
 	FLASH_ProgramPage(address, size, Data);
+#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
 	CACHE_CleanAll(CACHE);
+#endif
 	if (!NeedCheck) return ERROR_NONE;
 	res = memcmp(address, Data, Len);
 	if (res)
 	{
 		DBG_INFO("%x", res);
 		FLASH_ProgramPage(address, size, Data);
+#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
 		CACHE_CleanAll(CACHE);
+#endif
 		res = memcmp(address, Data, size);
 		if (res)
 		{

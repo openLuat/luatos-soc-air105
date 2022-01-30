@@ -13,7 +13,7 @@ if "%1" == "" (
 ) else (
     set make_target=%1
 )
-set CROSS_TOOL_WIN32_PATH=D:\gcc-arm-none-eabi-for-mcu
+set CROSS_TOOL_WIN32_PATH=D:\gcc-mcu
 set CROSS_TOOL_PATH=%CROSS_TOOL_WIN32_PATH:\=/%
 
 set PATH=%CROSS_TOOL_WIN32_PATH%\bin;%PATH%

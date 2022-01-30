@@ -9,7 +9,7 @@ if !line!==2 set A=%%a
 )
 set /a CPU_LINE=%A%+%A%
 
-set CROSS_TOOL_WIN32_PATH=D:\gcc-arm-none-eabi-for-mcu
+set CROSS_TOOL_WIN32_PATH=D:\gcc-mcu
 set CROSS_TOOL_PATH=%CROSS_TOOL_WIN32_PATH:\=/%
 set PATH=%CROSS_TOOL_WIN32_PATH%\bin;%PATH%
 REM debug属性标记

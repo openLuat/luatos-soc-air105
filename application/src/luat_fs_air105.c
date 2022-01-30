@@ -22,7 +22,7 @@
 #include "app_interface.h"
 #include "luat_base.h"
 #include "luat_fs.h"
-
+#include "luat_ota.h"
 
 struct lfs_config mcu_flash_lfs_cfg;
 struct lfs LFS;
@@ -31,10 +31,10 @@ struct lfs LFS;
 #define LFS_BLOCK_DEVICE_PROG_SIZE      (__FLASH_PAGE_SIZE__)
 #define LFS_BLOCK_DEVICE_LOOK_AHEAD     (16)
 #define LFS_BLOCK_DEVICE_CACHE_SIZE     (256)
-#define SCRIPT_LUADB_START_ADDR			(__FLASH_BASE_ADDR__ + __CORE_FLASH_SECTOR_NUM__ * __FLASH_SECTOR_SIZE__)
+#define SCRIPT_LUADB_START_ADDR			(__FLASH_BASE_ADDR__ + __CORE_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__)
 // 根据头文件的定义, 算出脚本区和文件系统区的绝对地址
 const size_t script_luadb_start_addr = SCRIPT_LUADB_START_ADDR;
-const size_t lfs_fs_start_addr = SCRIPT_LUADB_START_ADDR + __SCRIPT_FLASH_SECTOR_NUM__ * __FLASH_SECTOR_SIZE__ ;
+const size_t lfs_fs_start_addr = SCRIPT_LUADB_START_ADDR + __SCRIPT_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__ ;
 
 static int block_device_read(const struct lfs_config *cfg, lfs_block_t block,
         lfs_off_t off, void *buffer, lfs_size_t size)
@@ -154,6 +154,11 @@ int luat_fs_init(void) {
 	};
 	luat_fs_mount(&conf);
 
+#ifdef LUAT_USE_OTA
+	//OTA检测升级
+    luat_ota(script_luadb_start_addr);
+#endif
+
 	// 指向3M 的脚本区, luadb格式
 	luat_fs_conf_t conf2 = {
 		.busname = (char*)script_luadb_start_addr,
@@ -173,3 +178,11 @@ int luat_fs_init(void) {
 	#endif
 	return 0;
 }
+
+#ifdef LUAT_USE_OTA
+int luat_flash_write(uint32_t addr, uint8_t * buf, uint32_t len){
+	// DBG("addr %x %d", addr,len);
+	Flash_EraseSector(addr, 0);
+	return FLASH_ProgramPage( addr, len, buf);
+}
+#endif

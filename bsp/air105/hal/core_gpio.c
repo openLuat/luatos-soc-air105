@@ -24,7 +24,7 @@ typedef struct
 {
 	volatile GPIO_TypeDef *RegBase;
 	const int32_t IrqLine;
-
+	uint16_t ODBitMap;
 
 }GPIO_ResourceStruct;
 
@@ -37,31 +37,37 @@ typedef struct
 
 static GPIO_CtrlStruct prvGPIO;
 
-static const GPIO_ResourceStruct prvGPIO_Resource[6] =
+static GPIO_ResourceStruct prvGPIO_Resource[6] =
 {
 		{
 				GPIOA,
 				EXTI0_IRQn,
+				0,
 		},
 		{
 				GPIOB,
 				EXTI1_IRQn,
+				0,
 		},
 		{
 				GPIOC,
 				EXTI2_IRQn,
+				0,
 		},
 		{
 				GPIOD,
 				EXTI3_IRQn,
+				0,
 		},
 		{
 				GPIOE,
 				EXTI4_IRQn,
+				0,
 		},
 		{
 				GPIOF,
 				EXTI5_IRQn,
+				0,
 		},
 };
 
@@ -134,6 +140,25 @@ void __FUNC_IN_RAM__ GPIO_Config(uint32_t Pin, uint8_t IsInput, uint8_t InitValu
 		prvGPIO_Resource[Port].RegBase->BSRR |= InitValue?Pin:(Pin << 16);
 		prvGPIO_Resource[Port].RegBase->OEN &= ~Pin;
 	}
+	prvGPIO_Resource[Port].ODBitMap &= ~Pin;
+}
+
+void __FUNC_IN_RAM__ GPIO_ODConfig(uint32_t Pin, uint8_t InitValue)
+{
+	uint8_t Port = (Pin >> 4);
+	uint8_t orgPin = Pin;
+	Pin = 1 << (Pin & 0x0000000f);
+	GPIO_Iomux(orgPin, 1);
+	prvGPIO_Resource[Port].RegBase->OEN |= Pin;
+	if (InitValue)
+	{
+		prvGPIO_Resource[Port].RegBase->PUE |= Pin;
+	}
+	else
+	{
+		prvGPIO_Resource[Port].RegBase->PUE &= ~Pin;
+	}
+	prvGPIO_Resource[Port].ODBitMap |= Pin;
 }
 
 void __FUNC_IN_RAM__ GPIO_PullConfig(uint32_t Pin, uint8_t IsPull, uint8_t IsUp)
@@ -198,7 +223,22 @@ void __FUNC_IN_RAM__ GPIO_Output(uint32_t Pin, uint8_t Level)
 {
 	uint8_t Port = (Pin >> 4);
 	Pin = 1 << (Pin & 0x0000000f);
-	prvGPIO_Resource[Port].RegBase->BSRR |= Level?Pin:(Pin << 16);
+	if (prvGPIO_Resource[Port].ODBitMap & Pin)
+	{
+		if (Level)
+		{
+			prvGPIO_Resource[Port].RegBase->PUE |= Pin;
+		}
+		else
+		{
+			prvGPIO_Resource[Port].RegBase->PUE &= ~Pin;
+		}
+	}
+	else
+	{
+		prvGPIO_Resource[Port].RegBase->BSRR |= Level?Pin:(Pin << 16);
+	}
+
 //	DBG("%d, %x, %x, %x",Port, Pin, prvGPIO_Resource[Port].RegBase, prvGPIO_Resource[Port].RegBase->IODR);
 }
 

@@ -46,11 +46,11 @@
 #define LUAT_USE_DAC 1
 #define LUAT_USE_OTP 1
 
-// #define LUAT_USE_CRYPTO  1
+#define LUAT_USE_CRYPTO  1
 #define LUAT_USE_CJSON  1
 #define LUAT_USE_ZBUFF  1
 #define LUAT_USE_PACK  1
-//#define LUAT_USE_GNSS  1
+//#define LUAT_USE_LIBGNSS  1
 #define LUAT_USE_FS  1
 #define LUAT_USE_SENSOR  1
 #define LUAT_USE_SFUD  1
@@ -70,7 +70,7 @@
 //----------------------------
 // 高级功能, 其中shell是推荐启用, 除非你打算uart0也读数据
 #define LUAT_USE_SHELL 
-
+#define LUAT_USE_OTA
 #define LUAT_USE_DBG
 
 //---------------------
@@ -94,8 +94,7 @@
 // #define USE_U8G2_OPPOSANSM24_CHINESE
 // #define USE_U8G2_OPPOSANSM32_CHINESE
 /**********LVGL FONT*************/
-// #define LV_FONT_OPPOSANS_M_8
-// #define LV_FONT_OPPOSANS_M_10
+//#define LV_FONT_OPPOSANS_M_12
 #define LV_FONT_OPPOSANS_M_16
 //---------------------
 // LVGL

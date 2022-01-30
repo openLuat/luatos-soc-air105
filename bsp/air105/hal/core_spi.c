@@ -344,7 +344,6 @@ static void SPI_IrqHandle(int32_t IrqLine, void *pData)
 
 static int32_t SPI_DummyCB(void *pData, void *pParam)
 {
-	DBG("!");
 	return 0;
 }
 
@@ -968,8 +967,6 @@ int32_t SPI_FlashBlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint32_t WL
 	{
 		free(Temp);
 		DBG("!!!");
-		DMA_StopStream(prvSPI[SpiID].DMATxStream);
-		DMA_StopStream(prvSPI[SpiID].DMARxStream);
 		SPI_TransferStop(SpiID);
 		prvSPI[SpiID].IsBlockMode = 0;
 		return -1;
@@ -1057,7 +1054,8 @@ void SPI_TransferStop(uint8_t SpiID)
 	SPI_TypeDef *SPI;
 	HSPIM_TypeDef *HSPI;
 	uint32_t TxLen, i;
-
+	DMA_StopStream(prvSPI[SpiID].DMATxStream);
+	DMA_StopStream(prvSPI[SpiID].DMARxStream);
 	switch(SpiID)
 	{
 	case HSPI_ID0:

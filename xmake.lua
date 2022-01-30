@@ -1,5 +1,5 @@
 set_project("AIR105")
-set_xmakever("2.5.8")
+set_xmakever("2.6.3")
 
 set_version("0.0.2", {build = "%Y%m%d%H%M"})
 add_rules("mode.debug", "mode.release")
@@ -7,19 +7,32 @@ add_rules("mode.debug", "mode.release")
 local AIR105_VERSION
 local luatos = "../LuatOS/"
 
-local sdk_dir = "C:\\gcc-arm-none-eabi-10.3-2021.10\\"
-if is_plat("linux") then
-    sdk_dir = "/opt/gcc-arm-none-eabi-10.3-2021.10/"
-elseif is_plat("windows") then
-    sdk_dir = "C:\\gcc-arm-none-eabi-10.3-2021.10\\"
-end
+package("gnu_rm")
+    set_kind("toolchain")
+    set_homepage("https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm")
+    set_description("GNU Arm Embedded Toolchain")
+    local version_map = {
+        ["2021.10"] = "10.3-2021.10"
+    }
+    if is_host("windows") then
+        set_urls("http://cdndownload.openluat.com/xmake/toolchains/gcc-arm/gcc-arm-none-eabi-$(version)-win32.zip", {version = function (version)
+            return version_map[tostring(version)]
+        end})
+        add_versions("2021.10", "d287439b3090843f3f4e29c7c41f81d958a5323aecefcf705c203bfd8ae3f2e7")
+    elseif is_host("linux") then
+        set_urls("http://cdndownload.openluat.com/xmake/toolchains/gcc-arm/gcc-arm-none-eabi-$(version)-x86_64-linux.tar.bz2", {version = function (version)
+            return version_map[tostring(version)]
+        end})
+        add_versions("2021.10", "97dbb4f019ad1650b732faffcc881689cedc14e2b7ee863d390e0a41ef16c9a3")
+    end
+    on_install("@windows", "@linux", function (package)
+        os.vcp("*", package:installdir())
+    end)
+package_end()
 
-toolchain("arm_toolchain")
-    set_kind("standalone")
-    set_sdkdir(sdk_dir)
-toolchain_end()
+add_requires("gnu_rm 2021.10")
+set_toolchains("gnu-rm@gnu_rm")
 
-set_toolchains("arm_toolchain")
 set_plat("cross")
 set_arch("arm")
 
@@ -57,6 +70,8 @@ target("bootloader.elf")
 	add_includedirs("bsp/common/include",{public = true})
     add_files("bsp/usb/**.c",{public = true})
     add_includedirs("bsp/usb/include",{public = true})
+
+    add_files("Third_Party/heap/*.c",{public = true})
 	add_includedirs("Third_Party/heap",{public = true})
 
     -- add files
@@ -67,9 +82,13 @@ target("bootloader.elf")
     add_includedirs("bsp/air105/chip/include")
     add_includedirs("bsp/air105/include")
 
+    add_includedirs("bsp/device/include",{public = true})
+    add_files("bsp/device/src/*.c",{public = true})
+
     add_ldflags("-Wl,-Map=./build/out/bootloader.map","-Wl,-T$(projectdir)/project/air105/bl.ld",{force = true})
 
 	after_build(function(target)
+        sdk_dir = target:toolchains()[1]:sdkdir().."/"
         os.exec(sdk_dir .. "bin/arm-none-eabi-objcopy -O binary --gap-fill=0xff $(buildir)/out/bootloader.elf $(buildir)/out/bootloader.bin")
         os.exec(sdk_dir .. "bin/arm-none-eabi-objcopy -O ihex $(buildir)/out/bootloader.elf $(buildir)/out/bootloader.hex")
         io.writefile("$(buildir)/out/bootloader.list", os.iorun(sdk_dir .. "bin/arm-none-eabi-objdump -h -S $(buildir)/out/bootloader.elf"))
@@ -112,31 +131,31 @@ target("lvgl")
 target_end()
 
 ---//-----------------------------
--- target("tflm")
---     tfroot = "Third_Party/tflm-cmsis/"
---     set_kind("static")
---     set_languages("c99", "c++11")
+target("tflm")
+    tfroot = "Third_Party/tflm-cmsis/"
+    set_kind("static")
+    set_languages("c99", "c++11")
 
---     add_defines("CMSIS_NN=1")
+    add_defines("CMSIS_NN=1")
 
---     add_files(tfroot .. "tensorflow/**.c")
---     add_files(tfroot .. "tensorflow/**.cc")
---     add_files(tfroot .. "apps/person_detection/**.cc")
+    add_files(tfroot .. "tensorflow/**.c")
+    add_files(tfroot .. "tensorflow/**.cc")
+    add_files(tfroot .. "apps/person_detection/**.cc")
     
---     add_files(tfroot .. "third_party/**.c")
+    add_files(tfroot .. "third_party/**.c")
 
---     add_includedirs(tfroot .. ".", 
---     tfroot .. "third_party/ruy", 
---     tfroot .. "third_party/kissfft", 
---     tfroot .. "third_party/gemmlowp", 
---     tfroot .. "third_party/flatbuffers/include",
---     tfroot .. "third_party/cmsis/CMSIS/Core/Include",
---     tfroot .. "third_party/cmsis/CMSIS/DSP/Include",
---     tfroot .. "third_party/cmsis/CMSIS/NN/Include",
---     tfroot .. "third_party/cmsis"
---                         )
+    add_includedirs(tfroot .. ".", 
+    tfroot .. "third_party/ruy", 
+    tfroot .. "third_party/kissfft", 
+    tfroot .. "third_party/gemmlowp", 
+    tfroot .. "third_party/flatbuffers/include",
+    tfroot .. "third_party/cmsis/CMSIS/Core/Include",
+    tfroot .. "third_party/cmsis/CMSIS/DSP/Include",
+    tfroot .. "third_party/cmsis/CMSIS/NN/Include",
+    tfroot .. "third_party/cmsis"
+                        )
 
--- target_end()
+target_end()
 ---//-----------------------------
 
 target("app.elf")
@@ -152,8 +171,8 @@ target("app.elf")
         if LVGL_CONF == nil then target:add("deps", "lvgl") end
     end)
 
-    -- add_deps("tflm")
-    
+    add_deps("tflm")
+
     -- add deps
     add_files("Third_Party/cm_backtrace/*.c",{public = true})
     --add_files("Third_Party/cm_backtrace/fault_handler/gcc/cmb_fault.S",{public = true})
@@ -172,7 +191,8 @@ target("app.elf")
 	add_includedirs("bsp/common/include",{public = true})
     add_files("bsp/usb/**.c",{public = true})
     add_includedirs("bsp/usb/include",{public = true})
-
+    add_includedirs("bsp/device/include",{public = true})
+    -- add_files("bsp/device/src/*.c",{public = true})
     -- add files
     add_files("bsp/air105/platform/startup_full.s")
     add_files("bsp/air105/platform/app_main.c")
@@ -197,7 +217,7 @@ target("app.elf")
     add_files(luatos.."lua/src/*.c")
     add_files(luatos.."luat/modules/*.c")
     add_files(luatos.."luat/vfs/*.c")
-    del_files(luatos.."luat/vfs/luat_fs_posix.c")
+    remove_files(luatos.."luat/vfs/luat_fs_posix.c")
 
     add_files(luatos.."components/lcd/*.c")
     add_files(luatos.."components/sfd/*.c")
@@ -206,7 +226,7 @@ target("app.elf")
     add_files(luatos.."components/nr_micro_shell/*.c")
     add_files(luatos.."luat/packages/eink/*.c")
     add_files(luatos.."luat/packages/epaper/*.c")
-    del_files(luatos.."luat/packages/epaper/GUI_Paint.c")
+    remove_files(luatos.."luat/packages/epaper/GUI_Paint.c")
     add_files(luatos.."luat/packages/iconv/*.c")
     add_files(luatos.."luat/packages/lfs/*.c")
     add_files(luatos.."luat/packages/lua-cjson/*.c")
@@ -259,6 +279,7 @@ target("app.elf")
     add_ldflags("-Wl,--whole-archive -Wl,--start-group ./lib/libgt.a -Wl,--end-group -Wl,--no-whole-archive","-Wl,-Map=./build/out/app.map","-Wl,-T$(projectdir)/project/air105/app.ld",{force = true})
 
 	after_build(function(target)
+        sdk_dir = target:toolchains()[1]:sdkdir().."/"
         os.exec(sdk_dir .. "bin/arm-none-eabi-objcopy -O binary --gap-fill=0xff $(buildir)/out/app.elf $(buildir)/out/app.bin")
         os.exec(sdk_dir .. "bin/arm-none-eabi-objcopy -O ihex $(buildir)/out/app.elf $(buildir)/out/app.hex")
         io.writefile("$(buildir)/out/app.list", os.iorun(sdk_dir .. "bin/arm-none-eabi-objdump -h -S $(buildir)/out/app.elf"))
