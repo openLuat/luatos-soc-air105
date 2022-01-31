@@ -12,3 +12,11 @@ https://wiki.luatos.com/develop/compile/Air105.html
 [![asciicast](https://asciinema.org/a/461295.svg)](https://asciinema.org/a/461295)
 
 寄存器手册: https://luatos.com/t/air105 硬件资料
+
+## 第三方资源
+
+* AIR105 Keil5 MDK 项目模板 https://gitee.com/iosetting/air105_project
+
+## 授权协议
+
+[MIT](LICENSE)
