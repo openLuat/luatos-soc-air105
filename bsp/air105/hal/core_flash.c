@@ -20,6 +20,16 @@
  */
 
 #include "bl_inc.h"
+
+void __FUNC_IN_RAM__ CACHE_CleanAll(CACHE_TypeDef *Cache)
+{
+	while (Cache->CACHE_CS & CACHE_IS_BUSY);
+
+	Cache->CACHE_REF = CACHE_REFRESH_ALLTAG;
+	Cache->CACHE_REF |= CACHE_REFRESH;
+	while ((Cache->CACHE_REF & CACHE_REFRESH));
+}
+#if 0 //没什么用，没有ROM里的API好用
 typedef struct
 {
     uint8_t Instruction;
@@ -33,14 +43,7 @@ typedef struct
 }FLASH_CommandTypeDef;
 #define QSPI_FIFO_NUM	32
 #define __FLASH_DISABLE_IRQ__
-void __FUNC_IN_RAM__ CACHE_CleanAll(CACHE_TypeDef *Cache)
-{
-	while (Cache->CACHE_CS & CACHE_IS_BUSY);
 
-	Cache->CACHE_REF = CACHE_REFRESH_ALLTAG;
-	Cache->CACHE_REF |= CACHE_REFRESH;
-	while ((Cache->CACHE_REF & CACHE_REFRESH));
-}
 #define FLASH_QSPI_TIMEOUT_DEFAULT_CNT	(19000) //18944
 #define FLASH_QSPI_ACCESS_REQ_ENABLE	(0x00000001U)
 #define FLASH_QSPI_FLASH_READY_ENABLE	(0x0000006BU)
@@ -175,11 +178,13 @@ int32_t __FUNC_IN_RAM__ Flash_Program(uint32_t Address, const uint8_t *pBuf, uin
 	FLASH_CommandTypeDef sCommand;
 	uint32_t FinishLen = 0, DummyLen, ProgramLen, i;
 	int32_t status;
+	uint32_t PageData[64];
     /* Initialize the adress variables */
 	sCommand.Instruction = QUAD_INPUT_PAGE_PROG_CMD;
 	sCommand.BusMode = QSPI_BUSMODE_114;
 	sCommand.CmdFormat = QSPI_CMDFORMAT_CMD8_ADDR24_PDAT;
 	Address &= 0x00ffffff;
+
 	while(FinishLen < Len)
 	{
         if (prvQSPI_WriteEnable(QSPI_BUSMODE_111))
@@ -188,11 +193,14 @@ int32_t __FUNC_IN_RAM__ Flash_Program(uint32_t Address, const uint8_t *pBuf, uin
         }
 #if (defined __FLASH_DISABLE_IRQ__)
         __disable_irq();
-        ProgramLen = ((Len - FinishLen) > 128)?128:(Len - FinishLen);
+        ProgramLen = ((Len - FinishLen) > 4)?4:(Len - FinishLen);
 #else
         ProgramLen = ((Len - FinishLen) > QSPI_FIFO_NUM)?QSPI_FIFO_NUM:(Len - FinishLen);
 #endif
-
+    	for(i = 0; i < ProgramLen; i+=4)
+    	{
+    		PageData[i >> 2] = BytesGetLe32(pBuf + i);
+    	}
 
 		QSPI->FIFO_CNTL |= QUADSPI_FIFO_CNTL_TFFH;
 		QSPI->BYTE_NUM = (ProgramLen << 16);
@@ -201,7 +209,7 @@ int32_t __FUNC_IN_RAM__ Flash_Program(uint32_t Address, const uint8_t *pBuf, uin
 		DummyLen = 0;
 		while((DummyLen < ProgramLen) && !(QSPI->FIFO_CNTL & QUADSPI_FIFO_CNTL_TFFL))
 		{
-			QSPI->WR_FIFO = pBuf[FinishLen + DummyLen] | (pBuf[FinishLen + DummyLen + 1] << 8) | (pBuf[FinishLen + DummyLen + 2] << 16) | (pBuf[FinishLen + DummyLen + 3] << 24);
+			QSPI->WR_FIFO = PageData[DummyLen >> 2];
 			DummyLen += 4;
 		}
 
@@ -213,7 +221,7 @@ int32_t __FUNC_IN_RAM__ Flash_Program(uint32_t Address, const uint8_t *pBuf, uin
 			{
 
 			}
-			QSPI->WR_FIFO = pBuf[FinishLen + DummyLen] | (pBuf[FinishLen + DummyLen + 1] << 8) | (pBuf[FinishLen + DummyLen + 2] << 16) | (pBuf[FinishLen + DummyLen + 3] << 24);
+			QSPI->WR_FIFO = PageData[DummyLen >> 2];
 			DummyLen += 4;
 		}
 //		DBG("%u", DummyLen);
@@ -247,7 +255,7 @@ int32_t __FUNC_IN_RAM__ Flash_Program(uint32_t Address, const uint8_t *pBuf, uin
 #endif
 	return ERROR_NONE;
 }
-
+#endif
 /**
   * @brief  Flash Erase Sector.
   * @param  sectorAddress: The sector address to be erased
@@ -294,6 +302,82 @@ uint8_t FLASH_ProgramPage(uint32_t addr, uint32_t size, uint8_t *buffer)
     return ret;
 }
 
+int32_t Flash_Erase(uint32_t Address, uint32_t Length)
+{
+	uint32_t TotalLen = 0;
+	QSPI_CommandTypeDef sCommand;
+	sCommand.BusMode = QSPI_BUSMODE_111;
+	sCommand.CmdFormat = QSPI_CMDFORMAT_CMD8_ADDR24;
+	uint32_t FlashAddress, DummyLen;
+	uint8_t ret;
+	while (TotalLen < Length)
+	{
+		FlashAddress = Address + TotalLen;
+		DummyLen = Length - TotalLen;
+		if (!(FlashAddress & SPI_FLASH_BLOCK_MASK) && (DummyLen >= SPI_FLASH_BLOCK_SIZE))
+		{
+			sCommand.Instruction = SPIFLASH_CMD_BE;
+			TotalLen += SPI_FLASH_BLOCK_SIZE;
+		}
+		else
+		{
+			sCommand.Instruction = SPIFLASH_CMD_SE;
+			TotalLen += SPI_FLASH_SECTOR_SIZE;
+		}
+		__disable_irq();
+		//__disable_fault_irq();
+
+	    ret = ROM_QSPI_EraseSector(&sCommand, FlashAddress);
+
+		//__enable_fault_irq();
+		__enable_irq();
+	}
+	CACHE_CleanAll(CACHE);
+	return ERROR_NONE;
+}
+
+int32_t Flash_Program(uint32_t Address, const uint8_t *pBuf, uint32_t Len)
+{
+	uint32_t size = (Len + (4 - 1)) & (~(4 - 1));
+	uint32_t Pos = 0;
+    uint8_t ret;
+	QSPI_CommandTypeDef cmdType;
+
+    cmdType.Instruction = QUAD_INPUT_PAGE_PROG_CMD;
+    cmdType.BusMode = QSPI_BUSMODE_114;
+    cmdType.CmdFormat = QSPI_CMDFORMAT_CMD8_ADDR24_PDAT;
+
+
+	while(Pos < size)
+	{
+		if ((size - Pos) > __FLASH_PAGE_SIZE__)
+		{
+
+
+			__disable_irq();
+			//__disable_fault_irq();
+
+		    ret = ROM_QSPI_ProgramPage(&cmdType, DMA_Channel_1, Address + Pos, __FLASH_PAGE_SIZE__, pBuf + Pos);
+
+			//__enable_fault_irq();
+			__enable_irq();
+			Pos += __FLASH_PAGE_SIZE__;
+		}
+		else
+		{
+			__disable_irq();
+			//__disable_fault_irq();
+
+		    ret = ROM_QSPI_ProgramPage(&cmdType, DMA_Channel_1, Address + Pos, (size - Pos), pBuf + Pos);
+
+			//__enable_fault_irq();
+			__enable_irq();
+			Pos += (size - Pos);
+		}
+	}
+	CACHE_CleanAll(CACHE);
+	return ERROR_NONE;
+}
 
 int Flash_EraseSector(uint32_t address, uint8_t NeedCheck)
 {

@@ -123,30 +123,12 @@ void BL_EraseSector(uint32_t address)
 
 static void BL_OTAErase(uint32_t Address, uint32_t Len)
 {
-	uint32_t Pos = 0;
-	while(Pos < Len)
-	{
-		Flash_EraseSector(Address + Pos, 0);
-		Pos += __FLASH_SECTOR_SIZE__;
-	}
+	Flash_Erase(Address, Len);
 }
 
 static void BL_OTAWrite(uint32_t Address, uint8_t *Data, uint32_t Len)
 {
-	uint32_t Pos = 0;
-	while(Pos < Len)
-	{
-		if ((Len - Pos) > __FLASH_PAGE_SIZE__)
-		{
-			Flash_ProgramData(Address + Pos, Data + Pos, __FLASH_PAGE_SIZE__, 0);
-			Pos += __FLASH_PAGE_SIZE__;
-		}
-		else
-		{
-			Flash_ProgramData(Address + Pos, Data + Pos, Len - Pos, 0);
-			Pos += Len - Pos;
-		}
-	}
+	Flash_Program(Address, Data, Len);
 }
 
 void FileSystem_Init(void)
