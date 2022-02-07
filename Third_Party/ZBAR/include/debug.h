@@ -22,7 +22,7 @@
  *------------------------------------------------------------------------*/
 
 /* varargs variations on compile time debug spew */
-#if 1
+#if 0
 
 #define dprintf(...)
 #define zassert(condition, retval, format, ...) //assert(condition)
