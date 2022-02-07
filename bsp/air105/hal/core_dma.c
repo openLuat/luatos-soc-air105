@@ -308,6 +308,7 @@ void DMA_ClearStreamFlag(uint8_t Stream)
 
 void DMA_StopStream(uint8_t Stream)
 {
+	if (Stream >= DMA_STREAM_QTY) return;
 	DMA_TypeDef *hwDMA = hwDMAChannal[Stream].RegBase;
 	uint32_t tmpChannelxBit = hwDMAChannal[Stream].Index;
 	DMA->ChEnReg_L = (tmpChannelxBit << 8);

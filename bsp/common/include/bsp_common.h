@@ -28,6 +28,17 @@
 #include <stdarg.h>
 #include "cmsis_gcc.h"
 
+typedef struct
+{
+	uint32_t MaigcNum; //升级包标识，标识不对直接抛弃
+	uint32_t CRC32;		//后续字节的CRC32校验，所有CRC32规则与ZIP压缩一致
+	uint32_t Param1;	//升级参数，其中byte0升级类型，byte1升级包存放位置，byte2外设总线序号，和platform_define里的外设序号一致
+	uint32_t Param2;	//额外的参数，需要和外置存储总线配合使用，一般是外置存储总线的PIN
+	uint32_t DataStartAddress;//升级包在flash中的起始地址，外部和内部都可以用
+	uint32_t DataLen;//升级包大小
+	uint32_t DataCRC32;//升级包整包数据的CRC32
+	char FilePath[100];//升级包在文件系统中的绝对路径，如果在flash中则随意填写
+}CoreUpgrade_HeadStruct;
 
 typedef struct
 {

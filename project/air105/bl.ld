@@ -6,6 +6,7 @@ _Min_Heap_Size = 0 ;	/* required amount of heap  */
 _Min_Stack_Size = 0x10000 ;	/* required amount of stack */
 _estack = ORIGIN(RAM) + _Min_Stack_Size + _Min_Heap_Size;	/* start of "RAM" Ram type memory */
 _sstack = ORIGIN(RAM); /* start of "RAM" Ram type memory */
+__ram_end = ORIGIN(RAM) + LENGTH(RAM);
 /* Memories definition */
 MEMORY
 {

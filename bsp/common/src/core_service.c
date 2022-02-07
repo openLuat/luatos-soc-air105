@@ -1262,6 +1262,7 @@ static void prvService_Task(void* params)
 	CBDataFun_t CBDataFun;
 	PV_Union uPV;
 	OS_EVENT Event;
+//	InFlash_Test();
 	while(1)
 	{
 		Task_GetEventByMS(prvService.ServiceHandle, CORE_EVENT_ID_ANY, &Event, NULL, 0);
@@ -1422,7 +1423,7 @@ static void prvCore_PrintTaskStack(HANDLE TaskHandle)
 	for(i = 0; i < 16, SP < StackAddress + Len; SP += 4)
 	{
 		PC = *((uint32_t *) SP) - 4;
-		if ((PC > __FLASH_APP_START_ADDR__) && (PC < (__FLASH_BASE_ADDR__ + __CORE_FLASH_SECTOR_NUM__ * __FLASH_SECTOR_SIZE__)))
+		if ((PC > __FLASH_APP_START_ADDR__) && (PC < (__FLASH_BASE_ADDR__ + __CORE_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__)))
 		{
 
 	        if (PC % 2 == 0) {

@@ -32,7 +32,7 @@
 #define DBG_RXBUF_SIZE (0)
 #define DBG_RXBUF_BAND (1)
 #else
-#define DBG_BUF_SIZE (4080)
+#define DBG_BUF_SIZE (4090)
 #define DBG_TXBUF_SIZE DBG_BUF_SIZE
 #define DBG_RXBUF_SIZE DBG_BUF_SIZE
 #define DBG_RXBUF_BAND (4)
@@ -326,7 +326,6 @@ void DBG_HexPrintf(void *Data, unsigned int len)
 	uint8_t *data = (uint8_t *)Data;
 	int8_t *uart_buf;
     uint32_t i,j;
-    uint32_t Critical;
     j = 0;
 
 	if (!prvDBGCtrl.AppMode) return;

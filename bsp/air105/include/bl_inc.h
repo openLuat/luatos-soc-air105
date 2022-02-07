@@ -48,4 +48,6 @@
 #include "usb_hid.h"
 #include "usb_scsi.h"
 #include "usb_cdc.h"
+
+#include "dev_spiflash.h"
 #endif
