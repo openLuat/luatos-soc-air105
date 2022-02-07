@@ -20,7 +20,7 @@
  */
 
 #include "user.h"
-#include "Lzmalib.h"
+#include "LzmaLib.h"
 extern const uint32_t __isr_start_address;
 extern const uint32_t __os_heap_start;
 extern const uint32_t __ram_end;
