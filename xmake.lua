@@ -39,6 +39,8 @@ set_arch("arm")
 --add macro defination
 add_defines("__AIR105_BSP__","__USE_XTL__","CMB_CPU_PLATFORM_TYPE=CMB_CPU_ARM_CORTEX_M4","HSE_VALUE=12000000","CORTEX_M4","__FLASH_APP_START_ADDR__=0x01010000","__LUATOS__")
 add_defines("__FLASH_OTA_INFO_ADDR__=0x0100F000")
+add_defines("_7ZIP_ST")
+
 -- set warning all as error
 set_warnings("allextra")
 -- set_optimize("smallest")
@@ -73,6 +75,9 @@ target("bootloader.elf")
 
     add_files("Third_Party/heap/*.c",{public = true})
 	add_includedirs("Third_Party/heap",{public = true})
+
+    add_files("Third_Party/lzma/src/*.c",{public = true})
+    add_includedirs("Third_Party/lzma/include",{public = true})
 
     -- add files
     add_files("bsp/air105/platform/startup_full.s")
@@ -183,6 +188,9 @@ target("app.elf")
 
     add_files("Third_Party/iconv/src/*.c",{public = true})
     add_includedirs("Third_Party/iconv/include",{public = true})
+
+    add_files("Third_Party/lzma/src/*.c",{public = true})
+    add_includedirs("Third_Party/lzma/include",{public = true})
     
     --add_files("bsp/common/*.c",{public = true})
 	add_files("bsp/common/src/*.c",{public = true})

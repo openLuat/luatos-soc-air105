@@ -32,6 +32,7 @@ typedef struct
 
 }FLASH_CommandTypeDef;
 #define QSPI_FIFO_NUM	32
+#define __FLASH_DISABLE_IRQ__
 void __FUNC_IN_RAM__ CACHE_CleanAll(CACHE_TypeDef *Cache)
 {
 	while (Cache->CACHE_CS & CACHE_IS_BUSY);
@@ -145,12 +146,12 @@ int32_t __FUNC_IN_RAM__ Flash_Erase(uint32_t Address, uint32_t Length)
 			TotalLen += SPI_FLASH_SECTOR_SIZE;
 		}
 		sCommand.Address = FlashAddress;
-#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+#if (defined __FLASH_DISABLE_IRQ__)
 		__disable_irq();
 #endif
 		if (prvQSPI_Command(&sCommand, FLASH_QSPI_TIMEOUT_DEFAULT_CNT))
 		{
-#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+#if (defined __FLASH_DISABLE_IRQ__)
 			CACHE_CleanAll(CACHE);
 			__enable_irq();
 #endif
@@ -158,13 +159,12 @@ int32_t __FUNC_IN_RAM__ Flash_Erase(uint32_t Address, uint32_t Length)
 		}
 
 		while(prvQSPI_IsBusy(sCommand.BusMode));
-#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+#if (defined __FLASH_DISABLE_IRQ__)
 		__enable_irq();
 #endif
 
-
 	}
-#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+#if (defined __FLASH_DISABLE_IRQ__)
 	CACHE_CleanAll(CACHE);
 #endif
 	return ERROR_NONE;
@@ -186,7 +186,7 @@ int32_t __FUNC_IN_RAM__ Flash_Program(uint32_t Address, const uint8_t *pBuf, uin
         {
 			return -ERROR_OPERATION_FAILED;
         }
-#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+#if (defined __FLASH_DISABLE_IRQ__)
         __disable_irq();
         ProgramLen = ((Len - FinishLen) > 128)?128:(Len - FinishLen);
 #else
@@ -230,20 +230,19 @@ int32_t __FUNC_IN_RAM__ Flash_Program(uint32_t Address, const uint8_t *pBuf, uin
 
 		if (status)
 		{
-#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+#if (defined __FLASH_DISABLE_IRQ__)
 			CACHE_CleanAll(CACHE);
 			__enable_irq();
-			DBGF;
 #endif
 			return status;
 		}
 		while (prvQSPI_IsBusy(QSPI_BUSMODE_111));
-#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+#if (defined __FLASH_DISABLE_IRQ__)
 		__enable_irq();
 #endif
 		FinishLen += ProgramLen;
 	}
-#if (defined __BUILD_OS__) || (defined __BUILD_APP__)
+#if (defined __FLASH_DISABLE_IRQ__)
 	CACHE_CleanAll(CACHE);
 #endif
 	return ERROR_NONE;

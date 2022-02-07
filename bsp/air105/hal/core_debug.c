@@ -560,8 +560,17 @@ static void DBG_RunApp(uint8_t *Data, uint32_t Len)
 {
 #ifdef __BUILD_APP__
 #else
-	uint8_t Result = BL_RunAPP();
-	DBG_Response(DBG_CMD_RUNAPP, Result, &Result, 1);
+	uint32_t Result = BL_RunAPP();
+	DBG_Response(DBG_CMD_RUNAPP, Result, &Result, 4);
+#endif
+}
+
+static void DBG_FlashZipBlockEnd(uint8_t *Data, uint32_t Len)
+{
+#ifdef __BUILD_APP__
+#else
+	uint8_t Result = BL_RunLzmaBlock(Data + 1, Data[0]);
+	DBG_Response(DBG_CMD_FLASHLZMABLOCKEND, Result, &Result, 1);
 #endif
 }
 
@@ -572,6 +581,7 @@ static const CBDataFun_t DBG_ProtoclFunlist[] =
 		DBG_FlashDownload,
 		DBG_FlashDownloadEnd,
 		DBG_RunApp,
+		DBG_FlashZipBlockEnd,
 };
 
 static int32_t DBG_DummyRx(void *pData, void *pParam)
