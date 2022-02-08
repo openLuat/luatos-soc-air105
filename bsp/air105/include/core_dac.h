@@ -21,7 +21,10 @@
 
 #ifndef __CORE_DAC_H__
 #define __CORE_DAC_H__
-void DAC_Init(uint8_t Stream);
-void DAC_Setup(uint32_t Freq, uint32_t OutRMode);
-void DAC_Send(const uint16_t *Data, uint32_t Len, CBFuncEx_t Callback, void *pParam);
+void DAC_DMAInit(uint8_t DAC_ID, uint8_t Stream);
+void DAC_Setup(uint8_t DAC_ID, uint32_t Freq, uint32_t OutRMode);
+void DAC_Send(uint8_t DAC_ID, const uint16_t *Data, uint32_t Len, CBFuncEx_t Callback, void *pParam);
+void DAC_Stop(uint8_t DAC_ID);
+void DAC_ForceStop(uint8_t DAC_ID);
+uint8_t DAC_CheckRun(uint8_t DAC_ID);
 #endif
