@@ -25,6 +25,7 @@
 #include "platform_define.h"
 #include "resource_map.h"
 #include "bsp_common.h"
+#include "core_dma.h"
 #include "core_flash.h"
 #include "core_debug.h"
 #include "core_tick.h"
