@@ -13,7 +13,7 @@ __ram_end = ORIGIN(RAM) + LENGTH(RAM);
 MEMORY
 {
     RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 640K
-    FLASH    (rx)    : ORIGIN = 0x1010000,   LENGTH = 3008K
+    FLASH    (rx)    : ORIGIN = 0x1010000,   LENGTH = 2944K
 }
 
 /* Sections */
