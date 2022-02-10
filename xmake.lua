@@ -72,7 +72,7 @@ target("bootloader.elf")
 	add_includedirs("bsp/common/include",{public = true})
     add_files("bsp/usb/**.c",{public = true})
     add_includedirs("bsp/usb/include",{public = true})
-
+    add_includedirs("bsp/audio/include",{public = true})
     add_files("Third_Party/heap/*.c",{public = true})
 	add_includedirs("Third_Party/heap",{public = true})
 
@@ -200,6 +200,8 @@ target("app.elf")
     add_files("bsp/usb/**.c",{public = true})
     add_includedirs("bsp/usb/include",{public = true})
     add_includedirs("bsp/device/include",{public = true})
+    add_includedirs("bsp/audio/include",{public = true})
+    add_files("bsp/audio/**.c",{public = true})
     -- add_files("bsp/device/src/*.c",{public = true})
     -- add files
     add_files("bsp/air105/platform/startup_full.s")
