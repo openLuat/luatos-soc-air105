@@ -788,8 +788,6 @@ int32_t SPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData,
 	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 10))
 	{
 		DBG("!!!");
-		DMA_StopStream(prvSPI[SpiID].DMATxStream);
-		DMA_StopStream(prvSPI[SpiID].DMARxStream);
 		SPI_TransferStop(SpiID);
 		prvSPI[SpiID].IsBlockMode = 0;
 		return -1;

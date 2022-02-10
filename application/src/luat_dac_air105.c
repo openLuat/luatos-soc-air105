@@ -23,6 +23,14 @@
 #include "luat_dac.h"
 #include "app_interface.h"
 
+static int32_t luat_dac_cb(void *pData, void *pParam)
+{
+	uint32_t DAC_ID = pData;
+	HANDLE Mutex = pParam;
+	OS_MutexRelease(Mutex);
+	return 0;
+}
+
 int luat_dac_setup(uint32_t ch, uint32_t freq, uint32_t mode) {
     if (ch != 0)
         return -1;
@@ -35,7 +43,10 @@ int luat_dac_setup(uint32_t ch, uint32_t freq, uint32_t mode) {
 int luat_dac_write(uint32_t ch, uint16_t* buff, size_t len) {
     if (ch != 0)
         return -1;
-    DAC_Send(ch, buff, len, NULL, NULL);
+    HANDLE Mutex = OS_MutexCreate();
+    DAC_Send(ch, buff, len, luat_dac_cb, Mutex);
+    OS_MutexLock(Mutex);
+    OS_MutexDelete(Mutex);
     return 0;
 }
 

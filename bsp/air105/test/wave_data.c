@@ -2,7 +2,7 @@
 
 
 
-uint16_t wavData[WAVE_DATA_SIZE/2] =
+const uint16_t wavData[WAVE_DATA_SIZE] =
 {
     0x0011, 0x0019, 0x0007, 0x001b, 0x0007, 0x0019, 0x0011, 0x0001, 0x0019, 0xfff5, 0x0013, 0x0001, 0x000b, 0x0007, 0x000b, 0x0000, 
     0xffff, 0x000b, 0x0001, 0x0013, 0x0011, 0x0007, 0x0000, 0x0001, 0x0011, 0x0011, 0x0001, 0x0011, 0x0000, 0x0011, 0x0001, 0x0001, 
@@ -3244,11 +3244,11 @@ uint16_t wavData[WAVE_DATA_SIZE/2] =
 
 void wave_DataHandle(void)
 {
-    uint32_t i = 0;
-    
-    for (i = 0; i < WAVE_DATA_SIZE/2; i++)
-    {
-        wavData[i] = (wavData[i] + 0x8000) >> 6;
-    }
+//    uint32_t i = 0;
+//
+//    for (i = 0; i < WAVE_DATA_SIZE; i++)
+//    {
+//        wavData[i] = (wavData[i] + 0x8000) >> 6;
+//    }
 }
  

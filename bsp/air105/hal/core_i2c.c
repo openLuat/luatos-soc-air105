@@ -448,3 +448,7 @@ int32_t I2C_BlockRead(uint8_t I2CID, uint8_t ChipAddress, uint8_t *Reg, uint8_t 
 	while(!I2C_WaitResult(I2CID, &Result)) {;}
 	return Result;
 }
+
+#ifdef __BUILD_APP__
+INIT_HW_EXPORT(I2C_GlobalInit, "1");
+#endif

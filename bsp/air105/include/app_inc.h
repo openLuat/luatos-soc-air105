@@ -57,6 +57,7 @@ typedef long long           int64_t;
 #include "bget.h"
 #include "core_task.h"
 #include "core_service.h"
+
 #define mallc OS_Malloc
 #define zallc OS_Zalloc
 #define reallc OS_Realloc

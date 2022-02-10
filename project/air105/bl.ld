@@ -94,6 +94,37 @@ SECTIONS
         PROVIDE_HIDDEN (__fini_array_end = .);
         . = ALIGN(4);
     } >FLASH
+    
+    .preinit_fun_array :
+    {
+        . = ALIGN(4);
+        __preinit_fun_array_start = .;
+        KEEP (*(SORT(.preinit_fun_array.*)))
+        KEEP (*(.preinit_fun_array*))
+        __preinit_fun_array_end = .;
+        . = ALIGN(4);
+    } > FLASH
+    
+    .init_fun_array :
+    {
+        . = ALIGN(4);
+        __init_fun_array_start = .;
+        KEEP (*(SORT(.init_fun_array.*)))
+        KEEP (*(.init_fun_array*))
+        __init_fun_array_end = .;
+        . = ALIGN(4);
+    } > FLASH
+    
+    .task_fun_array :
+    {
+        . = ALIGN(4);
+        __task_fun_array_start = .;
+        KEEP (*(SORT(.task_fun_array.*)))
+        KEEP (*(.task_fun_array*))
+        __task_fun_array_end = .;
+        . = ALIGN(4);
+    } > FLASH
+    
     /* User_heap_stack section, used to check that there is enough "RAM" Ram  type memory left */
     ._user_heap_stack :
     {

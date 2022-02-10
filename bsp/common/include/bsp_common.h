@@ -162,9 +162,32 @@ enum
 #define MIN(X,Y)	(((X) < (Y))?(X):(Y))
 
 typedef void (* TaskFun_t)( void * );
+typedef void (* CommonFun_t)(void);
 typedef void(* CBDataFun_t)(uint8_t *Data, uint32_t Len);
 typedef int32_t(*CBFuncEx_t)(void *pData, void *pParam);
 typedef uint64_t LongInt;
+
+
+
+#define INIT_FUN_EXPORT(fn, location, level) const CommonFun_t __ex_init_##fn __attribute__((section(location level))) = fn
+#define INIT_HW_EXPORT(fn, level) INIT_FUN_EXPORT(fn, ".preinit_fun_array.", level)
+#define INIT_DRV_EXPORT(fn, level) INIT_FUN_EXPORT(fn, ".init_fun_array.", level)
+#define INIT_TASK_EXPORT(fn, level) INIT_FUN_EXPORT(fn, ".task_fun_array.", level)
+
+/* board init routines will be called in board_init() function */
+#define INIT_BOARD_EXPORT(fn)           INIT_EXPORT(fn, "1")
+
+/* pre/device/component/env/app init routines will be called in init_thread */
+/* components pre-initialization (pure software initilization) */
+#define INIT_PREV_EXPORT(fn)            INIT_EXPORT(fn, "2")
+/* device initialization */
+#define INIT_DEVICE_EXPORT(fn)          INIT_EXPORT(fn, "3")
+/* components initialization (dfs, lwip, ...) */
+#define INIT_COMPONENT_EXPORT(fn)       INIT_EXPORT(fn, "4")
+/* environment initialization (mount disk, ...) */
+#define INIT_ENV_EXPORT(fn)             INIT_EXPORT(fn, "5")
+/* appliation initialization (rtgui application etc ...) */
+#define INIT_APP_EXPORT(fn)             INIT_EXPORT(fn, "6")
 
 typedef struct
 {
@@ -192,9 +215,11 @@ typedef struct
 __attribute__((weak)) uint8_t OS_CheckInIrq(void);
 #ifdef __BUILD_OS__
 HANDLE OS_MutexCreate(void);
+HANDLE OS_MutexCreateUnlock(void);
 void OS_MutexLock(HANDLE Sem);
 int32_t OS_MutexLockWtihTime(HANDLE Sem, uint32_t TimeoutMs);
 HANDLE OS_MutexRelease(HANDLE Sem);
+void OS_MutexDelete(HANDLE Sem);
 #endif
 uint32_t OS_EnterCritical(void);
 void OS_ExitCritical(uint32_t Critical);

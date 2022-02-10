@@ -36,20 +36,25 @@ int luat_adc_open(int ch, void *args)
         return 0;
     case 1:
         GPIO_Iomux(GPIOC_00, 2);
+        GPIO_PullConfig(GPIOC_00, 0, 0);
         break;
     case 2:
         GPIO_Iomux(GPIOC_01, 2);
+        GPIO_PullConfig(GPIOC_01, 0, 0);
         break;
     case 3:
         return -1;
     case 4:
         GPIO_Iomux(GPIOC_03, 2);
+        GPIO_PullConfig(GPIOC_03, 0, 0);
         break;
     case 5:
         GPIO_Iomux(GPIOC_04, 2);
+        GPIO_PullConfig(GPIOC_04, 0, 0);
         break;
     case 6:
         GPIO_Iomux(GPIOC_05, 2);
+        GPIO_PullConfig(GPIOC_05, 0, 0);
         break;
     default:
         return -1;

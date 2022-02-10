@@ -26,7 +26,12 @@ static HANDLE prvWDTTimer;
 extern const uint32_t __isr_start_address;
 extern const uint32_t __os_heap_start;
 extern const uint32_t __ram_end;
-
+extern const uint32_t __preinit_fun_array_start;
+extern const uint32_t __preinit_fun_array_end;
+extern const uint32_t __init_fun_array_start;
+extern const uint32_t __init_fun_array_end;
+extern const uint32_t __task_fun_array_start;
+extern const uint32_t __task_fun_array_end;
 const uint32_t __attribute__((section (".app_info")))
     g_CAppInfo[256] =
 {
@@ -124,6 +129,33 @@ static void prvMain_InitHeap(void)
 	bpool((uint32_t)(&__os_heap_start), prvHeapLen);
 }
 
+static void prvTask_Init(void)
+{
+	volatile CommonFun_t *pFun;
+	for(pFun = &__task_fun_array_start; pFun < &__task_fun_array_end; pFun++)
+	{
+		(*pFun)();
+	}
+}
+
+static void prvDrv_Init(void)
+{
+	volatile CommonFun_t *pFun;
+	for(pFun = &__init_fun_array_start; pFun < &__init_fun_array_end; pFun++)
+	{
+		(*pFun)();
+	}
+}
+
+static void prvHW_Init(void)
+{
+	volatile CommonFun_t *pFun;
+	for(pFun = &__preinit_fun_array_start; pFun < &__preinit_fun_array_end; pFun++)
+	{
+		(*pFun)();
+	}
+}
+
 int main(void)
 {
     cm_backtrace_init_ex("air105", "1.0", "v0001", prvSystemReserCtrl);
@@ -135,15 +167,12 @@ int main(void)
 	Uart_GlobalInit();
 	DMA_TakeStream(DMA1_STREAM_1);//for qspi
 	DBG_Init(1);
-	ADC_GlobalInit();
 	Timer_Init();
-	I2C_GlobalInit();
-	RTC_GlobalInit();
-	USB_GlobalInit();
-	RNG_Init();
+	prvHW_Init();
+	prvDrv_Init();
 	gMainWDTEnable = 1;
 	prvWDTTimer = Timer_Create(prvMainWDT, NULL, NULL);
-	Core_ServiceInit();
+	prvTask_Init();
 #ifdef __DEBUG__
 	DBG("APP Build debug %s %s!", __DATE__, __TIME__);
 #else

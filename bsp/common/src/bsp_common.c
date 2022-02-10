@@ -269,9 +269,17 @@ HANDLE OS_MutexCreate(void)
 	return xSemaphoreCreateBinary();
 }
 
+HANDLE OS_MutexCreateUnlock(void)
+{
+	HANDLE Sem = xSemaphoreCreateBinary();
+	xSemaphoreGive(Sem);
+	return Sem;
+}
+
 void OS_MutexLock(HANDLE Sem)
 {
 	xSemaphoreTake(Sem, portMAX_DELAY);
+
 }
 
 int32_t OS_MutexLockWtihTime(HANDLE Sem, uint32_t TimeoutMs)
@@ -302,6 +310,11 @@ HANDLE OS_MutexRelease(HANDLE Sem)
 	{
 		xSemaphoreGive(Sem);
 	}
+}
+
+void OS_MutexDelete(HANDLE Sem)
+{
+	vSemaphoreDelete(Sem);
 }
 #endif
 static uint8_t prvOSRunFlag;
@@ -1525,7 +1538,7 @@ void *llist_traversal(llist_head *head, CBFuncEx_t cb, void *pData)
 			if (result < 0)
 			{
 				llist_del(del);
-				cb((void *)del, NULL);
+				free(del);
 			}
 		}
 	}

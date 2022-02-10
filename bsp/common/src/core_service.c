@@ -1262,7 +1262,7 @@ static void prvService_Task(void* params)
 	CBDataFun_t CBDataFun;
 	PV_Union uPV;
 	OS_EVENT Event;
-//	InFlash_Test();
+//	Audio_Test();
 	while(1)
 	{
 		Task_GetEventByMS(prvService.ServiceHandle, CORE_EVENT_ID_ANY, &Event, NULL, 0);
@@ -1336,20 +1336,6 @@ static void prvLuatOS_Task(void* params)
 //	}
 }
 extern void luat_base_init(void);
-
-
-void Core_ServiceInit(void)
-{
-	uint32_t i;
-	prvService.SleepEnable = 0;
-	prvService.HardwareHandle = Task_Create(prvHW_Task, NULL, 4 * 1024, HW_TASK_PRO, "HW task");
-	prvService.ServiceHandle = Task_Create(prvService_Task, NULL, 8 * 1024, SERVICE_TASK_PRO, "Serv task");
-#ifdef __LUATOS__
-
-	prvService.UserHandle = Task_Create(prvLuatOS_Task, NULL, 16*1024, LUATOS_TASK_PRO, "luatos task");
-	luat_base_init();
-#endif
-}
 
 uint32_t Core_LCDDrawCacheLen(void)
 {
@@ -1473,5 +1459,26 @@ void Core_DebugMem(uint8_t HeapID, const char *FuncName, uint32_t Line)
 	}
 }
 
+void Core_HWTaskInit(void)
+{
+	prvService.HardwareHandle = Task_Create(prvHW_Task, NULL, 4 * 1024, HW_TASK_PRO, "HW task");
+}
 
+void Core_ServiceInit(void)
+{
+	prvService.SleepEnable = 0;
+	prvService.ServiceHandle = Task_Create(prvService_Task, NULL, 8 * 1024, SERVICE_TASK_PRO, "Serv task");
+}
+
+void Core_UserTaskInit(void)
+{
+#ifdef __LUATOS__
+	prvService.UserHandle = Task_Create(prvLuatOS_Task, NULL, 16*1024, LUATOS_TASK_PRO, "luatos task");
+	luat_base_init();
+#endif
+}
+
+INIT_TASK_EXPORT(Core_HWTaskInit, "0");
+INIT_TASK_EXPORT(Core_ServiceInit, "1");
+INIT_TASK_EXPORT(Core_UserTaskInit, "2");
 #endif

@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 #define SAMPLE_RATE          22050      /* sample rate��22050Hz */
-#define WAVE_DATA_SIZE       (0x19442)
+#define WAVE_DATA_SIZE       (0x19442 >> 1)
 
-extern uint16_t wavData[WAVE_DATA_SIZE >> 1];
+extern const uint16_t wavData[WAVE_DATA_SIZE];
 
 void wave_DataHandle(void);
 

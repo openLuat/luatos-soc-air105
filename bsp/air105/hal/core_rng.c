@@ -50,3 +50,7 @@ void RNG_GetData(uint32_t Buf[4])
 
 
 }
+
+#ifdef __BUILD_APP__
+INIT_HW_EXPORT(RNG_Init, "1");
+#endif

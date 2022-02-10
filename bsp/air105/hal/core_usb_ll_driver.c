@@ -1925,3 +1925,6 @@ int32_t USB_ExitLatency(HANDLE hUSB, uint8_t Config[6])
 	return -1;
 }
 
+#ifdef __BUILD_APP__
+INIT_DRV_EXPORT(USB_GlobalInit, "0");
+#endif

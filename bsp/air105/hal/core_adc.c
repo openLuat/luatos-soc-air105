@@ -229,4 +229,9 @@ uint32_t ADC_GetChannelValue(uint8_t Channel)
 	ADC0->ADC_CR1 = 0;
 	return ((total - max) -min)/(SAMPLE_PER_CH-12);
 }
+
+#ifdef __BUILD_APP__
+INIT_HW_EXPORT(ADC_GlobalInit, "1");
+#endif
+
 #endif

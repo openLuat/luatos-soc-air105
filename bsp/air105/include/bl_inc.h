@@ -50,4 +50,5 @@
 #include "usb_cdc.h"
 
 #include "dev_spiflash.h"
+#include "audio_ll_drv.h"
 #endif

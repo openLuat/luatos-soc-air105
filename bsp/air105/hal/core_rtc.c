@@ -126,3 +126,6 @@ uint64_t RTC_GetUTC(void)
 	return curTime;
 }
 
+#ifdef __BUILD_APP__
+INIT_HW_EXPORT(RTC_GlobalInit, "1");
+#endif
