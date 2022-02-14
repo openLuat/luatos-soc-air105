@@ -56,6 +56,10 @@ uint64_t GetSysTickMS(void)
 	return GetSysTick()/CORE_TICK_1MS;
 }
 
+void SysTickAddSleepTime(uint64_t Tick)
+{
+	PowerOnTickCnt += Tick;
+}
 
 void SysTickDelay(uint32_t Tick)
 {

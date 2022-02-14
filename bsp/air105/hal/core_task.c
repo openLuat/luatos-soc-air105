@@ -21,14 +21,21 @@
 
 #include "user.h"
 #ifdef __BUILD_OS__
+#define __USE_FREERTOS_NOTIFY__
 enum
 {
 	TASK_POINT_LIST_HEAD,
+#ifdef __USE_SEMAPHORE__
 	TASK_POINT_EVENT_SEM,
-	TASK_POINT_EVENT_TIMER,
 	TASK_POINT_DELAY_SEM,
+#endif
+	TASK_POINT_EVENT_TIMER,
 	TASK_POINT_DELAY_TIMER,
 	TASK_POINT_DEBUG,
+#ifdef __USE_FREERTOS_NOTIFY__
+	TASK_NOTIFY_EVENT = tskDEFAULT_INDEX_TO_NOTIFY,
+	TASK_NOTIFY_DELAY,
+#endif
 };
 
 typedef struct
@@ -54,8 +61,18 @@ static int32_t prvTaskTimerCallback(void *pData, void *pParam)
 
 static int32_t prvTaskDelayTimerCallback(void *pData, void *pParam)
 {
+#ifdef __USE_SEMAPHORE__
 	SemaphoreHandle_t sem = (SemaphoreHandle_t)vTaskGetPoint(pParam, TASK_POINT_DELAY_SEM);
 	OS_MutexRelease(sem);
+#endif
+#ifdef __USE_FREERTOS_NOTIFY__
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+	vTaskGenericNotifyGiveFromISR(pParam, TASK_NOTIFY_DELAY, &xHigherPriorityTaskWoken);
+	if (xHigherPriorityTaskWoken)
+	{
+		portYIELD_WITHIN_API();
+	}
+#endif
 	return 0;
 }
 
@@ -64,23 +81,29 @@ HANDLE Task_Create(TaskFun_t EntryFunction, void *Param, uint32_t StackSize, uin
 	TaskHandle_t Handle;
 	llist_head *Head;
 	Timer_t *Timer, *DelayTimer;
+#ifdef __USE_SEMAPHORE__
 	SemaphoreHandle_t Sem, DelaySem;
+#endif
 	if (pdPASS != xTaskCreate(EntryFunction, Name, StackSize>>2, Param, Priority, &Handle))
 	{
 		return NULL;
 	}
 	if (!Handle) return NULL;
 	Head = OS_Zalloc(sizeof(llist_head));
+#ifdef __USE_SEMAPHORE__
 	Sem = OS_MutexCreate();
 	DelaySem = OS_MutexCreate();
+#endif
 	Timer = Timer_Create(prvTaskTimerCallback, Handle, NULL);
 	DelayTimer = Timer_Create(prvTaskDelayTimerCallback, Handle, NULL);
 	INIT_LLIST_HEAD(Head);
 	vTaskSetPoint(Handle, TASK_POINT_LIST_HEAD, Head);
+#ifdef __USE_SEMAPHORE__
 	vTaskSetPoint(Handle, TASK_POINT_EVENT_SEM, Sem);
-	vTaskSetPoint(Handle, TASK_POINT_EVENT_TIMER, Timer);
 	vTaskSetPoint(Handle, TASK_POINT_DELAY_SEM, DelaySem);
+#endif
 	vTaskSetPoint(Handle, TASK_POINT_DELAY_TIMER, DelayTimer);
+	vTaskSetPoint(Handle, TASK_POINT_EVENT_TIMER, Timer);
 	vTaskSetPoint(Handle, TASK_POINT_DEBUG, 0);
 //	DBG("%s, %x", Name, Handle);
 	return Handle;
@@ -91,7 +114,9 @@ void Task_SendEvent(HANDLE TaskHandle, uint32_t ID, uint32_t P1, uint32_t P2, ui
 	if (!TaskHandle) return;
 	uint32_t Critical;
 	llist_head *Head = (llist_head *)vTaskGetPoint(TaskHandle, TASK_POINT_LIST_HEAD);
+#ifdef __USE_SEMAPHORE__
 	SemaphoreHandle_t sem = (SemaphoreHandle_t)vTaskGetPoint(TaskHandle, TASK_POINT_EVENT_SEM);
+#endif
 	Core_EventStruct *Event = OS_Zalloc(sizeof(Core_EventStruct));
 	Event->ID = ID;
 	Event->Param1 = P1;
@@ -108,7 +133,25 @@ void Task_SendEvent(HANDLE TaskHandle, uint32_t ID, uint32_t P1, uint32_t P2, ui
 		while(1) {;}
 	}
 	OS_ExitCritical(Critical);
+#ifdef __USE_SEMAPHORE__
 	OS_MutexRelease(sem);
+#endif
+#ifdef __USE_FREERTOS_NOTIFY__
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+	if (OS_CheckInIrq())
+	{
+		vTaskGenericNotifyGiveFromISR(TaskHandle, TASK_NOTIFY_EVENT, &xHigherPriorityTaskWoken);
+		if (xHigherPriorityTaskWoken)
+		{
+			portYIELD_WITHIN_API();
+		}
+	}
+	else
+	{
+		xTaskGenericNotify(TaskHandle, TASK_NOTIFY_EVENT, ( 0 ), eIncrement, NULL );
+	}
+
+#endif
 }
 
 int32_t Task_GetEvent(HANDLE TaskHandle, uint32_t TargetEventID, Task_EventStruct *OutEvent, CBFuncEx_t Callback, uint64_t Tick)
@@ -123,7 +166,9 @@ int32_t Task_GetEvent(HANDLE TaskHandle, uint32_t TargetEventID, Task_EventStruc
 	}
 	if (!TaskHandle) return -ERROR_PARAM_INVALID;
 	llist_head *Head = (llist_head *)vTaskGetPoint(TaskHandle, TASK_POINT_LIST_HEAD);
+#ifdef __USE_SEMAPHORE__
 	SemaphoreHandle_t sem = (SemaphoreHandle_t)vTaskGetPoint(TaskHandle, TASK_POINT_EVENT_SEM);
+#endif
 	Timer_t *Timer = (Timer_t *)vTaskGetPoint(TaskHandle, TASK_POINT_EVENT_TIMER);
 	if (Tick)
 	{
@@ -199,7 +244,12 @@ WAIT_NEW_EVENT:
 			goto GET_EVENT_DONE;
 		}
 	}
+#ifdef __USE_SEMAPHORE__
 	OS_MutexLock(sem);
+#endif
+#ifdef __USE_FREERTOS_NOTIFY__
+	xTaskGenericNotifyWait(TASK_NOTIFY_EVENT, 0, 0, NULL, portMAX_DELAY);
+#endif
 	goto GET_NEW_EVENT;
 GET_EVENT_DONE:
 	Timer_Stop(Timer);
@@ -233,10 +283,17 @@ void Task_DelayTick(uint64_t Tick)
 		return;
 	}
 	HANDLE TaskHandle = vTaskGetCurrent();
+#ifdef __USE_SEMAPHORE__
 	SemaphoreHandle_t sem = (SemaphoreHandle_t)vTaskGetPoint(TaskHandle, TASK_POINT_DELAY_SEM);
+#endif
 	Timer_t *Timer = (Timer_t *)vTaskGetPoint(TaskHandle, TASK_POINT_DELAY_TIMER);
 	Timer_Start(Timer, Tick, 0);
+#ifdef __USE_SEMAPHORE__
 	OS_MutexLock(sem);
+#endif
+#ifdef __USE_FREERTOS_NOTIFY__
+	xTaskGenericNotifyWait(TASK_NOTIFY_DELAY, 0, 0, NULL, portMAX_DELAY);
+#endif
 }
 
 void Task_DelayUS(uint32_t US)

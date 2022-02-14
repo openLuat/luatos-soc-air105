@@ -96,7 +96,9 @@
 #define configUSE_APPLICATION_TASK_TAG    0
 #define configUSE_COUNTING_SEMAPHORES     1
 #define configGENERATE_RUN_TIME_STATS     0
-#define configNUM_THREAD_LOCAL_STORAGE_POINTERS 6
+#define configNUM_THREAD_LOCAL_STORAGE_POINTERS 4
+#define configUSE_TASK_NOTIFICATIONS		1
+#define configTASK_NOTIFICATION_ARRAY_ENTRIES    2
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES           0
 #define configMAX_CO_ROUTINE_PRIORITIES (2)

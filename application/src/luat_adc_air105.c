@@ -73,6 +73,35 @@ int luat_adc_read(int ch, int *val, int *val2)
 }
 
 int luat_adc_close(int ch){
+    switch (ch)
+    {
+    case 1:
+        GPIO_PullConfig(GPIOC_00, 1, 1);
+        GPIO_Iomux(GPIOC_00, 1);
+
+        break;
+    case 2:
+        GPIO_PullConfig(GPIOC_01, 1, 1);
+        GPIO_Iomux(GPIOC_01, 1);
+
+        break;
+    case 4:
+        GPIO_PullConfig(GPIOC_03, 1, 1);
+        GPIO_Iomux(GPIOC_03, 1);
+
+        break;
+    case 5:
+        GPIO_PullConfig(GPIOC_04, 1, 1);
+        GPIO_Iomux(GPIOC_04, 1);
+
+        break;
+    case 6:
+        GPIO_PullConfig(GPIOC_05, 1, 1);
+        GPIO_Iomux(GPIOC_05, 1);
+        break;
+    default:
+        return -1;
+    }
     if (ch)
         ADC_ChannelOnOff(ch, 0);
     return 0;

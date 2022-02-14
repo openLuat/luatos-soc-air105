@@ -176,6 +176,7 @@ static void HSPI_IrqHandle(int32_t IrqLine, void *pData)
 			OS_MutexRelease(prvSPI[SpiID].Sem);
 		}
 #endif
+		PM_SetHardwareRunFlag(PM_HW_HSPI, 0);
 		prvSPI[SpiID].Callback((void *)SpiID, prvSPI[SpiID].pParam);
 		return;
 	}
@@ -249,6 +250,14 @@ static int32_t SPI_DMADoneCB(void *pData, void *pParam)
 			OS_MutexRelease(prvSPI[SpiID].Sem);
 		}
 #endif
+		if (SpiID)
+		{
+			PM_SetHardwareRunFlag(PM_HW_HSPI, 0);
+		}
+		else
+		{
+			PM_SetHardwareRunFlag(PM_HW_SPI_0 + SpiID - 1, 0);
+		}
 		prvSPI[SpiID].Callback((void *)SpiID, prvSPI[SpiID].pParam);
 	}
 
@@ -309,6 +318,7 @@ static void SPI_IrqHandle(int32_t IrqLine, void *pData)
 			OS_MutexRelease(prvSPI[SpiID].Sem);
 		}
 #endif
+		PM_SetHardwareRunFlag(PM_HW_SPI_0 + SpiID - 1, 0);
 		prvSPI[SpiID].Callback((void *)SpiID, prvSPI[SpiID].pParam);
 		return;
 	}
@@ -507,6 +517,7 @@ static int32_t HSPI_Transfer(uint8_t SpiID, uint8_t UseDMA)
 {
 	HSPIM_TypeDef *SPI = (HSPIM_TypeDef *)prvSPI[SpiID].RegBase;
 	uint32_t TxLen, i;
+	PM_SetHardwareRunFlag(PM_HW_HSPI, 1);
 	if (UseDMA)
 	{
 		SPI->CR0 &= ~(7 << HSPIM_CR0_PARAM_INTERRPUT_ENABLE_POS);
@@ -560,7 +571,7 @@ int32_t SPI_Transfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData, uint
 		return -ERROR_DEVICE_BUSY;
 	}
 	prvSPI[SpiID].IsBusy = 1;
-//
+
 	uint32_t RxLevel, i, TxLen;
 	Buffer_StaticInit(&prvSPI[SpiID].TxBuf, TxData, Len);
 	Buffer_StaticInit(&prvSPI[SpiID].RxBuf, RxData, Len);
@@ -581,6 +592,7 @@ int32_t SPI_Transfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData, uint
 	default:
 		return -ERROR_ID_INVALID;
 	}
+	PM_SetHardwareRunFlag(PM_HW_SPI_0 + SpiID - 1, 1);
 	SPI = (SPI_TypeDef *)prvSPI[SpiID].RegBase;
 	SPI->SER = 0;
 	if (UseDMA)
@@ -1061,6 +1073,7 @@ void SPI_TransferStop(uint8_t SpiID)
 		HSPI->CR0 &= ~(7 << HSPIM_CR0_PARAM_INTERRPUT_ENABLE_POS);
 		HSPI->FCR = (32 << HSPIM_FCR_PARAM_TRANSIMIT_FIFO_EMPTY_THRESHOULD_POS)|(32 << HSPIM_FCR_PARAM_RECEIVE_FIFO_FULL_THRESHOULD_POS)|(3 << 6)|(63);
 		HSPI->FCR &= ~(3 << 6);
+		PM_SetHardwareRunFlag(PM_HW_HSPI, 0);
 		break;
 	case SPI_ID0:
 		SYSCTRL->PHER_CTRL &= ~SYSCTRL_PHER_CTRL_SPI0_SLV_EN;
@@ -1077,7 +1090,7 @@ void SPI_TransferStop(uint8_t SpiID)
 	default:
 		return ;
 	}
-
+	PM_SetHardwareRunFlag(PM_HW_SPI_0 + SpiID - 1, 0);
 	prvSPI[SpiID].IsBusy = 0;
 
 }

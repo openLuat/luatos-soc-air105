@@ -100,6 +100,6 @@ void GPIO_OutputMulti(uint32_t Port, uint32_t Pins, uint32_t Level);
  */
 uint32_t GPIO_InputMulti(uint32_t Port);
 
-void GPIO_ExtiSetHWTimerCB(CBFuncEx_t CB, void *pParam);
+void GPIO_ExtiSetCB(uint32_t Pin, CBFuncEx_t CB, void *pParam);
 void GPIO_ODConfig(uint32_t Pin, uint8_t InitValue);
 #endif

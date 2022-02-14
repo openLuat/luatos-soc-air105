@@ -113,7 +113,6 @@ typedef struct
 	uint64_t LCDDrawDoneByte;
 	uint32_t InitAllocMem;
 	uint32_t LastAllocMem;
-	uint8_t SleepEnable;
 
 }Service_CtrlStruct;
 
@@ -1403,6 +1402,7 @@ static void prvCore_PrintTaskStack(HANDLE TaskHandle)
 {
 	uint32_t SP, StackAddress, Len, i, PC;
 	uint32_t Buffer[16];
+	if (!TaskHandle) return;
 	char *Name = vTaskInfo(TaskHandle, &SP, &StackAddress, &Len);
 	Len *= 4;
 	DBG_Trace("%s call stack info:", Name);
@@ -1432,16 +1432,6 @@ void Core_PrintServiceStack(void)
 	prvCore_PrintTaskStack(prvService.ServiceHandle);
 }
 
-void Core_SetSleepEnable(uint8_t OnOff)
-{
-	prvService.SleepEnable = OnOff;
-}
-
-uint8_t Core_GetSleepFlag(void)
-{
-	return prvService.SleepEnable;
-}
-
 void Core_DebugMem(uint8_t HeapID, const char *FuncName, uint32_t Line)
 {
 	int32_t curalloc, totfree, maxfree;
@@ -1466,7 +1456,6 @@ void Core_HWTaskInit(void)
 
 void Core_ServiceInit(void)
 {
-	prvService.SleepEnable = 0;
 	prvService.ServiceHandle = Task_Create(prvService_Task, NULL, 8 * 1024, SERVICE_TASK_PRO, "Serv task");
 }
 

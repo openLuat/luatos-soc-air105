@@ -39,7 +39,7 @@ typedef struct
 	llist_head Head;
 	uint64_t NextTick;
 	uint32_t IDSn;
-
+	uint8_t SleepFlush;
 }Timer_CtrlStruct;
 static Timer_t prvTimer[TIMER_SN_MAX];
 static Timer_CtrlStruct prvTimerCtrl;
@@ -141,7 +141,7 @@ static void SystemTimerIrqHandler( int32_t Line, void *pData)
 		if (Timer->AddTick)
 		{
 			Critical = OS_EnterCritical();
-			Timer_Update(Timer, Timer->AddTick, 0);
+			Timer_Update(Timer, Timer->AddTick, prvTimerCtrl.SleepFlush);
 			if (llist_empty(&prvTimerCtrl.Head))
 			{
 				llist_add_tail(&Timer->Node, &prvTimerCtrl.Head);
@@ -181,7 +181,7 @@ void Timer_Init(void)
 	INIT_LLIST_HEAD(&prvTimerCtrl.Head);
 	TIMM0->TIM[SYS_TIMER_TIM].ControlReg = 0;
 	ISR_OnOff(SYS_TIMER_IRQ, 0);
-	ISR_SetHandler(SYS_TIMER_IRQ, SystemTimerIrqHandler);
+	ISR_SetHandler(SYS_TIMER_IRQ, SystemTimerIrqHandler, NULL);
 #ifdef __BUILD_OS__
 	ISR_SetPriority(SYS_TIMER_IRQ, IRQ_LOWEST_PRIORITY - 1);
 #else
@@ -196,9 +196,16 @@ void Timer_Task(void *Param)
 
 }
 
-void Timer_Run(void)
+void Timer_WakeupRun(void)
 {
-	Timer_Task(NULL);
+	if (GetSysTick() >= prvTimerCtrl.NextTick)
+	{
+		ISR_OnOff(SYS_TIMER_IRQ, 0);
+		prvTimerCtrl.SleepFlush = 1;
+		SystemTimerIrqHandler(SYS_TIMER_IRQ, NULL);
+		prvTimerCtrl.SleepFlush = 0;
+		ISR_OnOff(SYS_TIMER_IRQ, 1);
+	}
 }
 
 

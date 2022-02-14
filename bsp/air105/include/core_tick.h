@@ -27,4 +27,5 @@ void SysTickDelayUntil(uint64_t StartTick, uint32_t Tick);
 void CoreTick_Init(void);
 uint64_t GetSysTickMS(void);
 uint64_t GetSysTickUS(void);
+void SysTickAddSleepTime(uint64_t Tick);
 #endif

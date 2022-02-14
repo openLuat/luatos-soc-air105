@@ -87,7 +87,6 @@ int32_t Audio_StartRaw(Audio_StreamStruct *pStream)
 	{
 	case AUSTREAM_BUS_DAC:
 		GPIO_Iomux(GPIOC_00, 2);
-		GPIO_PullConfig(GPIOC_00, 0, 0);
 		DAC_ForceStop(pStream->BusID);
 		DAC_DMAInit(0, DAC_TX_DMA_STREAM);
 		DAC_Setup(pStream->BusID, pStream->SampleRate, prvAudio.DACOutRMode);
@@ -221,7 +220,7 @@ void Audio_Stop(Audio_StreamStruct *pStream)
 	switch(pStream->BusType)
 	{
 	case AUSTREAM_BUS_DAC:
-		DAC_ForceStop(pStream->BusID);
+		DAC_Stop(pStream->BusID);
 		llist_traversal(&pStream->DataHead, prvAudio_DeleteData, NULL);
 		break;
 	default:

@@ -551,6 +551,7 @@ void USB_StackDeviceBusChange(uint8_t USB_ID, uint8_t Type)
 	switch (Type)
 	{
 	case USBD_BUS_TYPE_SUSPEND:
+		PM_SetDriverRunFlag(PM_DRV_USB, 0);
 		Core_USBAction(USB_ID, SERV_USB_SUSPEND, USBCore->pHWCtrl);
 		USBCore->Setup.CB(uPV.u32, USBCore->Setup.pUserData);
 		break;
@@ -559,6 +560,7 @@ void USB_StackDeviceBusChange(uint8_t USB_ID, uint8_t Type)
 		USBCore->Setup.CB(uPV.u32, USBCore->Setup.pUserData);
 		break;
 	case USBD_BUS_TYPE_RESET:
+		PM_SetDriverRunFlag(PM_DRV_USB, 1);
 		for(i = 0; i < USB_EP_MAX; i++)
 		{
 			USB_StackResetEpBuffer(USB_ID, i);
@@ -569,6 +571,7 @@ void USB_StackDeviceBusChange(uint8_t USB_ID, uint8_t Type)
 	case USBD_BUS_TYPE_NEW_SOF:
 		break;
 	case USBD_BUS_TYPE_DISCONNECT:
+		PM_SetDriverRunFlag(PM_DRV_USB, 0);
 		if (USBCore->DeviceState != USB_STATE_DETACHED)
 		{
 			USB_Stop(USBCore->pHWCtrl);

@@ -104,6 +104,7 @@ void DHT11_TestOnce(uint8_t Pin, CBFuncEx_t CB)
 		HWTimer_AddOperation(HWTimerID, &OPCmd);
 	}
 	OPCmd.Operation = OP_QUEUE_CMD_CAPTURE_END;
+	OPCmd.Arg1 = Pin;
 	HWTimer_AddOperation(HWTimerID, &OPCmd);
 	HWTimer_StartOperationQueue(HWTimerID);
 }

@@ -30,9 +30,13 @@ typedef struct
 
 typedef struct
 {
-	CBFuncEx_t AllCB;
-	CBFuncEx_t HWTimerCB;
+	CBFuncEx_t CB;
 	void *pParam;
+}EXTI_CBStruct;
+
+typedef struct
+{
+	EXTI_CBStruct ExtiCB[GPIO_MAX];
 }GPIO_CtrlStruct;
 
 static GPIO_CtrlStruct prvGPIO;
@@ -79,19 +83,21 @@ static int32_t GPIO_IrqDummyCB(void *pData, void *pParam)
 static void __FUNC_IN_RAM__ GPIO_IrqHandle(int32_t IrqLine, void *pData)
 {
 	volatile uint32_t Port = (uint32_t)pData;
-	volatile uint32_t Sn, i;
+	volatile uint32_t Sn, i, Pin;
+	CBFuncEx_t CB;
 	if (GPIO->INTP_TYPE_STA[Port].INTP_STA)
 	{
 		Sn = GPIO->INTP_TYPE_STA[Port].INTP_STA;
 		GPIO->INTP_TYPE_STA[Port].INTP_STA = 0xffff;
-		prvGPIO.HWTimerCB((Port << 16) | Sn, prvGPIO.pParam);
 		Port = (Port << 4);
 
 		for(i = 0; i < 16; i++)
 		{
 			if (Sn & (1 << i))
 			{
-				prvGPIO.AllCB((void *)(Port+i), 0);
+				Pin = Port+i;
+				//DBG("%d,%x,%x", Pin, prvGPIO.ExtiCB[Pin].CB, prvGPIO.ExtiCB[Pin].pParam);
+				prvGPIO.ExtiCB[Pin].CB((void *)Pin, prvGPIO.ExtiCB[Pin].pParam);
 			}
 		}
 	}
@@ -103,13 +109,18 @@ void GPIO_GlobalInit(CBFuncEx_t Fun)
 	uint32_t i;
 	if (Fun)
 	{
-		prvGPIO.AllCB = Fun;
+		for(i = 0; i < GPIO_MAX; i++)
+		{
+			prvGPIO.ExtiCB[i].CB = Fun;
+		}
 	}
 	else
 	{
-		prvGPIO.AllCB = GPIO_IrqDummyCB;
+		for(i = 0; i < GPIO_MAX; i++)
+		{
+			prvGPIO.ExtiCB[i].CB = GPIO_IrqDummyCB;
+		}
 	}
-	prvGPIO.HWTimerCB = GPIO_IrqDummyCB;
 	for(i = 0; i < 6; i++)
 	{
 		GPIO->INTP_TYPE_STA[i].INTP_TYPE = 0;
@@ -196,19 +207,51 @@ void GPIO_ExtiConfig(uint32_t Pin, uint8_t IsLevel, uint8_t IsRiseHigh, uint8_t 
 		}
 	}
 	GPIO->INTP_TYPE_STA[Port].INTP_TYPE = (GPIO->INTP_TYPE_STA[Port].INTP_TYPE & Mask) | Type;
-}
-
-void GPIO_ExtiSetHWTimerCB(CBFuncEx_t CB, void *pParam)
-{
-	if (CB)
+	uint32_t Sn = Pin / 32;
+	uint32_t Pos = 1 << (Pin % 32);
+	if (!IsLevel)
 	{
-		prvGPIO.HWTimerCB = CB;
+		switch(Sn)
+		{
+		case 0:
+			GPIO->WAKE_P0_EN |= Pos;
+			break;
+		case 1:
+			GPIO->WAKE_P1_EN |= Pos;
+			break;
+		case 2:
+			GPIO->WAKE_P2_EN |= Pos;
+			break;
+		}
 	}
 	else
 	{
-		prvGPIO.HWTimerCB = GPIO_IrqDummyCB;
+		switch(Sn)
+		{
+		case 0:
+			GPIO->WAKE_P0_EN &= ~Pos;
+			break;
+		case 1:
+			GPIO->WAKE_P1_EN &= ~Pos;
+			break;
+		case 2:
+			GPIO->WAKE_P2_EN &= ~Pos;
+			break;
+		}
 	}
-	prvGPIO.pParam = pParam;
+}
+
+void GPIO_ExtiSetCB(uint32_t Pin, CBFuncEx_t CB, void *pParam)
+{
+	if (CB)
+	{
+		prvGPIO.ExtiCB[Pin].CB = CB;
+	}
+	else
+	{
+		prvGPIO.ExtiCB[Pin].CB = GPIO_IrqDummyCB;
+	}
+	prvGPIO.ExtiCB[Pin].pParam = pParam;
 }
 
 void __FUNC_IN_RAM__ GPIO_Iomux(uint32_t Pin, uint32_t Function)

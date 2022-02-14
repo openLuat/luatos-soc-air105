@@ -64,8 +64,9 @@ static I2C_CtrlStruct prvI2C = {
 		I2C0_IRQn,
 };
 
-static void prvI2C_Done(int32_t Result)
+static void prvI2C_Done(uint8_t I2CID, int32_t Result)
 {
+	PM_SetHardwareRunFlag(PM_HW_I2C_0 + I2CID, 0);
 	prvI2C.State = I2C_STATE_FREE;
 	prvI2C.Result = Result;
 	prvI2C.IsBusy = 0;
@@ -73,6 +74,7 @@ static void prvI2C_Done(int32_t Result)
 	if (prvI2C.IsBlockMode) OS_MutexRelease(prvI2C.Sem);
 #endif
 	prvI2C.Callback(I2C_ID0, prvI2C.pParam);
+
 }
 
 static int32_t prvI2C_DummyCB(void *pData, void *pParam)
@@ -86,7 +88,7 @@ static int32_t prvI2C_TimerUpCB(void *pData, void *pParam)
 	IIC_DBG("%d,%x",prvI2C.State, I2C->IC_RAW_INTR_STAT);
 	I2C->IC_ENABLE |= I2C_IC_ENABLE_ABORT;
 	I2C->IC_INTR_MASK = 0;
-	prvI2C_Done(-ERROR_TIMEOUT);
+	prvI2C_Done(0, -ERROR_TIMEOUT);
 	while(I2C->IC_ENABLE & I2C_IC_ENABLE_ABORT){;}
 	return 0;
 }
@@ -166,7 +168,7 @@ static void I2C_IrqHandle(int32_t IrqLine, void *pData)
 I2C_DONE:
 	Timer_Stop(prvI2C.ToTimer);
 	I2C->IC_INTR_MASK = 0;
-	prvI2C_Done(ERROR_NONE);
+	prvI2C_Done(0, ERROR_NONE);
 }
 
 static void I2C_IrqHandleRegQueue(int32_t IrqLine, void *pData)
@@ -207,7 +209,7 @@ static void I2C_IrqHandleRegQueue(int32_t IrqLine, void *pData)
 I2C_DONE:
 	Timer_Stop(prvI2C.ToTimer);
 	I2C->IC_INTR_MASK = 0;
-	prvI2C_Done(ERROR_NONE);
+	prvI2C_Done(0, ERROR_NONE);
 }
 
 void I2C_GlobalInit(void)
@@ -284,6 +286,7 @@ void I2C_MasterXfer(uint8_t I2CID, uint8_t Operate, uint8_t RegAddress, uint8_t 
 {
 	I2C_TypeDef *I2C = prvI2C.RegBase;
 	uint32_t RegValue;
+	PM_SetHardwareRunFlag(PM_HW_I2C_0 + I2CID, 1);
 	I2C->IC_INTR_MASK = 0;
 	ISR_OnOff(prvI2C.IrqLine, 0);
 	if (prvI2C.IsBusy)

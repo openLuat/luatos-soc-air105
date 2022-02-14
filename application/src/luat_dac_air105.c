@@ -51,7 +51,8 @@ int luat_dac_write(uint32_t ch, uint16_t* buff, size_t len) {
 }
 
 int luat_dac_close(uint32_t ch) {
-	DAC_ForceStop(ch);
+	DAC_Stop(ch);
+	GPIO_Iomux(GPIOC_01, 1);
     return 0; // 暂不支持关闭
 }
 

@@ -34,7 +34,7 @@ typedef struct Timer_InfoStruct Timer_t;
 
 void Timer_Init(void);
 //void Timer_Task(void *Param);
-//void Timer_Run(void);
+void Timer_WakeupRun(void);
 Timer_t * Timer_Create(CBFuncEx_t CB, void *Param, void *NotifyTask);
 Timer_t * Timer_GetStatic(uint32_t Sn, CBFuncEx_t CB, void *Param, void *NotifyTask);
 int Timer_Start(Timer_t *Timer, uint64_t Tick, uint8_t IsRepeat);

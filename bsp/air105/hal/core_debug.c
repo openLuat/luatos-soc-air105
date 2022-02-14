@@ -731,6 +731,7 @@ void DBG_Init(uint8_t AppMode)
 	}
 	prvDBGCtrl.InitDone = 1;
 	prvDBGCtrl.Fun = DBG_DummyRx;
+	PM_SetDriverRunFlag(PM_DRV_DBG, 1);
 }
 
 void DBG_SetRxCB(CBFuncEx_t cb)

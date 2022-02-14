@@ -30,5 +30,5 @@ void RTC_GetDateTime(Date_UserDataStruct *pDate, Time_UserDataStruct *pTime);
 
 uint64_t RTC_GetUTC(void);
 
-
+void RTC_SetAlarm(uint32_t TimeSecond, CBFuncEx_t CB, void *pParam);
 #endif

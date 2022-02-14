@@ -21,6 +21,22 @@
 
 #include "user.h"
 
+static int32_t RTC_DummyCB(void *pData, void *pParam)
+{
+	DBG("!");
+	return 0;
+}
+
+static CBFuncEx_t prvRTCCB;
+static void *prvParam;
+
+static void RTC_IrqHandler(int32_t Line, void *pData)
+{
+	RTC->RTC_INTCLR = 1;
+	ISR_OnOff(RTC_IRQn, 0);
+	prvRTCCB(pData, prvParam);
+}
+
 void RTC_GlobalInit(void)
 {
 	int8_t Buf[4][6];
@@ -30,6 +46,7 @@ void RTC_GlobalInit(void)
 	CmdParam CP;
 	Date_UserDataStruct BuildDate;
 	Time_UserDataStruct BuildTime;
+	prvRTCCB = RTC_DummyCB;
 	if (!RTC->RTC_REF)
 	{
 		memset(&CP, 0, sizeof(CP));
@@ -75,7 +92,12 @@ void RTC_GlobalInit(void)
 		BuildTime.Sec = Sec;
 		RTC_SetDateTime(&BuildDate, &BuildTime, 0);
 	}
-
+#ifdef __BUILD_OS__
+	ISR_SetPriority(RTC_IRQn, IRQ_MAX_PRIORITY + 1);
+#else
+	ISR_SetPriority(RTC_IRQn, 3);
+#endif
+	ISR_SetHandler(RTC_IRQn, RTC_IrqHandler, NULL);
 //	RTC_GetDateTime(&uBuildDate, &uBuildTime);
 //	DBG("%04u-%02u-%02u %02u:%02u:%02u", uBuildDate.Date.Year, uBuildDate.Date.Mon,
 //			uBuildDate.Date.Day, uBuildTime.Time.Hour, uBuildTime.Time.Min,
@@ -124,6 +146,27 @@ uint64_t RTC_GetUTC(void)
 	RTC->RTC_CS &= ~RTC_CS_LOCK_TIM;
 	curTime += RTC->RTC_REF;
 	return curTime;
+}
+
+void RTC_SetAlarm(uint32_t TimeSecond, CBFuncEx_t CB, void *pParam)
+{
+	while (!(RTC->RTC_CS & RTC_CS_READY)) {;}
+	RTC->RTC_INTCLR = 1;
+	RTC->RTC_CS &= ~RTC_CS_ALARM_EN;
+	RTC->RTC_CS |= RTC_CS_LOCK_TIM;
+	RTC->RTC_ARM = RTC->RTC_TIM + TimeSecond;
+	RTC->RTC_CS &= ~RTC_CS_LOCK_TIM;
+	if (CB)
+	{
+		prvRTCCB = CB;
+	}
+	else
+	{
+		prvRTCCB = RTC_DummyCB;
+	}
+	prvParam = pParam;
+	RTC->RTC_CS |= RTC_CS_ALARM_EN;
+	ISR_OnOff(RTC_IRQn, 1);
 }
 
 #ifdef __BUILD_APP__

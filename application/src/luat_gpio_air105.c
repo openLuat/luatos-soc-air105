@@ -28,24 +28,24 @@
 #include "platform_define.h"
 #include "luat_irq.h"
 
-typedef struct wm_gpio_conf
-{
-    luat_gpio_irq_cb cb;
-    void* args;
-}wm_gpio_conf_t;
+//typedef struct wm_gpio_conf
+//{
+//    luat_gpio_irq_cb cb;
+//    void* args;
+//}wm_gpio_conf_t;
+//
+//
+//static wm_gpio_conf_t confs[HAL_GPIO_MAX];
 
-
-static wm_gpio_conf_t confs[HAL_GPIO_MAX];
-
-static void luat_gpio_irq_callback(void *ptr, void *pParam)
-{
-    int pin = (int)ptr;
-    luat_gpio_irq_cb cb = confs[pin].cb;
-    if (cb == NULL)
-        luat_irq_gpio_cb(pin, confs[pin].args);
-    else
-        cb(pin, confs[pin].args);
-}
+//static void luat_gpio_irq_callback(void *ptr, void *pParam)
+//{
+//    int pin = (int)ptr;
+//    luat_gpio_irq_cb cb = confs[pin].cb;
+//    if (cb == NULL)
+//        luat_irq_gpio_cb(pin, confs[pin].args);
+//    else
+//        cb(pin, confs[pin].args);
+//}
 
 int luat_gpio_setup(luat_gpio_t *gpio){
     if (gpio->pin < HAL_GPIO_2 || gpio->pin > HAL_GPIO_MAX) return 0;
@@ -71,8 +71,11 @@ int luat_gpio_setup(luat_gpio_t *gpio){
                     break;
             }
             if (gpio->irq_cb) {
-                confs[gpio->pin].cb = gpio->irq_cb;
-                confs[gpio->pin].args = gpio->irq_args;
+            	GPIO_ExtiSetCB(gpio->pin, gpio->irq_cb, gpio->irq_args);
+            }
+            else
+            {
+            	GPIO_ExtiSetCB(gpio->pin, luat_irq_gpio_cb, gpio->irq_args);
             }
 
         }break;
@@ -108,19 +111,19 @@ int luat_gpio_get(int pin){
 
 void luat_gpio_close(int pin){
     if (pin < HAL_GPIO_2 || pin >= HAL_GPIO_MAX) return ;
-    confs[pin].cb = NULL;
+    GPIO_ExtiSetCB(pin, NULL, 0);
+    GPIO_ExtiConfig(pin, 0,0,0);
     return ;
 }
 
 void luat_gpio_init(void){
-    GPIO_GlobalInit(luat_gpio_irq_callback);
+//    GPIO_GlobalInit(luat_gpio_irq_callback);
 }
 
 int luat_gpio_set_irq_cb(int pin, luat_gpio_irq_cb cb, void* args) {
     if (pin < HAL_GPIO_2 || pin >= HAL_GPIO_MAX) return -1;
     if (cb) {
-        confs[pin].cb = cb;
-        confs[pin].args = args;
+    	GPIO_ExtiSetCB(pin, cb, args);
     }
     return 0;
 }

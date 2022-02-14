@@ -282,6 +282,10 @@ void Uart_BaseInit(uint8_t UartID, uint32_t BaudRate, uint8_t IsRxCacheEnable, u
 #endif
     }
 #endif
+    if (UartID != DBG_UART_ID)
+    {
+    	PM_SetHardwareRunFlag(PM_HW_UART_0 + UartID, 1);
+    }
 }
 
 
@@ -311,7 +315,10 @@ void Uart_DeInit(uint8_t UartID)
 
 	/* LCR = 0 */
 	Uart->LCR &= ~UART_LCR_DLAB;
-
+	if (UartID != DBG_UART_ID)
+    {
+    	PM_SetHardwareRunFlag(PM_HW_UART_0 + UartID, 0);
+    }
 
 }
 
@@ -717,4 +724,12 @@ void Uart_ChangeBR(uint8_t UartID, uint32_t BaudRate)
 uint32_t Uart_GetLastError(uint8_t UartID)
 {
 	return prvUart[UartID].LastError;
+}
+
+void Uart_Sleep(uint8_t UartID, uint8_t OnOff)
+{
+    if (UartID != DBG_UART_ID)
+    {
+    	PM_SetHardwareRunFlag(PM_HW_UART_0 + UartID, OnOff);
+    }
 }

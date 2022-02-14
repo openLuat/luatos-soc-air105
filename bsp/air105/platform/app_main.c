@@ -67,6 +67,13 @@ void SystemInit(void)
 	SYSCTRL->PHER_CTRL &= ~(1 << 20);
     SYSCTRL->SOFT_RST2 &= ~SYSCTRL_USB_RESET;
     SYSCTRL->LOCK_R |= SYSCTRL_USB_RESET;
+//    BPU->SEN_ANA0 &= ~(1 << 10);
+#ifdef __USE_32K_XTL__
+	BPU->SEN_ANA0 |= (1 << 10)|(7 << 25) | (2 << 29);	//外部32768+最大充电电流+最大晶振供电
+#else
+	BPU->SEN_ANA0 &= ~(1 << 10);
+	BPU->SEN_ANA0 |= (7 << 25) | (2 << 29);	//内部32K+最大充电电流+最大晶振供电
+#endif
 	__enable_irq();
 }
 
@@ -103,22 +110,7 @@ void vApplicationIdleHook( void )
 		WDT_Feed();
 		Timer_StartMS(prvWDTTimer, 12000, 1);
 	}
-	if (Core_GetSleepFlag())
-	{
-		SYSCTRL->FREQ_SEL = (SYSCTRL->FREQ_SEL & ~(SYSCTRL_FREQ_SEL_POWERMODE_Mask)) | SYSCTRL_FREQ_SEL_POWERMODE_CLOSE_CPU;
-		while (!(SYSCTRL->FREQ_SEL & (~SYSCTRL_FREQ_SEL_POWERMODE_CLOSE_CPU)));
-		__disable_irq();
-		__WFI();
-		__enable_irq();
-		if (gMainWDTEnable)
-		{
-			WDT_Feed();
-
-		}
-		Timer_Stop(prvWDTTimer);
-
-	}
-
+	PM_Sleep();
 }
 
 
@@ -167,7 +159,9 @@ int main(void)
 	Uart_GlobalInit();
 	DMA_TakeStream(DMA1_STREAM_1);//for qspi
 	DBG_Init(1);
+	PM_Init();
 	Timer_Init();
+	GPIO_GlobalInit(NULL);
 	prvHW_Init();
 	prvDrv_Init();
 	gMainWDTEnable = 1;

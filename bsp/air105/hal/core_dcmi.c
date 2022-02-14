@@ -138,6 +138,7 @@ void DCMI_CaptureSwitch(uint8_t OnOff, uint32_t BufLen, uint32_t ImageW, uint32_
 	uint32_t WDataLen, HLen;
 	if (OnOff)
 	{
+		PM_SetHardwareRunFlag(PM_HW_DCMI_0, 1);
 		if (DCMI->CR & DCMI_CR_CAPTURE) return;
 		if (!BufLen)
 		{
@@ -193,6 +194,7 @@ void DCMI_CaptureSwitch(uint8_t OnOff, uint32_t BufLen, uint32_t ImageW, uint32_
 				prvDCMI.uBuf[i].pu32 = 0;
 			}
 		}
+		PM_SetHardwareRunFlag(PM_HW_DCMI_0, 0);
 	}
 }
 

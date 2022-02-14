@@ -191,6 +191,12 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_ZLIB
   {"zlib", luaopen_zlib},
 #endif
+#ifdef LUAT_USE_VMX   
+  {"vmx",       luaopen_vmx}, 
+#endif 
+#ifdef LUAT_USE_NES   
+  {"nes", luaopen_nes}, 
+#endif
   {"usbapp", luaopen_usbapp},
   {NULL, NULL}
 };
@@ -245,6 +251,17 @@ static int32_t _lvgl_handler(void *pData, void *pParam) {
     rtos_msg_t msg = {0};
     msg.handler = luat_lvg_handler;
     luat_msgbus_put(&msg, 0);
+}
+void luat_lvgl_tick_sleep(uint8_t OnOff)
+{
+	if (OnOff)
+	{
+		Timer_StartMS(lv_timer, LVGL_TICK_PERIOD, 1);
+	}
+	else
+	{
+		Timer_Stop(lv_timer);
+	}
 }
 #endif
 

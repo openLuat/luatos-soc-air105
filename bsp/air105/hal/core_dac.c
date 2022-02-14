@@ -88,6 +88,8 @@ void DAC_Setup(uint8_t DAC_ID, uint32_t Freq, uint32_t OutRMode)
 void DAC_Send(uint8_t DAC_ID, const uint16_t *Data, uint32_t Len, CBFuncEx_t Callback, void *pParam)
 {
 	uint32_t TxLevel;
+	PM_SetHardwareRunFlag(PM_HW_DAC_0 + DAC_ID, 1);
+//	PM_SetHardwareRunFlag(PM_HW_DAC_0, 1);
 	if (prvDAC.IsBusy)
 	{
 		DMA_PrintReg(prvDAC.DMATxStream);
@@ -133,4 +135,6 @@ void DAC_ForceStop(uint8_t DAC_ID)
 	DMA_StopStream(prvDAC.DMATxStream);
 	DAC->DAC_CR1 |= (1 << 4);
 	DAC->DAC_CR1 &= ~0x04;
+	PM_SetHardwareRunFlag(PM_HW_DAC_0 + DAC_ID, 0);
+//	PM_SetHardwareRunFlag(PM_HW_DAC_0, 0);
 }

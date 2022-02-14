@@ -19,37 +19,36 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __BL_INC_H__
-#define __BL_INC_H__
-#include "global_config.h"
-#ifdef __AIR105_BSP__
-#include "../chip/include/air105.h"
-#include "../chip/include/air105_conf.h"
-#endif
-#include "bsp_common.h"
-#include "platform_define.h"
-#include "cm_backtrace.h"
-#include "resource_map.h"
-#include "core_dma.h"
-#include "core_tick.h"
-#include "core_debug.h"
-#include "core_flash.h"
-#include "core_gpio.h"
-#include "core_timer.h"
-#include "core_otp.h"
-#include "core_uart.h"
-#include "core_rtc.h"
-#include "core_i2c.h"
-#include "core_pm.h"
 
-#include "usb_driver.h"
-#include "usb_device.h"
-#include "usb_host.h"
-#include "usb_msc.h"
-#include "usb_hid.h"
-#include "usb_scsi.h"
-#include "usb_cdc.h"
+#include "luat_base.h"
+#include "luat_rtos.h"
+#include "app_interface.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
+#include "task.h"
 
-#include "dev_spiflash.h"
-#include "audio_ll_drv.h"
-#endif
+#define LUAT_LOG_TAG "luat.rtos"
+#include "luat_log.h"
+
+int luat_thread_start(luat_thread_t* thread){
+    Task_Create(thread->thread, NULL, thread->stack_size, thread->priority, thread->name);
+    return 0;
+}
+
+int luat_sem_create(luat_sem_t* semaphore){
+    semaphore->userdata = xSemaphoreCreateBinary();
+    return 0;
+}
+int luat_sem_delete(luat_sem_t* semaphore){
+    vSemaphoreDelete(semaphore->userdata);
+    return 0;
+}
+
+int luat_sem_take(luat_sem_t* semaphore,uint32_t timeout){
+    return xSemaphoreTake(semaphore->userdata, timeout);
+}
+
+int luat_sem_release(luat_sem_t* semaphore){
+    OS_MutexRelease(semaphore->userdata);
+    return 0;
+}

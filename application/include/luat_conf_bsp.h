@@ -70,8 +70,13 @@
 //----------------------------
 // 高级功能, 其中shell是推荐启用, 除非你打算uart0也读数据
 #define LUAT_USE_SHELL 
-#define LUAT_USE_OTA
 #define LUAT_USE_DBG
+
+#define LUAT_USE_OTA
+
+// 多虚拟机支持,实验性,一般不启用 
+// #define LUAT_USE_VMX 1 
+// #define LUAT_USE_NES
 
 //---------------------
 // UI
