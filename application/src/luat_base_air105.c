@@ -254,7 +254,7 @@ static int32_t _lvgl_handler(void *pData, void *pParam) {
 }
 void luat_lvgl_tick_sleep(uint8_t OnOff)
 {
-	if (OnOff)
+	if (!OnOff)
 	{
 		Timer_StartMS(lv_timer, LVGL_TICK_PERIOD, 1);
 	}

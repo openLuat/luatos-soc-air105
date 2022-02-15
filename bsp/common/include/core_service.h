@@ -44,11 +44,13 @@ typedef struct
 
 void Core_ServiceInit(void);
 void Core_LCDDraw(LCD_DrawStruct *Draw);
+void Core_LCDDrawBlock(LCD_DrawStruct *Draw);
 void Core_CameraDraw(LCD_DrawStruct *Draw);
 void Core_DecodeQR(uint8_t *ImageData, uint16_t ImageW, uint16_t ImageH,  CBDataFun_t CB);
 uint32_t Core_LCDDrawCacheLen(void);
 void Core_USBDefaultDeviceStart(uint8_t USB_ID);
 void Core_USBAction(uint8_t USB_ID, uint8_t Action, void *pParam);
+void Core_ScanKeyBoard(void);
 void Core_PrintMemInfo(void);
 void Core_PrintServiceStack(void);
 void Core_DebugMem(uint8_t HeapID, const char *FuncName, uint32_t Line);

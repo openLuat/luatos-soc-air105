@@ -41,6 +41,8 @@
 #include "core_rtc.h"
 #include "core_i2c.h"
 #include "core_pm.h"
+#include "core_spi.h"
+#include "core_soft_keyboard.h"
 
 #include "usb_driver.h"
 #include "usb_device.h"

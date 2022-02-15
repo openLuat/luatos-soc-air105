@@ -249,3 +249,32 @@ int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint
 		return -1;
 	}
 }
+
+void luat_lcd_draw_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, luat_color_t* color, uint8_t last_flush)
+{
+	LCD_DrawStruct draw;
+	if (conf->port == LUAT_LCD_SPI_DEVICE){
+		luat_spi_device_t* spi_dev = (luat_spi_device_t*)conf->userdata;
+		int spi_id = spi_dev->bus_id;
+	    uint8_t spi_mode = SPI_MODE_0;
+	    if(spi_dev->spi_config.CPHA&&spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_3;
+	    else if(spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_2;
+	    else if(spi_dev->spi_config.CPHA)spi_mode = SPI_MODE_1;
+	    draw.DCDelay = conf->dc_delay_us;
+	    draw.Mode = spi_mode;
+	    draw.Speed = spi_dev->spi_config.bandrate;
+	    draw.SpiID = luat_spi[spi_id].id;
+	    draw.CSPin = spi_dev->spi_config.cs;
+	    draw.DCPin = conf->pin_dc;
+	    draw.x1 = x1;
+	    draw.x2 = x2;
+	    draw.y1 = y1;
+	    draw.y2 = y2;
+	    draw.xoffset = conf->xoffset;
+	    draw.yoffset = conf->yoffset;
+	    draw.Size = (draw.x2 - draw.x1 + 1) * (draw.y2 - draw.y1 + 1) * 2;
+	    draw.ColorMode = COLOR_MODE_RGB_565;
+	    draw.Data = color;
+	    Core_LCDDrawBlock(&draw);
+	}
+}

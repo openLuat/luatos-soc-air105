@@ -20,7 +20,7 @@
  */
 
 #include "user.h"
-#define SAMPLE_PER_CH	(15)
+#define SAMPLE_PER_CH	(10)
 #if 0
 typedef struct
 {
@@ -185,6 +185,7 @@ void ADC_GlobalInit(void)
 	ISR_SetPriority(ADC0_IRQn, 6);
 #endif
 	ISR_OnOff(ADC0_IRQn, 0);
+//	ADC_IntelResistance(1);
 }
 
 void ADC_IntelResistance(uint8_t OnOff)
@@ -216,7 +217,7 @@ uint32_t ADC_GetChannelValue(uint8_t Channel)
 	ISR_OnOff(ADC0_IRQn, 1);
 	ADC0->ADC_CR1 = 0x060 | Channel;
 	while(!prvADC.Done){;}
-	for (i = 10; i < SAMPLE_PER_CH; i++)
+	for (i = 5; i < SAMPLE_PER_CH; i++)
 	{
 //		DBG("%d,%d", i, prvADC.Data[i]);
 		value = prvADC.Data[i];
@@ -227,7 +228,7 @@ uint32_t ADC_GetChannelValue(uint8_t Channel)
 		total += value;
 	}
 	ADC0->ADC_CR1 = 0;
-	return ((total - max) -min)/(SAMPLE_PER_CH-12);
+	return ((total - max) -min)/(SAMPLE_PER_CH-7);
 }
 
 #ifdef __BUILD_APP__

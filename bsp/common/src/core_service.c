@@ -101,6 +101,7 @@ enum
 	SERVICE_CAMERA_DRAW,
 	SERVICE_USB_ACTION,
 	SERVICE_DECODE_QR,
+	SERVICE_SCAN_KEYBOARD,
 };
 
 
@@ -1267,6 +1268,9 @@ static void prvService_Task(void* params)
 		Task_GetEventByMS(prvService.ServiceHandle, CORE_EVENT_ID_ANY, &Event, NULL, 0);
 		switch(Event.ID)
 		{
+		case SERVICE_SCAN_KEYBOARD:
+			SoftKB_ScanOnce();
+			break;
 		case SERVICE_USB_ACTION:
 			switch (Event.Param2)
 			{
@@ -1354,6 +1358,40 @@ void Core_LCDDraw(LCD_DrawStruct *Draw)
 	Task_SendEvent(prvService.HardwareHandle, SERVICE_LCD_DRAW, Draw, 0, 0);
 }
 
+void Core_LCDDrawBlock(LCD_DrawStruct *Draw)
+{
+	PV_Union uPV;
+	uint64_t StartUS;
+//	if (Draw->Speed > 30000000)
+//	{
+//		SPI_SetTxOnlyFlag(Draw->SpiID, 1);
+//	}
+	SPI_SetNewConfig(Draw->SpiID, Draw->Speed, Draw->Mode);
+//	SPI_DMATxInit(Draw->SpiID, LCD_SPI_TX_DMA_STREAM, 0);
+//	SPI_DMARxInit(Draw->SpiID, LCD_SPI_RX_DMA_STREAM, 0);
+	prvCore_LCDCmd(Draw, 0x2a);
+	BytesPutBe16(uPV.u8, Draw->x1 + Draw->xoffset);
+	BytesPutBe16(uPV.u8 + 2, Draw->x2 + Draw->xoffset);
+	prvCore_LCDData(Draw, uPV.u8, 4);
+	prvCore_LCDCmd(Draw, 0x2b);
+	BytesPutBe16(uPV.u8, Draw->y1 + Draw->yoffset);
+	BytesPutBe16(uPV.u8 + 2, Draw->y2 + Draw->yoffset);
+	prvCore_LCDData(Draw, uPV.u8, 4);
+	prvCore_LCDCmd(Draw, 0x2c);
+	GPIO_Output(Draw->CSPin, 0);
+//	StartUS = GetSysTickUS();
+//			SPI_Transfer(Draw->SpiID, Draw->Data, Draw->Data, Draw->Size, 2);
+
+	SPI_BlockTransfer(Draw->SpiID, Draw->Data, Draw->Data, Draw->Size);
+//	DBG("%u, %u", Draw->Size, (uint32_t)(GetSysTickUS() - StartUS));
+//	if (Draw->Speed > 30000000)
+//	{
+//		Task_DelayUS(1);
+//	}
+	GPIO_Output(Draw->CSPin, 1);
+	SPI_SetTxOnlyFlag(Draw->SpiID, 0);
+}
+
 void Core_CameraDraw(LCD_DrawStruct *Draw)
 {
 	Task_SendEvent(prvService.HardwareHandle, SERVICE_CAMERA_DRAW, Draw, 0, 0);
@@ -1370,6 +1408,11 @@ void Core_DecodeQR(uint8_t *ImageData, uint16_t ImageW, uint16_t ImageH,  CBData
 void Core_USBAction(uint8_t USB_ID, uint8_t Action, void *pParam)
 {
 	Task_SendEvent(prvService.ServiceHandle, SERVICE_USB_ACTION, USB_ID, Action, pParam);
+}
+
+void Core_ScanKeyBoard(void)
+{
+	Task_SendEvent(prvService.ServiceHandle, SERVICE_SCAN_KEYBOARD, 0, 0, 0);
 }
 
 void Core_PrintMemInfo(void)

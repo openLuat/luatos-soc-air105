@@ -160,14 +160,15 @@ void __FUNC_IN_RAM__ GPIO_ODConfig(uint32_t Pin, uint8_t InitValue)
 	uint8_t orgPin = Pin;
 	Pin = 1 << (Pin & 0x0000000f);
 	GPIO_Iomux(orgPin, 1);
-	prvGPIO_Resource[Port].RegBase->OEN |= Pin;
+
 	if (InitValue)
 	{
-		prvGPIO_Resource[Port].RegBase->PUE |= Pin;
+		prvGPIO_Resource[Port].RegBase->OEN |= Pin;
 	}
 	else
 	{
-		prvGPIO_Resource[Port].RegBase->PUE &= ~Pin;
+		prvGPIO_Resource[Port].RegBase->BSRR |= (Pin << 16);
+		prvGPIO_Resource[Port].RegBase->OEN &= ~Pin;
 	}
 	prvGPIO_Resource[Port].ODBitMap |= Pin;
 }
@@ -270,11 +271,12 @@ void __FUNC_IN_RAM__ GPIO_Output(uint32_t Pin, uint8_t Level)
 	{
 		if (Level)
 		{
-			prvGPIO_Resource[Port].RegBase->PUE |= Pin;
+			prvGPIO_Resource[Port].RegBase->OEN |= Pin;
 		}
 		else
 		{
-			prvGPIO_Resource[Port].RegBase->PUE &= ~Pin;
+			prvGPIO_Resource[Port].RegBase->BSRR |= (Pin << 16);
+			prvGPIO_Resource[Port].RegBase->OEN &= ~Pin;
 		}
 	}
 	else

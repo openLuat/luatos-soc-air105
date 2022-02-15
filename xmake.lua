@@ -191,6 +191,12 @@ target("app.elf")
 
     add_files("Third_Party/lzma/src/*.c",{public = true})
     add_includedirs("Third_Party/lzma/include",{public = true})
+
+    add_files("Third_Party/vsprintf/*.c",{public = true})
+    add_includedirs("Third_Party/vsprintf",{public = true})
+
+    add_files("Third_Party/heap/*.c",{public = true})
+    add_includedirs("Third_Party/heap",{public = true})
     
     --add_files("bsp/common/*.c",{public = true})
 	add_files("bsp/common/src/*.c",{public = true})
@@ -202,7 +208,7 @@ target("app.elf")
     add_includedirs("bsp/device/include",{public = true})
     add_includedirs("bsp/audio/include",{public = true})
     add_files("bsp/audio/**.c",{public = true})
-    -- add_files("bsp/device/src/*.c",{public = true})
+    add_files("bsp/device/src/*.c",{public = true})
     -- add files
     add_files("bsp/air105/platform/startup_full.s")
     add_files("bsp/air105/platform/app_main.c")
@@ -228,6 +234,8 @@ target("app.elf")
     add_files(luatos.."luat/modules/*.c")
     add_files(luatos.."luat/vfs/*.c")
     remove_files(luatos.."luat/vfs/luat_fs_posix.c")
+    remove_files(luatos.."lua/src/bget.c")
+    remove_files(luatos.."lua/src/printf.c")
 
     add_files(luatos.."components/lcd/*.c")
     add_files(luatos.."components/sfd/*.c")

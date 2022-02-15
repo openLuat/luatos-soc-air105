@@ -42,7 +42,6 @@ typedef unsigned long long  uint64_t;
 typedef long long           int64_t;
 #endif
 #include "core_hwtimer.h"
-#include "core_spi.h"
 #include "core_adc.h"
 #include "core_dac.h"
 #include "core_wdt.h"

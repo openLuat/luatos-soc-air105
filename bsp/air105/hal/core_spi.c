@@ -226,7 +226,7 @@ static int32_t SPI_DMADoneCB(void *pData, void *pParam)
 		if (prvSPI[SpiID].IsOnlyTx)
 		{
 			DMA_ForceStartStream(prvSPI[SpiID].DMATxStream, &prvSPI[SpiID].TxBuf.Data[prvSPI[SpiID].TxBuf.Pos], RxLevel, SPI_DMADoneCB, (void *)SpiID, 1);
-			DMA_ForceStartStream(prvSPI[SpiID].DMARxStream, &prvSPI[SpiID].RxBuf.Data[prvSPI[SpiID].RxBuf.Pos], RxLevel, NULL, NULL, 0);
+//			DMA_ForceStartStream(prvSPI[SpiID].DMARxStream, &prvSPI[SpiID].RxBuf.Data[prvSPI[SpiID].RxBuf.Pos], RxLevel, NULL, NULL, 0);
 		}
 		else
 		{
@@ -502,7 +502,7 @@ static void SPI_DMATransfer(uint8_t SpiID, uint8_t UseDMA)
 	if (prvSPI[SpiID].IsOnlyTx)
 	{
 		DMA_ForceStartStream(prvSPI[SpiID].DMATxStream, prvSPI[SpiID].TxBuf.Data, RxLevel, SPI_DMADoneCB, (void *)SpiID, 1);
-		DMA_ForceStartStream(prvSPI[SpiID].DMARxStream, prvSPI[SpiID].RxBuf.Data, RxLevel, NULL, NULL, 0);
+//		DMA_ForceStartStream(prvSPI[SpiID].DMARxStream, prvSPI[SpiID].RxBuf.Data, RxLevel, NULL, NULL, 0);
 	}
 	else
 	{
