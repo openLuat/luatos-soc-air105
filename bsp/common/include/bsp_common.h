@@ -401,6 +401,9 @@ void *llist_traversal(llist_head *head, CBFuncEx_t cb, void *pData);
 	container_of(ptr, type, member)
 
 
+uint16_t BSP_Swap16(uint16_t n);
+uint32_t BSP_Swap32(uint32_t n);
+
 uint8_t BytesGet8(const void *ptr);
 void BytesPut8(void *ptr, uint8_t v);
 uint16_t BytesGetBe16(const void *ptr);
@@ -437,4 +440,10 @@ void BytesPutDoubleToBuf(Buffer_Struct *Buf, double v);
 #define realloc OS_Realloc
 #define zalloc OS_Zalloc
 #define calloc OS_Calloc
+
+#if(defined(__DEBUG__) || defined(DEBUG))
+#define ASSERT( x ) if( ( x ) == 0 ) { __disable_irq(); DBG_Trace("\r\nassert %s,%d", __FUNCTION__, __LINE__); for( ;; ); }
+#else
+#define ASSERT( x )
+#endif
 #endif

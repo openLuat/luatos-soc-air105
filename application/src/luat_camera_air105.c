@@ -38,16 +38,23 @@
 
 typedef struct
 {
+	Buffer_Struct FileBuffer;
+	Buffer_Struct JPEGSavePath;
 	uint8_t *DataCache;
 	uint32_t TotalSize;
 	uint32_t CurSize;
 	uint32_t VLen;
 	uint32_t drawVLen;
+	int32_t YDiff;
 	uint16_t Width;
 	uint16_t Height;
 	uint8_t DataBytes;
 	uint8_t IsDecode;
 	uint8_t BufferFull;
+	uint8_t JPEGQuality;
+	uint8_t CaptureMode;
+	uint8_t CaptureWait;
+	uint8_t JPEGEncodeDone;
 }Camera_CtrlStruct;
 
 static Camera_CtrlStruct prvCamera;
@@ -56,6 +63,43 @@ static struct luat_camera_conf camera_conf;
 
 static luat_lcd_conf_t* lcd_conf;
 static uint8_t draw_lcd = 0;
+
+static void Camera_SaveJPEGData(void *Cxt, void *pData, int Size)
+{
+	OS_BufferWrite(Cxt, pData, Size);
+}
+
+static int32_t Camera_SaveJPEGDone(void *pData, void *pParam)
+{
+	HANDLE fd;
+	if (prvCamera.JPEGSavePath.Data)
+	{
+		fd = luat_fs_fopen(prvCamera.JPEGSavePath.Data, "w");
+	}
+	else
+	{
+		fd = luat_fs_fopen("/capture.jpg", "w");
+	}
+	if (fd)
+	{
+		LLOGD("capture data %ubyte", luat_fs_fwrite(prvCamera.FileBuffer.Data, prvCamera.FileBuffer.Pos, 1, fd));
+		luat_fs_fclose(fd);
+	}
+	OS_DeInitBuffer(&prvCamera.FileBuffer);
+	prvCamera.CaptureWait = 1;
+	prvCamera.JPEGEncodeDone = 1;
+	prvCamera.CaptureMode = 0;
+	Core_EncodeJPEGSetup(NULL, &prvCamera);
+    rtos_msg_t msg = {0};
+    {
+        msg.handler = l_camera_handler;
+        msg.ptr = NULL;
+        msg.arg1 = 0;
+        msg.arg2 = 1;
+        luat_msgbus_put(&msg, 1);
+	}
+
+}
 
 void DecodeQR_CBDataFun(uint8_t *Data, uint32_t Len){
     prvCamera.IsDecode = 0;
@@ -123,15 +167,43 @@ static int32_t Camera_DrawLcd(void *DrawData, uint8_t Scan){
 static int32_t prvCamera_DCMICB(void *pData, void *pParam){
 
     uint8_t zbar_scan = (uint8_t)pParam;
+    Buffer_Struct *RxBuf = (Buffer_Struct *)pData;
+    if (prvCamera.CaptureMode){
+    	if (!pData){
+    		if (prvCamera.CaptureWait && prvCamera.JPEGEncodeDone)
+    		{
+    			prvCamera.CaptureWait = 0;
+    			prvCamera.JPEGEncodeDone = 0;
+    			Core_EncodeJPEGStart(prvCamera.Width, prvCamera.Height, prvCamera.JPEGQuality, prvCamera.YDiff);
+    		}
+    		else if (!prvCamera.CaptureWait)
+    		{
+    			prvCamera.CaptureWait = 1;
+    			prvCamera.JPEGEncodeDone = 0;
+    			Core_EncodeJPEGEnd(Camera_SaveJPEGDone, 0);
+    		}
+    	}
+    	else
+    	{
+            if (!prvCamera.CaptureWait)
+            {
+                uint8_t *data = malloc(RxBuf->MaxLen * 4);
+                memcpy(data, RxBuf->Data, RxBuf->MaxLen * 4);
+                Core_EncodeJPEGRun(data, RxBuf->MaxLen * 4, zbar_scan?COLOR_MODE_GRAY:COLOR_MODE_RGB_565);
+            }
+    	}
+    	return 0;
+    }
     if (zbar_scan == 0){
-        Buffer_Struct *RxBuf = (Buffer_Struct *)pData;
+
         if (!pData){
             prvCamera.VLen = 0;
             return 0;
         }
         if (draw_lcd)
+        {
             Camera_DrawLcd(RxBuf->Data, zbar_scan);
-
+        }
         prvCamera.VLen += prvCamera.drawVLen;
         return 0;
     }else if (zbar_scan == 1){
@@ -217,11 +289,11 @@ int luat_camera_init(luat_camera_conf_t *conf){
     memcpy(&camera_conf, conf, sizeof(luat_camera_conf_t));
     lcd_conf = conf->lcd_conf;
     draw_lcd = conf->draw_lcd;
-
+    prvCamera.Width = lcd_conf->w;
+    prvCamera.Height = lcd_conf->h;
     if (conf->zbar_scan == 1){
         prvCamera.DataCache = NULL;
-        prvCamera.Width = lcd_conf->w;
-        prvCamera.Height = lcd_conf->h;
+
         prvCamera.TotalSize = prvCamera.Width * prvCamera.Height;
         prvCamera.DataBytes = 1;
     }
@@ -258,12 +330,39 @@ int luat_camera_start(int id)
 	}
     if (camera_conf.zbar_scan == 0){
         DCMI_SetCROPConfig(1, (camera_conf.sensor_height-lcd_conf->h)/2, ((camera_conf.sensor_width-lcd_conf->w)/2)*2, lcd_conf->h - 1, 2*lcd_conf->w - 1);
-        DCMI_CaptureSwitch(1, 0,lcd_conf->w, lcd_conf->h, 2, &prvCamera.drawVLen);
+        DCMI_CaptureSwitch(1, 0, lcd_conf->w, lcd_conf->h, 2, &prvCamera.drawVLen);
+        prvCamera.CaptureMode = 0;
         prvCamera.VLen = 0;
     }else if(camera_conf.zbar_scan == 1){
         DCMI_SetCROPConfig(1, (camera_conf.sensor_height-prvCamera.Height)/2, ((camera_conf.sensor_width-prvCamera.Width)/2)*prvCamera.DataBytes, prvCamera.Height - 1, prvCamera.DataBytes*prvCamera.Width - 1);
         DCMI_CaptureSwitch(1, 0,lcd_conf->w, lcd_conf->h, prvCamera.DataBytes, &prvCamera.drawVLen);
     }
+    return 0;
+}
+
+int luat_camera_capture(int id, int y_diff, uint8_t quality, const char *path)
+{
+	DCMI_CaptureSwitch(0, 0, 0, 0, 0, NULL);
+	if (prvCamera.DataCache)
+	{
+		free(prvCamera.DataCache);
+		prvCamera.DataCache = NULL;
+	}
+
+	if (path)
+	{
+		OS_ReInitBuffer(&prvCamera.JPEGSavePath, strlen(path) + 1);
+		memcpy(prvCamera.JPEGSavePath.Data, path, strlen(path));
+	}
+	OS_ReInitBuffer(&prvCamera.FileBuffer, 16 * 1024);
+	Core_EncodeJPEGSetup(Camera_SaveJPEGData, &prvCamera);
+	luat_camera_start(id);
+	prvCamera.YDiff = y_diff;
+	prvCamera.JPEGQuality = quality;
+	prvCamera.CaptureMode = 1;
+	prvCamera.CaptureWait = 1;
+	prvCamera.JPEGEncodeDone = 1;
+
     return 0;
 }
 
@@ -275,5 +374,6 @@ int luat_camera_stop(int id)
 		free(prvCamera.DataCache);
 		prvCamera.DataCache = NULL;
 	}
+	OS_DeInitBuffer(&prvCamera.FileBuffer);
     return 0;
 }

@@ -176,7 +176,7 @@ target("app.elf")
         if LVGL_CONF == nil then target:add("deps", "lvgl") end
     end)
 
-    add_deps("tflm")
+    -- add_deps("tflm")
 
     -- add deps
     add_files("Third_Party/cm_backtrace/*.c",{public = true})
@@ -197,6 +197,9 @@ target("app.elf")
 
     add_files("Third_Party/heap/*.c",{public = true})
     add_includedirs("Third_Party/heap",{public = true})
+
+    add_files("Third_Party/jpeg_encode/*.c",{public = true})
+    add_includedirs("Third_Party/jpeg_encode",{public = true})
     
     --add_files("bsp/common/*.c",{public = true})
 	add_files("bsp/common/src/*.c",{public = true})

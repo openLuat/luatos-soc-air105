@@ -1567,3 +1567,21 @@ uint32_t llist_num(const llist_head *head)
 	}
 	return num;
 }
+
+#define PP_HTONS(x) ((uint16_t)((((x) & (uint16_t)0x00ffU) << 8) | (((x) & (uint16_t)0xff00U) >> 8)))
+#define PP_NTOHS(x) PP_HTONS(x)
+#define PP_HTONL(x) ((((x) & (uint32_t)0x000000ffUL) << 24) | \
+                     (((x) & (uint32_t)0x0000ff00UL) <<  8) | \
+                     (((x) & (uint32_t)0x00ff0000UL) >>  8) | \
+                     (((x) & (uint32_t)0xff000000UL) >> 24))
+#define PP_NTOHL(x) PP_HTONL(x)
+
+uint16_t BSP_Swap16(uint16_t n)
+{
+  return (uint16_t)PP_HTONS(n);
+}
+
+uint32_t BSP_Swap32(uint32_t n)
+{
+  return (uint32_t)PP_HTONL(n);
+}

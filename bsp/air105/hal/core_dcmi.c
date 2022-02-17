@@ -29,7 +29,7 @@ typedef struct
 	void *pUserData;
 	uint32_t BufLen;
 	uint8_t RxDMASn;
-
+	uint8_t IsFirstVsync;
 }DCMI_CtrlStruct;
 
 static DCMI_CtrlStruct prvDCMI;
@@ -48,6 +48,10 @@ static void prvDCMI_IrqHandler(int32_t Line, void *pData)
 		prvDCMI.RxDMASn = (prvDCMI.RxDMASn + 1)%DCMI_RXBUF_BAND;
 		DMA_ClearStreamFlag(DCMI_RX_DMA_STREAM);
 		DMA_ForceStartStream(DCMI_RX_DMA_STREAM, prvDCMI.uBuf[prvDCMI.RxDMASn].pu32, prvDCMI.BufLen, prvDCMI_DMADone, NULL, 1);
+		if (prvDCMI.IsFirstVsync)
+		{
+			prvDCMI.IsFirstVsync = 0;
+		}
 		prvDCMI.CB(NULL, prvDCMI.pUserData);
 	}
 }
@@ -61,7 +65,10 @@ static int32_t prvDCMI_DMADone(void *pData, void *pParam)
 	DMA_ClearStreamFlag(DCMI_RX_DMA_STREAM);
 	DMA_ForceStartStream(DCMI_RX_DMA_STREAM, prvDCMI.uBuf[prvDCMI.RxDMASn].pu32, prvDCMI.BufLen, prvDCMI_DMADone, NULL, 1);
 	Buffer_StaticInit(&RxBuf, prvDCMI.uBuf[LastRxDMASn].pu32, prvDCMI.BufLen);
-	prvDCMI.CB(&RxBuf, prvDCMI.pUserData);
+	if (!prvDCMI.IsFirstVsync)
+	{
+		prvDCMI.CB(&RxBuf, prvDCMI.pUserData);
+	}
 	return 0;
 }
 
@@ -140,25 +147,27 @@ void DCMI_CaptureSwitch(uint8_t OnOff, uint32_t BufLen, uint32_t ImageW, uint32_
 	{
 		PM_SetHardwareRunFlag(PM_HW_DCMI_0, 1);
 		if (DCMI->CR & DCMI_CR_CAPTURE) return;
+		prvDCMI.IsFirstVsync = 1;
 		if (!BufLen)
 		{
 			WDataLen = (ImageW * DataByte) >> 2;
-			if (ImageH > 100)
-			{
-				if (!(ImageH % 10))
-				{
-					HLen = ImageH / 10;
-				}
-				else
-				{
-					HLen = ImageH >> 1;
-				}
-			}
-			else
-			{
-				HLen = ImageH >> 1;
-			}
-			while( (WDataLen * HLen) > 2048)
+//			if (ImageH > 100)
+//			{
+//				if (!(ImageH % 10))
+//				{
+//					HLen = ImageH / 10;
+//				}
+//				else
+//				{
+//					HLen = ImageH >> 1;
+//				}
+//			}
+//			else
+//			{
+//				HLen = ImageH >> 1;
+//			}
+			HLen = 8;
+			while( (WDataLen * HLen) > 4000)
 			{
 				HLen >>= 1;
 			}
@@ -177,6 +186,7 @@ void DCMI_CaptureSwitch(uint8_t OnOff, uint32_t BufLen, uint32_t ImageW, uint32_
 		DCMI->ICR = 0x1f;
 		ISR_OnOff(DCMI_IRQn, 1);
 		DCMI->CR |= DCMI_CR_CAPTURE|DCMI_CR_ENABLE;
+
 	}
 	else
 	{
