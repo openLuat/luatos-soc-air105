@@ -285,7 +285,7 @@ static void prvService_Task(void* params)
 			}
 			break;
 		case SERVICE_ENCODE_JPEG_START:
-			JPEGEncodeHandle = jpeg_encode_init(prvService.JPEGEncodeWriteFun, prvService.JPEGEncodeWriteParam, Event.Param2, Event.Param1 >> 16, Event.Param1 & 0x0000ffff, 3, (int32_t)Event.Param3);
+			JPEGEncodeHandle = jpeg_encode_init(prvService.JPEGEncodeWriteFun, prvService.JPEGEncodeWriteParam, Event.Param2, Event.Param1 >> 16, Event.Param1 & 0x0000ffff, 3);
 			break;
 		case SERVICE_ENCODE_JPEG_RUN:
 			if (JPEGEncodeHandle)
@@ -478,9 +478,9 @@ void Core_EncodeJPEGSetup(HANDLE Fun, void *pParam)
 	prvService.JPEGEncodeWriteParam = pParam;
 }
 
-void Core_EncodeJPEGStart(uint32_t Width, uint32_t Height, uint8_t Quality, int32_t YDiff)
+void Core_EncodeJPEGStart(uint32_t Width, uint32_t Height, uint8_t Quality)
 {
-	Task_SendEvent(prvService.ServiceHandle, SERVICE_ENCODE_JPEG_START, (Width << 16 | Height), Quality, YDiff);
+	Task_SendEvent(prvService.ServiceHandle, SERVICE_ENCODE_JPEG_START, (Width << 16 | Height), Quality, 0);
 }
 
 void Core_EncodeJPEGRun(uint8_t *Data, uint32_t Len, uint8_t ColorMode)

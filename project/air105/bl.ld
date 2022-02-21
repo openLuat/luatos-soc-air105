@@ -27,6 +27,11 @@ SECTIONS
     } >FLASH
 
     /* The program code and other data into "FLASH" Rom type memory */
+    .start :
+    {
+        . = ALIGN(4);
+        *startup_full.o(.text .text.*)
+    } >FLASH
     .text :
     {
         . = ALIGN(4);

@@ -77,7 +77,7 @@
 /* #define configMAX_PRIORITIES					( 56 ) */
 #define configUSE_PREEMPTION              1
 #define configUSE_IDLE_HOOK               1
-#define configUSE_TICK_HOOK               1
+#define configUSE_TICK_HOOK               0
 #define configMAX_PRIORITIES              (7)
 #define configSUPPORT_STATIC_ALLOCATION   0
 #define configCPU_CLOCK_HZ                (SystemCoreClock)
@@ -195,5 +195,6 @@ header file. */
  */
 #define xPortSysTickHandler SysTick_Handler
 #define traceTASK_SWITCHED_IN OS_SetStartFlag
+#define configUSE_TIME_SLICING 0
 #endif /* FREERTOS_CONFIG_H */
 

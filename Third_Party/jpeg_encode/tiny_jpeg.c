@@ -1016,10 +1016,8 @@ typedef struct
     // Bit stack
     uint32_t bitbuffer;
     uint32_t location;
-
-    int32_t y_diff;
 }TJE_ContextStruct;
-void *jpeg_encode_init(tje_write_func* func, void* context, uint8_t quality, uint32_t width, uint32_t height, uint8_t src_num_components, int32_t y_diff)
+void *jpeg_encode_init(tje_write_func* func, void* context, uint8_t quality, uint32_t width, uint32_t height, uint8_t src_num_components)
 {
     if (quality < 1 || quality > 3) {
         tje_log("Valid 'quality' %d values are 1 (lowest), 2, or 3 (highest)", quality);
@@ -1181,7 +1179,6 @@ void *jpeg_encode_init(tje_write_func* func, void* context, uint8_t quality, uin
         tjei_write(state, &header, sizeof(TJEScanHeader), 1);
 
     }
-    ctx->y_diff = y_diff;
     return ctx;
 }
 
@@ -1208,7 +1205,7 @@ void jpeg_encode_run(void *ctx, uint8_t *src_data, uint8_t is_rgb)
 					r = src_data[src_index + 0];
 					g = src_data[src_index + 1];
 					b = src_data[src_index + 2];
-					du_y[block_index] = 0.299f   * r + 0.587f    * g + 0.114f    * b + handle->y_diff;
+					du_y[block_index] = 0.299f   * r + 0.587f    * g + 0.114f    * b - 128;
 					du_b[block_index] = -0.1687f * r - 0.3313f   * g + 0.5f      * b;
 					du_r[block_index] = 0.5f     * r - 0.4187f   * g - 0.0813f   * b;
 				}
@@ -1217,7 +1214,7 @@ void jpeg_encode_run(void *ctx, uint8_t *src_data, uint8_t is_rgb)
 					du_y[block_index] = src_data[src_index + 0];
 					du_b[block_index] = src_data[src_index + 1];
 					du_r[block_index] = src_data[src_index + 2];
-					du_y[block_index] += handle->y_diff;
+					du_y[block_index] -= 128;
 					du_b[block_index] -= 128;
 					du_r[block_index] -= 128;
 				}

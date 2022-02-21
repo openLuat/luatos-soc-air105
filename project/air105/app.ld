@@ -35,9 +35,16 @@ SECTIONS
     } >FLASH
 
     /* The program code and other data into "FLASH" Rom type memory */
+    .start :
+    {
+        . = ALIGN(4);
+        *startup_full.o(.text .text.*)
+    } >FLASH
+    
     .text :
     {
         . = ALIGN(4);
+        *start_full.o(.text .text.*)
         *(.text)           /* .text sections (code) */
         *(.text*)          /* .text* sections (code) */
         *(.glue_7)         /* glue arm to thumb code */

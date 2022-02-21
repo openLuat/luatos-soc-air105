@@ -53,7 +53,7 @@ void Core_USBAction(uint8_t USB_ID, uint8_t Action, void *pParam);
 void Core_ScanKeyBoard(void);
 void Core_SetRGB565FixValue(uint8_t R, uint8_t G, uint8_t B);
 void Core_EncodeJPEGSetup(HANDLE Fun, void *pParam);
-void Core_EncodeJPEGStart(uint32_t Width, uint32_t Height, uint8_t Quality, int32_t YDiff);
+void Core_EncodeJPEGStart(uint32_t Width, uint32_t Height, uint8_t Quality);
 void Core_EncodeJPEGRun(uint8_t *Data, uint32_t Len, uint8_t ColorMode);
 void Core_EncodeJPEGEnd(CBFuncEx_t CB, void *pParam);
 void Core_PrintMemInfo(void);

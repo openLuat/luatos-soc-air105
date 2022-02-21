@@ -51,7 +51,7 @@ extern "C"
 //  to free the data.
 
 typedef void tje_write_func(void* context, void* data, int size);
-void *jpeg_encode_init(tje_write_func* func, void* context, uint8_t quality, uint32_t width, uint32_t height, uint8_t src_num_components, int32_t y_diff);
+void *jpeg_encode_init(tje_write_func* func, void* context, uint8_t quality, uint32_t width, uint32_t height, uint8_t src_num_components);
 void jpeg_encode_run(void *ctx, uint8_t *src_data, uint8_t IsRGB);
 void jpeg_encode_end(void *ctx);
 // ============================================================

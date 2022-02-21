@@ -45,7 +45,6 @@ typedef struct
 	uint32_t CurSize;
 	uint32_t VLen;
 	uint32_t drawVLen;
-	int32_t YDiff;
 	uint16_t Width;
 	uint16_t Height;
 	uint8_t DataBytes;
@@ -174,7 +173,7 @@ static int32_t prvCamera_DCMICB(void *pData, void *pParam){
     		{
     			prvCamera.CaptureWait = 0;
     			prvCamera.JPEGEncodeDone = 0;
-    			Core_EncodeJPEGStart(prvCamera.Width, prvCamera.Height, prvCamera.JPEGQuality, prvCamera.YDiff);
+    			Core_EncodeJPEGStart(prvCamera.Width, prvCamera.Height, prvCamera.JPEGQuality);
     		}
     		else if (!prvCamera.CaptureWait)
     		{
@@ -340,7 +339,7 @@ int luat_camera_start(int id)
     return 0;
 }
 
-int luat_camera_capture(int id, int y_diff, uint8_t quality, const char *path)
+int luat_camera_capture(int id, uint8_t quality, const char *path)
 {
 	DCMI_CaptureSwitch(0, 0, 0, 0, 0, NULL);
 	if (prvCamera.DataCache)
@@ -357,7 +356,6 @@ int luat_camera_capture(int id, int y_diff, uint8_t quality, const char *path)
 	OS_ReInitBuffer(&prvCamera.FileBuffer, 16 * 1024);
 	Core_EncodeJPEGSetup(Camera_SaveJPEGData, &prvCamera);
 	luat_camera_start(id);
-	prvCamera.YDiff = y_diff;
 	prvCamera.JPEGQuality = quality;
 	prvCamera.CaptureMode = 1;
 	prvCamera.CaptureWait = 1;

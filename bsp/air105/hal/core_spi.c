@@ -773,7 +773,7 @@ static int32_t prvSPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_
 int32_t SPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData, uint32_t Len)
 {
 #ifdef __BUILD_OS__
-	if ( (prvSPI[SpiID].DMARxStream == 0xff) || (prvSPI[SpiID].DMATxStream == 0xff) || OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= (Len * 100000)))
+	if (  OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= (Len * 100000)))
 	{
 		prvSPI[SpiID].IsBlockMode = 0;
 #endif
@@ -781,15 +781,24 @@ int32_t SPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData,
 #ifdef __BUILD_OS__
 	}
 	int32_t Result;
+	uint8_t DMAMode;
 	uint32_t Time = (Len * 1000) / (prvSPI[SpiID].Speed >> 3);
 	prvSPI[SpiID].IsBlockMode = 1;
-	if (TxData)
+	if ( (prvSPI[SpiID].DMARxStream == 0xff) || (prvSPI[SpiID].DMATxStream == 0xff) )
 	{
-		Result = SPI_Transfer(SpiID, TxData, RxData, Len, 1);
+		DMAMode = 0;
 	}
 	else
 	{
-		Result = SPI_Transfer(SpiID, RxData, RxData, Len, 1);
+		DMAMode = 1;
+	}
+	if (TxData)
+	{
+		Result = SPI_Transfer(SpiID, TxData, RxData, Len, DMAMode);
+	}
+	else
+	{
+		Result = SPI_Transfer(SpiID, RxData, RxData, Len, DMAMode);
 	}
 	if (Result)
 	{
@@ -954,19 +963,23 @@ int32_t SPI_FlashBlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint32_t WL
 #ifdef __BUILD_OS__
 	}
 	int32_t Result;
+	uint8_t DMAMode;
 	uint32_t Time = ((WLen + RLen) * 1000) / (prvSPI[SpiID].Speed >> 3);
 	uint8_t *Temp = malloc(WLen + RLen);
-	memcpy(Temp, TxData, WLen);
-	prvSPI[SpiID].IsBlockMode = 1;
-
 	if (TxData)
 	{
-		Result = SPI_Transfer(SpiID, Temp, Temp, WLen + RLen, 1);
+		memcpy(Temp, TxData, WLen);
+	}
+	prvSPI[SpiID].IsBlockMode = 1;
+	if ( (prvSPI[SpiID].DMARxStream == 0xff) || (prvSPI[SpiID].DMATxStream == 0xff) )
+	{
+		DMAMode = 0;
 	}
 	else
 	{
-		Result = SPI_Transfer(SpiID, Temp, Temp, WLen + RLen, 1);
+		DMAMode = 1;
 	}
+	Result = SPI_Transfer(SpiID, Temp, Temp, WLen + RLen, DMAMode);
 	if (Result)
 	{
 		prvSPI[SpiID].IsBlockMode = 0;
