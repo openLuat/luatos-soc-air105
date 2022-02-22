@@ -54,6 +54,8 @@ typedef struct
 	uint8_t CaptureMode;
 	uint8_t CaptureWait;
 	uint8_t JPEGEncodeDone;
+	uint8_t PWMID;
+	uint8_t I2CID;
 }Camera_CtrlStruct;
 
 static Camera_CtrlStruct prvCamera;
@@ -299,13 +301,13 @@ int luat_camera_init(luat_camera_conf_t *conf){
 
     GPIO_Iomux(GPIOA_05, 2);
     HWTimer_SetPWM(conf->pwm_id, conf->pwm_period, conf->pwm_pulse, 0);
-
+    prvCamera.PWMID = conf->pwm_id;
     luat_i2c_setup(conf->i2c_id,1,NULL);
     for(size_t i = 0; i < conf->init_cmd_size; i++){
         luat_i2c_send(conf->i2c_id, conf->i2c_addr, &(conf->init_cmd[i]), 2);
         i++;
 	}
-
+    prvCamera.I2CID = conf->i2c_id;
     DCMI_Setup(0, 0, 0, 8, 0);
 	DCMI_SetCallback(prvCamera_DCMICB, conf->zbar_scan);
 
@@ -374,4 +376,22 @@ int luat_camera_stop(int id)
 	}
 	OS_DeInitBuffer(&prvCamera.FileBuffer);
     return 0;
+}
+
+int luat_camera_close(int id)
+{
+	luat_camera_stop(id);
+	GPIO_Iomux(GPIOD_01, 1);
+	GPIO_Iomux(GPIOD_02, 1);
+	GPIO_Iomux(GPIOD_03, 1);
+	GPIO_Iomux(GPIOD_08, 1);
+	GPIO_Iomux(GPIOD_09, 1);
+	GPIO_Iomux(GPIOD_10, 1);
+	GPIO_Iomux(GPIOD_11, 1);
+	GPIO_Iomux(GPIOE_00, 1);
+    GPIO_Iomux(GPIOE_01, 1);
+	GPIO_Iomux(GPIOE_02, 1);
+    GPIO_Iomux(GPIOA_05, 1);
+    HWTimer_Stop(prvCamera.PWMID);
+    luat_i2c_close(prvCamera.I2CID);
 }
