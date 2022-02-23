@@ -257,6 +257,7 @@ static void prvService_Task(void* params)
 		case SERVICE_DECODE_QR:
 			if (Event.Param3)
 			{
+				//此处代码可以更换成第三方解码
 				CBDataFun = (CBDataFun_t)(Event.Param3);
 				uPV.u32 = Event.Param2;
 				zbar_scanner = zbar_image_scanner_create();
@@ -269,11 +270,13 @@ static void prvService_Task(void* params)
 				{
 					zbar_symbol = (zbar_symbol_t *)zbar_image_first_symbol(zbar_image);
 					free(Event.Param1);
+					//解码完成回调
 					CBDataFun(zbar_symbol->data, zbar_symbol->datalen);
 				}
 				else
 				{
 					free(Event.Param1);
+					//解码失败回调
 					CBDataFun(NULL, 0);
 				}
 				zbar_image_destroy(zbar_image);
