@@ -213,7 +213,7 @@ int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint
 			LLOGE("lcd flush no memory");
 			return -1;
 		}
-		luat_spi_device_t* spi_dev = (luat_spi_device_t*)conf->userdata;
+		luat_spi_device_t* spi_dev = (luat_spi_device_t*)conf->lcd_spi_device;
 		int spi_id = spi_dev->bus_id;
 	    uint8_t spi_mode = SPI_MODE_0;
 	    if(spi_dev->spi_config.CPHA&&spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_3;
@@ -254,7 +254,7 @@ void luat_lcd_draw_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint16
 {
 	LCD_DrawStruct draw;
 	if (conf->port == LUAT_LCD_SPI_DEVICE){
-		luat_spi_device_t* spi_dev = (luat_spi_device_t*)conf->userdata;
+		luat_spi_device_t* spi_dev = (luat_spi_device_t*)conf->lcd_spi_device;
 		int spi_id = spi_dev->bus_id;
 	    uint8_t spi_mode = SPI_MODE_0;
 	    if(spi_dev->spi_config.CPHA&&spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_3;

@@ -96,9 +96,9 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_WDT
   {"wdt",     luaopen_wdt},               // watchdog模块
 #endif
-// #ifdef LUAT_USE_PM
-//   {"pm",      luaopen_pm},                // 电源管理模块
-// #endif
+#ifdef LUAT_USE_PM
+  {"pm",      luaopen_pm},                // 电源管理模块
+#endif
 #ifdef LUAT_USE_MCU
   {"mcu",     luaopen_mcu},               // MCU特有的一些操作
 #endif

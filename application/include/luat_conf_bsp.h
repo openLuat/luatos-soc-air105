@@ -23,7 +23,7 @@
 #ifndef LUAT_CONF_BSP
 #define LUAT_CONF_BSP
 
-#define LUAT_BSP_VERSION "V0004"
+#define LUAT_BSP_VERSION "V0005"
 
 
 #define LUAT_USE_FS_VFS 1
@@ -37,7 +37,7 @@
 #define LUAT_USE_ADC  1
 #define LUAT_USE_PWM  1
 #define LUAT_USE_WDT  1
-// #define LUAT_USE_PM  1
+#define LUAT_USE_PM  1
 #define LUAT_USE_MCU  1
 // #define LUAT_USE_HWTIMER  1
 #define LUAT_USE_RTC 1
@@ -57,7 +57,7 @@
 #define LUAT_USE_SFD  1
 // #define LUAT_USE_STATEM 1
 // #define LUAT_USE_COREMARK 1
-// #define LUAT_USE_FDB 1
+#define LUAT_USE_FDB 1
 // #define LUAT_USE_ZLIB 
 #define LUAT_USE_CAMERA  1
 #define LUAT_USE_FATFS 1
