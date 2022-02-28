@@ -23,7 +23,7 @@
 #ifndef LUAT_CONF_BSP
 #define LUAT_CONF_BSP
 
-#define LUAT_BSP_VERSION "V0005"
+#define LUAT_BSP_VERSION "V0006"
 
 
 #define LUAT_USE_FS_VFS 1
