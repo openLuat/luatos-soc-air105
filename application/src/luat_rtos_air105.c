@@ -45,7 +45,7 @@ int luat_sem_delete(luat_sem_t* semaphore){
 }
 
 int luat_sem_take(luat_sem_t* semaphore,uint32_t timeout){
-    return xSemaphoreTake(semaphore->userdata, timeout);
+    return (xSemaphoreTake(semaphore->userdata, timeout)==pdFALSE?-1:0);
 }
 
 int luat_sem_release(luat_sem_t* semaphore){
