@@ -33,7 +33,7 @@ static const USB_HIDKeyValue prvKeyList[128] =
 		{HID_KEY_SPACE, 0},
 		{HID_KEY_BACKSPACE, 0},	//08
 		{HID_KEY_SPACE, 0},
-		{HID_KEY_SPACE, 0},		//0a
+		{HID_KEY_ENTER, 0},		//0a
 		{HID_KEY_SPACE, 0},
 		{HID_KEY_SPACE, 0},
 		{HID_KEY_ENTER, 0},		//0d

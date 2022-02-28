@@ -8,6 +8,7 @@ local AIR105_VERSION
 local with_luatos = true
 local luatos = "../LuatOS/"
 
+-- 在线下载GCC并配置
 package("gnu_rm")
     set_kind("toolchain")
     set_homepage("https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm")
@@ -34,6 +35,19 @@ package_end()
 add_requires("gnu_rm 2021.10")
 set_toolchains("gnu-rm@gnu_rm")
 
+-- 本地配置GCC 注意注释下方 sdk_dir = target:toolchains()[1]:sdkdir().."/" 这句代码
+-- local sdk_dir = "E:\\gcc-arm-none-eabi-10.3-2021.10\\"
+-- if is_plat("linux") then
+--     sdk_dir = "/opt/gcc-arm-none-eabi-10.3-2021.10/"
+-- elseif is_plat("windows") then
+--     sdk_dir = "D:\\gcc-arm-none-eabi-10.3-2021.10\\"
+-- end
+-- toolchain("arm_toolchain")
+--     set_kind("standalone")
+--     set_sdkdir(sdk_dir)
+-- toolchain_end()
+-- set_toolchains("arm_toolchain")
+
 set_plat("cross")
 set_arch("arm")
 
@@ -52,9 +66,9 @@ set_languages("c11", "cxx11")
 
 add_asflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c",{force = true})
 -- add_arflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c","--specs=nano.specs","-ffunction-sections","-fdata-sections","-fstack-usage","-Og","-DTRACE_LEVEL=4",{force = true})
-add_cxflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-Og","-c","--specs=nano.specs","-ffunction-sections","-fdata-sections","-fstack-usage","-DTRACE_LEVEL=4",{force = true})
+add_cxflags("-mcpu=cortex-m4","-Og","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c","--specs=nano.specs","-ffunction-sections","-fdata-sections","-fstack-usage","-DTRACE_LEVEL=4",{force = true})
 
-add_ldflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-Og","--specs=nano.specs","--specs=nosys.specs","-Wl,--gc-sections","-Wl,--check-sections","-Wl,--cref","-Wl,--no-whole-archive","-lc_nano","-Wl,--no-whole-archive",{force = true})
+add_ldflags("-mcpu=cortex-m4","-Og","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","--specs=nano.specs","--specs=nosys.specs","-Wl,--gc-sections","-Wl,--check-sections","-Wl,--cref","-Wl,--no-whole-archive","-lc_nano","-Wl,--no-whole-archive",{force = true})
 
 set_dependir("$(buildir)/.deps")
 set_objectdir("$(buildir)/.objs")
@@ -75,7 +89,10 @@ target("bootloader.elf")
 	add_includedirs("bsp/common/include",{public = true})
     add_files("bsp/usb/**.c",{public = true})
     add_includedirs("bsp/usb/include",{public = true})
+
+    add_files("bsp/audio/**.c",{public = true})
     add_includedirs("bsp/audio/include",{public = true})
+
     add_files("Third_Party/heap/*.c",{public = true})
 	add_includedirs("Third_Party/heap",{public = true})
 
@@ -116,9 +133,7 @@ target("lvgl")
         if LVGL_CONF == nil then target:set("default", true) else target:set("default", false) end
     end)
 
-    if with_luatos then
         add_files(luatos.."components/lvgl/**.c")
-    end
 
     add_includedirs("application/include")
     add_includedirs("bsp/air105/include",{public = true})
@@ -183,7 +198,7 @@ target("app.elf")
         if LVGL_CONF == nil then target:add("deps", "lvgl") end
     end)
 
-    -- add_deps("tflm")
+    add_deps("tflm")
 
     -- add deps
     add_files("Third_Party/cm_backtrace/*.c",{public = true})
@@ -196,17 +211,11 @@ target("app.elf")
     add_files("Third_Party/iconv/src/*.c",{public = true})
     add_includedirs("Third_Party/iconv/include",{public = true})
 
-    add_files("Third_Party/lzma/src/*.c",{public = true})
-    add_includedirs("Third_Party/lzma/include",{public = true})
-
-    add_files("Third_Party/vsprintf/*.c",{public = true})
-    add_includedirs("Third_Party/vsprintf",{public = true})
-
-    add_files("Third_Party/heap/*.c",{public = true})
-    add_includedirs("Third_Party/heap",{public = true})
-
     add_files("Third_Party/jpeg_encode/*.c",{public = true})
     add_includedirs("Third_Party/jpeg_encode",{public = true})
+    
+    -- add_files("Third_Party/vsprintf/*.c",{public = true})
+    -- add_includedirs("Third_Party/vsprintf",{public = true})
     
     --add_files("bsp/common/*.c",{public = true})
 	add_files("bsp/common/src/*.c",{public = true})
@@ -216,14 +225,14 @@ target("app.elf")
     add_files("bsp/usb/**.c",{public = true})
     add_includedirs("bsp/usb/include",{public = true})
     add_includedirs("bsp/device/include",{public = true})
-    add_includedirs("bsp/audio/include",{public = true})
-    add_files("bsp/audio/**.c",{public = true})
-    add_files("bsp/device/src/*.c",{public = true})
+    -- add_files("bsp/device/src/*.c",{public = true})
     -- add files
     add_files("bsp/air105/platform/startup_full.s")
     add_files("bsp/air105/platform/app_main.c")
     add_files("bsp/air105/hal/*.c")
     -- add_files("bsp/air105/chip/src/*.c")
+    add_files("bsp/audio/**.c",{public = true})
+    add_includedirs("bsp/audio/include",{public = true})
 
     add_files("os/FreeRTOS_v10/GCC/ARM_CM4F/*.c",{public = true})
     add_files("os/FreeRTOS_v10/src/*.c",{public = true})
@@ -240,12 +249,11 @@ target("app.elf")
 
     if with_luatos then
         add_files("application/src/*.c")
+
         add_files(luatos.."lua/src/*.c")
         add_files(luatos.."luat/modules/*.c")
         add_files(luatos.."luat/vfs/*.c")
         remove_files(luatos.."luat/vfs/luat_fs_posix.c")
-        remove_files(luatos.."lua/src/bget.c")
-        remove_files(luatos.."lua/src/printf.c")
 
         add_files(luatos.."components/lcd/*.c")
         add_files(luatos.."components/sfd/*.c")
