@@ -406,7 +406,7 @@ void SDHC_SpiInitCard(void *pSDHC)
 	{
 		goto INIT_DONE;
 	}
-	OpEndTick = GetSysTick() + 100 * CORE_TICK_1MS;
+	OpEndTick = GetSysTick() + 1 * CORE_TICK_1S;
 	if (SDHC_SpiCmd(Ctrl, CMD8, 0x1aa, 1))	//只支持2G以上的SDHC卡
 	{
 		goto INIT_DONE;
