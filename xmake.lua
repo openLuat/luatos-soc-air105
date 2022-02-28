@@ -4,7 +4,7 @@ set_xmakever("2.6.3")
 set_version("0.0.2", {build = "%Y%m%d%H%M"})
 add_rules("mode.debug", "mode.release")
 
-local AIR105_VERSION
+local AIR105_VERSION = ""
 local with_luatos = true
 local luatos = "../LuatOS/"
 
@@ -133,7 +133,7 @@ target("lvgl")
         if LVGL_CONF == nil then target:set("default", true) else target:set("default", false) end
     end)
 
-        add_files(luatos.."components/lvgl/**.c")
+    add_files(luatos.."components/lvgl/**.c")
 
     add_includedirs("application/include")
     add_includedirs("bsp/air105/include",{public = true})
@@ -141,18 +141,17 @@ target("lvgl")
     --add_includedirs("bsp/common",{public = true})
 	add_includedirs("bsp/common/include",{public = true})
     add_includedirs("bsp/cmsis/include",{public = true})
-    if with_luatos then
-        add_includedirs(luatos.."luat/packages/lfs")
-        add_includedirs(luatos.."lua/include",{public = true})
-        add_includedirs(luatos.."luat/include",{public = true})
-        add_includedirs(luatos.."components/lcd",{public = true})
-        add_includedirs(luatos.."components/lvgl",{public = true})
-        add_includedirs(luatos.."components/lvgl/binding",{public = true})
-        add_includedirs(luatos.."components/lvgl/gen",{public = true})
-        add_includedirs(luatos.."components/lvgl/src",{public = true})
-        add_includedirs(luatos.."components/lvgl/font",{public = true})
-        add_includedirs(luatos.."luat/packages/u8g2",{public = true})
-    end
+    add_includedirs(luatos.."luat/packages/lfs")
+    add_includedirs(luatos.."lua/include",{public = true})
+    add_includedirs(luatos.."luat/include",{public = true})
+    add_includedirs(luatos.."components/lcd",{public = true})
+    add_includedirs(luatos.."components/lvgl",{public = true})
+    add_includedirs(luatos.."components/lvgl/binding",{public = true})
+    add_includedirs(luatos.."components/lvgl/gen",{public = true})
+    add_includedirs(luatos.."components/lvgl/src",{public = true})
+    add_includedirs(luatos.."components/lvgl/font",{public = true})
+    add_includedirs(luatos.."luat/packages/u8g2",{public = true})
+
 
     set_targetdir("$(buildir)/lib")
 target_end()
@@ -191,6 +190,7 @@ target("app.elf")
     set_targetdir("$(buildir)/out")
     add_defines("__BUILD_APP__","__BUILD_OS__","CMB_USING_OS_PLATFORM","CMB_OS_PLATFORM_TYPE=CMB_OS_PLATFORM_FREERTOS")
 
+if with_luatos then
     on_load(function (target)
         local conf_data = io.readfile("$(projectdir)/application/include/luat_conf_bsp.h")
         AIR105_VERSION = conf_data:match("#define LUAT_BSP_VERSION \"(%w+)\"")
@@ -199,6 +199,7 @@ target("app.elf")
     end)
 
     add_deps("tflm")
+end
 
     -- add deps
     add_files("Third_Party/cm_backtrace/*.c",{public = true})
@@ -213,9 +214,7 @@ target("app.elf")
 
     add_files("Third_Party/jpeg_encode/*.c",{public = true})
     add_includedirs("Third_Party/jpeg_encode",{public = true})
-    
-    -- add_files("Third_Party/vsprintf/*.c",{public = true})
-    -- add_includedirs("Third_Party/vsprintf",{public = true})
+
     
     --add_files("bsp/common/*.c",{public = true})
 	add_files("bsp/common/src/*.c",{public = true})
@@ -223,7 +222,6 @@ target("app.elf")
     add_includedirs("bsp/common",{public = true})
 	add_includedirs("bsp/common/include",{public = true})
     add_files("bsp/usb/**.c",{public = true})
-    add_files("bsp/device/src/*.c")
     add_includedirs("bsp/usb/include",{public = true})
     add_includedirs("bsp/device/include",{public = true})
     -- add_files("bsp/device/src/*.c",{public = true})
@@ -234,6 +232,8 @@ target("app.elf")
     -- add_files("bsp/air105/chip/src/*.c")
     add_files("bsp/audio/**.c",{public = true})
     add_includedirs("bsp/audio/include",{public = true})
+    add_files("bsp/device/**.c",{public = true})
+    add_includedirs("bsp/device/include",{public = true})
 
     add_files("os/FreeRTOS_v10/GCC/ARM_CM4F/*.c",{public = true})
     add_files("os/FreeRTOS_v10/src/*.c",{public = true})
@@ -248,71 +248,80 @@ target("app.elf")
     add_includedirs("bsp/air105/chip/include",{public = true})
     add_includedirs("bsp/air105/include",{public = true})
 
-    if with_luatos then
-        add_files("application/src/*.c")
+if with_luatos then
+    add_files("application/src/*.c")
 
-        add_files(luatos.."lua/src/*.c")
-        add_files(luatos.."luat/modules/*.c")
-        add_files(luatos.."luat/vfs/*.c")
-        remove_files(luatos.."luat/vfs/luat_fs_posix.c")
+    add_files(luatos.."lua/src/*.c")
+    add_files(luatos.."luat/modules/*.c")
+    add_files(luatos.."luat/vfs/*.c")
+    remove_files(luatos.."luat/vfs/luat_fs_posix.c")
 
-        add_files(luatos.."components/lcd/*.c")
-        add_files(luatos.."components/sfd/*.c")
-        add_files(luatos.."components/sfud/*.c")
-        add_files(luatos.."components/statem/*.c")
-        add_files(luatos.."components/nr_micro_shell/*.c")
-        add_files(luatos.."luat/packages/eink/*.c")
-        add_files(luatos.."luat/packages/epaper/*.c")
-        remove_files(luatos.."luat/packages/epaper/GUI_Paint.c")
-        add_files(luatos.."luat/packages/iconv/*.c")
-        add_files(luatos.."luat/packages/lfs/*.c")
-        add_files(luatos.."luat/packages/lua-cjson/*.c")
-        add_files(luatos.."luat/packages/minmea/*.c")
-        add_files(luatos.."luat/packages/qrcode/*.c")
-        add_files(luatos.."luat/packages/u8g2/*.c")
-        add_files(luatos.."luat/packages/fatfs/*.c")
-        add_files(luatos.."luat/weak/*.c")
-        add_files(luatos.."components/coremark/*.c")
-        add_files(luatos.."components/cjson/*.c")
+    add_files(luatos.."components/lcd/*.c")
+    add_files(luatos.."components/sfd/*.c")
+    add_files(luatos.."components/sfud/*.c")
+    add_files(luatos.."components/statem/*.c")
+    add_files(luatos.."components/nr_micro_shell/*.c")
+    add_files(luatos.."luat/packages/eink/*.c")
+    add_files(luatos.."luat/packages/epaper/*.c")
+    remove_files(luatos.."luat/packages/epaper/GUI_Paint.c")
+    add_files(luatos.."luat/packages/iconv/*.c")
+    add_files(luatos.."luat/packages/lfs/*.c")
+    add_files(luatos.."luat/packages/lua-cjson/*.c")
+    add_files(luatos.."luat/packages/minmea/*.c")
+    add_files(luatos.."luat/packages/qrcode/*.c")
+    add_files(luatos.."luat/packages/u8g2/*.c")
+    add_files(luatos.."luat/packages/fatfs/*.c")
+    add_files(luatos.."luat/weak/*.c")
+    add_files(luatos.."components/coremark/*.c")
+    add_files(luatos.."components/cjson/*.c")
     
-        add_includedirs("application/include",{public = true})
-        add_includedirs(luatos.."lua/include",{public = true})
-        add_includedirs(luatos.."luat/include",{public = true})
-        add_includedirs(luatos.."components/lcd",{public = true})
-        add_includedirs(luatos.."components/sfud",{public = true})
-        add_includedirs(luatos.."components/statem",{public = true})
-        add_includedirs(luatos.."components/coremark",{public = true})
-        add_includedirs(luatos.."components/cjson",{public = true})
-        
-        add_includedirs(luatos.."luat/packages/eink")
-        add_includedirs(luatos.."luat/packages/epaper")
-        add_includedirs(luatos.."luat/packages/iconv")
-        add_includedirs(luatos.."luat/packages/lfs")
-        add_includedirs(luatos.."luat/packages/lua-cjson")
-        add_includedirs(luatos.."luat/packages/minmea")
-        add_includedirs(luatos.."luat/packages/qrcode")
-        add_includedirs(luatos.."luat/packages/u8g2")
-        add_includedirs(luatos.."luat/packages/fatfs")
+    add_includedirs("application/include",{public = true})
+    add_includedirs(luatos.."lua/include",{public = true})
+    add_includedirs(luatos.."luat/include",{public = true})
+    add_includedirs(luatos.."components/lcd",{public = true})
+    add_includedirs(luatos.."components/sfud",{public = true})
+    add_includedirs(luatos.."components/statem",{public = true})
+    add_includedirs(luatos.."components/coremark",{public = true})
+    add_includedirs(luatos.."components/cjson",{public = true})
+    
+    add_includedirs(luatos.."luat/packages/eink")
+    add_includedirs(luatos.."luat/packages/epaper")
+    add_includedirs(luatos.."luat/packages/iconv")
+    add_includedirs(luatos.."luat/packages/lfs")
+    add_includedirs(luatos.."luat/packages/lua-cjson")
+    add_includedirs(luatos.."luat/packages/minmea")
+    add_includedirs(luatos.."luat/packages/qrcode")
+    add_includedirs(luatos.."luat/packages/u8g2")
+    add_includedirs(luatos.."luat/packages/fatfs")
 
-        -- gtfont
-        add_includedirs(luatos.."components/gtfont",{public = true})
-        add_files(luatos.."components/gtfont/*.c")
+    -- gtfont
+    add_includedirs(luatos.."components/gtfont",{public = true})
+    add_files(luatos.."components/gtfont/*.c")
 
-        
-        add_files(luatos.."components/flashdb/src/*.c")
-        add_files(luatos.."components/fal/src/*.c")
-        add_includedirs(luatos.."components/flashdb/inc",{public = true})
-        add_includedirs(luatos.."components/fal/inc",{public = true})
+    
+    add_files(luatos.."components/flashdb/src/*.c")
+    add_files(luatos.."components/fal/src/*.c")
+    add_includedirs(luatos.."components/flashdb/inc",{public = true})
+    add_includedirs(luatos.."components/fal/inc",{public = true})
 
-        add_files(luatos.."components/mbedtls/library/*.c")
-        add_includedirs(luatos.."components/mbedtls/include")
+    add_files(luatos.."components/mbedtls/library/*.c")
+    add_includedirs(luatos.."components/mbedtls/include")
 
-        add_files(luatos.."components/zlib/*.c")
-        add_includedirs(luatos.."components/zlib")
+    add_files(luatos.."components/zlib/*.c")
+    add_includedirs(luatos.."components/zlib")
 
-        add_files(luatos.."components/camera/*.c")
-        add_includedirs(luatos.."components/camera")
-    end
+    add_files(luatos.."components/camera/*.c")
+    add_includedirs(luatos.."components/camera")
+else
+
+    add_files("Third_Party/vsprintf/*.c",{public = true})
+    add_includedirs("Third_Party/vsprintf",{public = true})
+    add_files("Third_Party/heap/*.c",{public = true})
+    add_includedirs("Third_Party/heap",{public = true})
+end
+
+    -- add_files(luatos.."components/nes/*.cpp",luatos.."components/nes/luat/*.c",{public = true})
+    -- add_includedirs(luatos.."components/nes",luatos.."components/nes/luat",{public = true})
 
     add_ldflags("-Wl,--whole-archive -Wl,--start-group ./lib/libgt.a -Wl,--end-group -Wl,--no-whole-archive","-Wl,-Map=./build/out/app.map","-Wl,-T$(projectdir)/project/air105/app.ld",{force = true})
 
