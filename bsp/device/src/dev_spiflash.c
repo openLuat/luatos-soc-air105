@@ -1,12 +1,19 @@
 #ifdef __BUILD_OS__
 #include "app_inc.h"
-enum
-{
-	DEV_SPIFLASH_SPI_DONE = SERVICE_EVENT_ID_START + 1,
-};
+
+
 #else
 #include "bl_inc.h"
 #endif
+
+enum
+{
+	SPIFLASH_STATE_IDLE = 0,
+	SPIFLASH_STATE_RUN,
+	SPIFLASH_STATE_READ,
+	SPIFLASH_STATE_ERASE,
+	SPIFLASH_STATE_WRITE,
+};
 
 const uint8_t SPI_FLASH_VENDOR_DICT[] = {
 	0xA1,//"FM"
@@ -64,7 +71,7 @@ static int32_t SPIFlash_SpiIrqCB(void *pData, void *pParam)
 	SPIFlash_CtrlStruct *Ctrl = (SPIFlash_CtrlStruct *)pParam;
 	SPIFlash_CS(Ctrl, 0);
 #ifdef __BUILD_OS__
-	if (Ctrl->NotifyTask && Ctrl->NotifyTask && Ctrl->IsBlockMode)
+	if (Ctrl->NotifyTask && Ctrl->IsBlockMode)
 	{
 		Task_SendEvent(Ctrl->NotifyTask, DEV_SPIFLASH_SPI_DONE, 0, 0, 0);
 	}
@@ -381,7 +388,6 @@ uint8_t SPIFlash_WaitOpDone(SPIFlash_CtrlStruct *Ctrl)
 		return 1;
 	}
 	return 0;
-
 }
 
 int32_t SPIFlash_WriteEnable(SPIFlash_CtrlStruct *Ctrl)
@@ -430,6 +436,7 @@ int32_t SPIFlash_Read(SPIFlash_CtrlStruct *Ctrl, uint32_t Address, uint8_t *Buf,
 				Ctrl->SPIError = 1;
 				SPI_TransferStop(Ctrl->SpiID);
 			}
+			SPI_SetCallbackFun(Ctrl->SpiID, NULL, NULL);
 			SPIFlash_CS(Ctrl, 0);
 		}
 		else
@@ -493,6 +500,7 @@ int32_t SPIFlash_Write(SPIFlash_CtrlStruct *Ctrl, uint32_t Address, const uint8_
 					Ctrl->SPIError = 1;
 					SPI_TransferStop(Ctrl->SpiID);
 				}
+				SPI_SetCallbackFun(Ctrl->SpiID, NULL, NULL);
 				SPIFlash_CS(Ctrl, 0);
 			}
 			else

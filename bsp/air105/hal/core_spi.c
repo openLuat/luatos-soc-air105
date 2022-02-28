@@ -74,12 +74,14 @@ typedef struct
 	Buffer_Struct TxBuf;
 	Buffer_Struct RxBuf;
 	uint32_t Speed;
+	uint32_t TargetSpeed;
 	uint8_t DMATxStream;
 	uint8_t DMARxStream;
 	uint8_t Is16Bit;
 	uint8_t IsOnlyTx;
 	uint8_t IsBusy;
 	uint8_t IsBlockMode;
+	uint8_t SpiMode;
 }SPI_ResourceStruct;
 
 static SPI_ResourceStruct prvSPI[SPI_MAX] = {
@@ -173,6 +175,7 @@ static void HSPI_IrqHandle(int32_t IrqLine, void *pData)
 #ifdef __BUILD_OS__
 		if (prvSPI[SpiID].IsBlockMode)
 		{
+			prvSPI[SpiID].IsBlockMode = 0;
 			OS_MutexRelease(prvSPI[SpiID].Sem);
 		}
 #endif
@@ -247,6 +250,7 @@ static int32_t SPI_DMADoneCB(void *pData, void *pParam)
 #ifdef __BUILD_OS__
 		if (prvSPI[SpiID].IsBlockMode)
 		{
+			prvSPI[SpiID].IsBlockMode = 0;
 			OS_MutexRelease(prvSPI[SpiID].Sem);
 		}
 #endif
@@ -315,6 +319,7 @@ static void SPI_IrqHandle(int32_t IrqLine, void *pData)
 #ifdef __BUILD_OS__
 		if (prvSPI[SpiID].IsBlockMode)
 		{
+			prvSPI[SpiID].IsBlockMode = 0;
 			OS_MutexRelease(prvSPI[SpiID].Sem);
 		}
 #endif
@@ -397,6 +402,8 @@ void SPI_MasterInit(uint8_t SpiID, uint8_t DataBit, uint8_t Mode, uint32_t Speed
 	SPI_TypeDef *SPI;
 	uint32_t ctrl;
 	uint32_t div;
+	prvSPI[SpiID].SpiMode = Mode;
+	prvSPI[SpiID].TargetSpeed = Speed;
 	switch(SpiID)
 	{
 	case HSPI_ID0:
@@ -1119,7 +1126,13 @@ void SPI_SetNewConfig(uint8_t SpiID, uint32_t Speed, uint8_t NewMode)
 	SPI_TypeDef *SPI;
 	uint32_t div;
 	if (prvSPI[SpiID].IsBusy) return;
-
+	if ((prvSPI[SpiID].TargetSpeed == Speed) && (prvSPI[SpiID].SpiMode == NewMode))
+	{
+		return;
+	}
+//	DBG("speed %u->%u mode %u->%u", prvSPI[SpiID].TargetSpeed, Speed, prvSPI[SpiID].SpiMode, NewMode);
+	prvSPI[SpiID].TargetSpeed = Speed;
+	prvSPI[SpiID].SpiMode == NewMode;
 	switch(SpiID)
 	{
 	case HSPI_ID0:

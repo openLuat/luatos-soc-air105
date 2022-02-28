@@ -23,8 +23,8 @@
 #define __BL_INC_H__
 #include "global_config.h"
 #ifdef __AIR105_BSP__
-#include "../chip/include/air105.h"
-#include "../chip/include/air105_conf.h"
+#include "air105.h"
+#include "air105_conf.h"
 #endif
 #include "bsp_common.h"
 #include "platform_define.h"
@@ -53,5 +53,6 @@
 #include "usb_cdc.h"
 
 #include "dev_spiflash.h"
+#include "dev_sdhc_spi.h"
 #include "audio_ll_drv.h"
 #endif

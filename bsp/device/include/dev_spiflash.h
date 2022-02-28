@@ -1,5 +1,5 @@
-#ifndef __CORE_SPIFLASH_H__
-#define __CORE_SPIFLASH_H__
+#ifndef __DEV_SPIFLASH_H__
+#define __DEV_SPIFLASH_H__
 
 #define SPIFLASH_CMD_WREN		(0x06)	//写使能
 #define SPIFLASH_CMD_WRDI		(0x04)	//写禁止
@@ -81,17 +81,6 @@ typedef struct
 	uint8_t IsSpiDMAMode;
 	uint8_t CSPin;
 }SPIFlash_CtrlStruct;
-
-enum
-{
-	SPIFLASH_STATE_IDLE = 0,
-	SPIFLASH_STATE_RUN,
-	SPIFLASH_STATE_READ,
-	SPIFLASH_STATE_ERASE,
-	SPIFLASH_STATE_WRITE,
-};
-
-
 
 
 void SPIFlash_Init(SPIFlash_CtrlStruct *Ctrl, void *Config);

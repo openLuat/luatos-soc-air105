@@ -997,13 +997,12 @@ void Core_VHIDUploadData(uint8_t USB_ID, uint8_t *Data, uint16_t Len)
 			HIDKeyBoard.PressKey[0] = HIDKey.Value;
 //			DBG("%u,%c,%d,%x,%d", Pos - 1, Data[Pos - 1], 0, HIDKey.Value, HIDKey.Shift);
 ADD_REST:
-			for(i = 1; i < 4; i++)
+			for(i = 1; i < 6; i++)
 			{
 				HIDKey = USB_HIDGetValueFromAscii(Data[Pos]);
 				Pos++;
-				if ((IsShift != HIDKey.Shift))
+				if ((IsShift != HIDKey.Shift) || (LastValue == HIDKey.Value) || (LastValue == '\r') || (LastValue == '\n'))
 				{
-					//shift发生切换，必须换新的data
 					OS_BufferWrite(&pVHID->TxCacheBuf, &HIDKeyBoard, sizeof(HIDKeyBoard));
 					memset(&HIDKeyBoard, 0, sizeof(USB_HIDKeyBoradKeyStruct));
 					//加入一个抬起的data
@@ -1023,26 +1022,26 @@ ADD_REST:
 					}
 
 				}
-				else if (LastValue == HIDKey.Value)
-				{
-					OS_BufferWrite(&pVHID->TxCacheBuf, &HIDKeyBoard, sizeof(HIDKeyBoard));
-					memset(&HIDKeyBoard, 0, sizeof(USB_HIDKeyBoradKeyStruct));
-					//加入一个抬起的data
-					OS_BufferWrite(&pVHID->TxCacheBuf, &HIDKeyBoard, sizeof(HIDKeyBoard));
-					IsShift = HIDKey.Shift;
-					LastValue = HIDKey.Value;
-					HIDKeyBoard.SPECIALHID_KEY_b.RightShift = IsShift;
-					HIDKeyBoard.PressKey[0] = HIDKey.Value;
-//					DBG("%u,%c,%d,%x,%d", Pos - 1, Data[Pos - 1], 0, HIDKey.Value, HIDKey.Shift);
-					if (Pos < Len)
-					{
-						goto ADD_REST;
-					}
-					else
-					{
-						break;
-					}
-				}
+//				else if
+//				{
+//					OS_BufferWrite(&pVHID->TxCacheBuf, &HIDKeyBoard, sizeof(HIDKeyBoard));
+//					memset(&HIDKeyBoard, 0, sizeof(USB_HIDKeyBoradKeyStruct));
+//					//加入一个抬起的data
+//					OS_BufferWrite(&pVHID->TxCacheBuf, &HIDKeyBoard, sizeof(HIDKeyBoard));
+//					IsShift = HIDKey.Shift;
+//					LastValue = HIDKey.Value;
+//					HIDKeyBoard.SPECIALHID_KEY_b.RightShift = IsShift;
+//					HIDKeyBoard.PressKey[0] = HIDKey.Value;
+////					DBG("%u,%c,%d,%x,%d", Pos - 1, Data[Pos - 1], 0, HIDKey.Value, HIDKey.Shift);
+//					if (Pos < Len)
+//					{
+//						goto ADD_REST;
+//					}
+//					else
+//					{
+//						break;
+//					}
+//				}
 				else
 				{
 					LastValue = HIDKey.Value;
@@ -1086,4 +1085,14 @@ void Core_VHIDUploadStop(uint8_t USB_ID)
 	pVHID->TxCacheBuf.Pos = 0;
 	USB_StackStopDeviceTx(pVHID->USB_ID, pVHID->ToHostEpIndex, 0);
 	USB_StackEpIntOnOff(pVHID->USB_ID, pVHID->ToHostEpIndex, 0, 1);
+}
+
+static void prvUSB_AppTask(void *pParam)
+{
+
+}
+
+void USB_AppTaskInit(void)
+{
+
 }

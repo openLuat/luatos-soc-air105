@@ -64,10 +64,10 @@ void SystemInit(void)
 	SCB->VTOR = (uint32_t)(&__isr_start_address);
 	SYSCTRL->CG_CTRL1 = SYSCTRL_APBPeriph_ALL;
 	SYSCTRL->SOFT_RST1 = SYSCTRL_APBPeriph_ALL;
-	SYSCTRL->PHER_CTRL &= ~(1 << 20);
+	SYSCTRL->PHER_CTRL &= ~BIT(20);
     SYSCTRL->SOFT_RST2 &= ~SYSCTRL_USB_RESET;
     SYSCTRL->LOCK_R |= SYSCTRL_USB_RESET;
-    SYSCTRL->LDO25_CR &= ~BIT(5);
+    SYSCTRL->LDO25_CR &= ~(BIT(4)|BIT(5));
 //    BPU->SEN_ANA0 &= ~(1 << 10);
 #ifdef __USE_32K_XTL__
 	BPU->SEN_ANA0 |= (1 << 10)|(7 << 25) | (2 << 29);	//外部32768+最大充电电流+最大晶振供电

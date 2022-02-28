@@ -35,6 +35,7 @@
 #include "core_spi.h"
 #include "core_wdt.h"
 #include "core_rtc.h"
+#include "core_pm.h"
 #include "core_hwtimer.h"
 #include "core_service.h"
 #include "core_keyboard.h"

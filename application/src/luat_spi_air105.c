@@ -24,7 +24,8 @@
 #include "luat_base.h"
 #include "luat_spi.h"
 #include "luat_lcd.h"
-
+#include "ff.h"			/* Obtains integer types */
+#include "diskio.h"		/* Declarations of disk functions */
 #include "app_interface.h"
 
 #define LUAT_LOG_TAG "luat.spi"
@@ -151,7 +152,7 @@ int luat_spi_setup(luat_spi_t* spi) {
     else if(spi->CPOL)spi_mode = SPI_MODE_2;
     else if(spi->CPHA)spi_mode = SPI_MODE_1;
     luat_spi[spi_id].mode=spi->mode;
-    // LLOGD("SPI_MasterInit luat_spi%d:%d dataw:%d spi_mode:%d bandrate:%d ",spi_id,luat_spi[spi_id], spi->dataw, spi_mode, spi->bandrate);
+//    LLOGD("SPI_MasterInit luat_spi%d:%d dataw:%d spi_mode:%d bandrate:%d ",spi_id,luat_spi[spi_id].id, spi->dataw, spi_mode, spi->bandrate);
     SPI_MasterInit(luat_spi[spi_id].id, spi->dataw, spi_mode, spi->bandrate, luat_spi_cb, NULL);
     return 0;
 }
@@ -213,7 +214,7 @@ int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint
 			LLOGE("lcd flush no memory");
 			return -1;
 		}
-		luat_spi_device_t* spi_dev = (luat_spi_device_t*)conf->userdata;
+		luat_spi_device_t* spi_dev = (luat_spi_device_t*)conf->lcd_spi_device;
 		int spi_id = spi_dev->bus_id;
 	    uint8_t spi_mode = SPI_MODE_0;
 	    if(spi_dev->spi_config.CPHA&&spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_3;
@@ -254,7 +255,7 @@ void luat_lcd_draw_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint16
 {
 	LCD_DrawStruct draw;
 	if (conf->port == LUAT_LCD_SPI_DEVICE){
-		luat_spi_device_t* spi_dev = (luat_spi_device_t*)conf->userdata;
+		luat_spi_device_t* spi_dev = (luat_spi_device_t*)conf->lcd_spi_device;
 		int spi_id = spi_dev->bus_id;
 	    uint8_t spi_mode = SPI_MODE_0;
 	    if(spi_dev->spi_config.CPHA&&spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_3;
@@ -277,4 +278,107 @@ void luat_lcd_draw_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint16
 	    draw.Data = color;
 	    Core_LCDDrawBlock(&draw);
 	}
+}
+
+static void *luat_fatfs_spi_ctrl;
+
+static void sdhc_spi_check(luat_fatfs_spi_t* userdata)
+{
+	if (!luat_fatfs_spi_ctrl)
+	{
+		if(userdata->type == 1){
+			luat_fatfs_spi_ctrl = SDHC_SpiCreate(luat_spi[userdata->spi_device->bus_id].id, userdata->spi_device->spi_config.cs);
+			luat_spi_device_config(userdata->spi_device);
+		}else{
+			luat_fatfs_spi_ctrl = SDHC_SpiCreate(luat_spi[userdata->spi_id].id, userdata->spi_cs);
+		}
+	}
+}
+
+static DSTATUS sdhc_spi_initialize(luat_fatfs_spi_t* userdata)
+{
+	if (luat_fatfs_spi_ctrl)
+	{
+		free(luat_fatfs_spi_ctrl);
+		luat_fatfs_spi_ctrl = NULL;
+	}
+	sdhc_spi_check(userdata);
+	SDHC_SpiInitCard(luat_fatfs_spi_ctrl);
+	if(userdata->type == 1){
+		userdata->spi_device->spi_config.bandrate = userdata->fast_speed;
+		luat_spi_device_config(userdata->spi_device);
+	}else{
+		SPI_SetNewConfig(luat_spi[userdata->spi_id].id, userdata->fast_speed, 0);
+	}
+	return SDHC_IsReady(luat_fatfs_spi_ctrl)?0:STA_NOINIT;
+}
+
+static DSTATUS sdhc_spi_status(luat_fatfs_spi_t* userdata)
+{
+	sdhc_spi_check(userdata);
+	return SDHC_IsReady(luat_fatfs_spi_ctrl)?0:STA_NOINIT;
+}
+
+static DRESULT sdhc_spi_read(luat_fatfs_spi_t* userdata, uint8_t* buff, uint32_t sector, uint32_t count)
+{
+	sdhc_spi_check(userdata);
+	if (!SDHC_IsReady(luat_fatfs_spi_ctrl))
+	{
+		return RES_NOTRDY;
+	}
+	SDHC_SpiReadBlocks(luat_fatfs_spi_ctrl, buff, sector, count);
+	return SDHC_IsReady(luat_fatfs_spi_ctrl)?RES_OK:RES_ERROR;
+}
+
+static DRESULT sdhc_spi_write(luat_fatfs_spi_t* userdata, const uint8_t* buff, uint32_t sector, uint32_t count)
+{
+	sdhc_spi_check(userdata);
+	if (!SDHC_IsReady(luat_fatfs_spi_ctrl))
+	{
+		return RES_NOTRDY;
+	}
+	SDHC_SpiWriteBlocks(luat_fatfs_spi_ctrl, buff, sector, count);
+	return SDHC_IsReady(luat_fatfs_spi_ctrl)?RES_OK:RES_ERROR;
+}
+
+static DRESULT sdhc_spi_ioctl(luat_fatfs_spi_t* userdata, uint8_t ctrl, void* buff)
+{
+	sdhc_spi_check(userdata);
+	if (!SDHC_IsReady(luat_fatfs_spi_ctrl))
+	{
+		return RES_NOTRDY;
+	}
+	SDHC_SpiReadCardConfig(luat_fatfs_spi_ctrl);
+	switch (ctrl) {
+		case CTRL_SYNC :		/* Make sure that no pending write process */
+			return RES_OK;
+			break;
+
+		case GET_SECTOR_COUNT :	/* Get number of sectors on the disk (DWORD) */
+			*(uint32_t*)buff = SDHC_GetLogBlockNbr(luat_fatfs_spi_ctrl);
+			return RES_OK;
+			break;
+
+		case GET_BLOCK_SIZE :	/* Get erase block size in unit of sector (DWORD) */
+			*(uint32_t*)buff = 128;
+			return RES_OK;
+			break;
+
+		default:
+			return RES_PARERR;
+	}
+	return RES_PARERR;
+}
+
+static const block_disk_opts_t sdhc_spi_disk_opts = {
+    .initialize = sdhc_spi_initialize,
+    .status = sdhc_spi_status,
+    .read = sdhc_spi_read,
+    .write = sdhc_spi_write,
+    .ioctl = sdhc_spi_ioctl,
+};
+
+void luat_spi_set_sdhc_ctrl(block_disk_t *disk)
+{
+	disk->opts = &sdhc_spi_disk_opts;
 }

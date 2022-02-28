@@ -215,7 +215,7 @@ typedef enum {ERROR = 0, SUCCESS = !ERROR} ErrorStatus;
 #define BIT30       (0x40000000U)
 #define BIT31       (0x80000000U)
 
-#define BIT(n)      (1UL << (n))
+
 
 typedef struct
 {

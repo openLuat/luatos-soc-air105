@@ -86,6 +86,7 @@ static int32_t Camera_SaveJPEGDone(void *pData, void *pParam)
 		LLOGD("capture data %ubyte", luat_fs_fwrite(prvCamera.FileBuffer.Data, prvCamera.FileBuffer.Pos, 1, fd));
 		luat_fs_fclose(fd);
 	}
+
 	OS_DeInitBuffer(&prvCamera.FileBuffer);
 	prvCamera.CaptureWait = 1;
 	prvCamera.JPEGEncodeDone = 1;
@@ -120,17 +121,17 @@ static int32_t Camera_DrawLcd(void *DrawData, uint8_t Scan){
         DBG("lcd flush no memory");
         return -1;
     }
-    uint8_t CPHA = ((luat_spi_device_t*)(lcd_conf->userdata))->spi_config.CPHA;
-    uint8_t CPOL = ((luat_spi_device_t*)(lcd_conf->userdata))->spi_config.CPOL;
+    uint8_t CPHA = ((luat_spi_device_t*)(lcd_conf->lcd_spi_device))->spi_config.CPHA;
+    uint8_t CPOL = ((luat_spi_device_t*)(lcd_conf->lcd_spi_device))->spi_config.CPOL;
     draw->DCDelay = lcd_conf->dc_delay_us;
     draw->Mode = SPI_MODE_0;
     if(CPHA&&CPOL)draw->Mode = SPI_MODE_3;
     else if(CPOL)draw->Mode = SPI_MODE_2;
     else if(CPHA)draw->Mode = SPI_MODE_1;
-    draw->Speed = ((luat_spi_device_t*)(lcd_conf->userdata))->spi_config.bandrate;
-    if (((luat_spi_device_t*)(lcd_conf->userdata))->bus_id == 5) draw->SpiID = HSPI_ID0;
-    else draw->SpiID = ((luat_spi_device_t*)(lcd_conf->userdata))->bus_id;
-    draw->CSPin = ((luat_spi_device_t*)(lcd_conf->userdata))->spi_config.cs;
+    draw->Speed = ((luat_spi_device_t*)(lcd_conf->lcd_spi_device))->spi_config.bandrate;
+    if (((luat_spi_device_t*)(lcd_conf->lcd_spi_device))->bus_id == 5) draw->SpiID = HSPI_ID0;
+    else draw->SpiID = ((luat_spi_device_t*)(lcd_conf->lcd_spi_device))->bus_id;
+    draw->CSPin = ((luat_spi_device_t*)(lcd_conf->lcd_spi_device))->spi_config.cs;
     draw->DCPin = lcd_conf->pin_dc;
     draw->xoffset = lcd_conf->xoffset;
     draw->yoffset = lcd_conf->yoffset;

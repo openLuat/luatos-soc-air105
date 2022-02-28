@@ -17,15 +17,13 @@ void PM_Init(void)
 	GPIO->WAKE_P0_EN = 0;
 	GPIO->WAKE_P1_EN = 0;
 	GPIO->WAKE_P2_EN = 0;
-	SYSCTRL->MSR_CR1 |= BIT(27);
-	SYSCTRL->LDO25_CR |= BIT(4);
-	SYSCTRL->ANA_CTRL |= BIT(7)|BIT(4)|BIT(5);
 	SENSOR->SEN_EXTS_START = 0x55;
 	int i;
 	for(i = 0; i < 19; i++)
 	{
 		SENSOR->SEN_EN[i] = 0x80000055;
 	}
+	SYSCTRL->MSR_CR1 |= BIT(27);
 }
 
 void PM_SetHardwareRunFlag(uint32_t PmHWSn, uint32_t OnOff)
@@ -60,28 +58,28 @@ void PM_Print(void)
 int32_t PM_Sleep(void)
 {
 	uint64_t StartTick;
-	uint32_t Temp, Temp2, Temp3, Temp4;
+	uint32_t Temp;
 	if (prvPM.HWFlagBit || prvPM.DrvFlagBit) return -ERROR_DEVICE_BUSY;
 	__disable_irq();
-	Temp2 = ADC0->ADC_CR1;
-	Temp3 = DAC->DAC_CR1;
-	Temp4 = ADC0->ADC_CR2;
+	SYSCTRL->ANA_CTRL |= BIT(7)|BIT(5)|BIT(4);
+	SYSCTRL->LDO25_CR |= BIT(4);
 	ADC0->ADC_CR1 |= BIT(8);
 	ADC0->ADC_CR1 &= ~BIT(6);
-	DAC->DAC_CR1 |= (1 << 4);
-	ADC_IntelResistance(0);
+	DAC->DAC_CR1 |= BIT(4);
 	StartTick = RTC_GetUTC();
 	Temp = TRNG->RNG_ANA;
 	TRNG->RNG_ANA = Temp | TRNG_RNG_AMA_PD_ALL_Mask;
 //	SYSCTRL->PHER_CTRL |= BIT(20);
-//	SYSCTRL->LDO25_CR |= BIT(5);
+
 	__WFI();
 //	SYSCTRL->LDO25_CR &= ~BIT(5);
 //	SYSCTRL->PHER_CTRL &= ~BIT(20);
 	TRNG->RNG_ANA = Temp;
-	ADC0->ADC_CR1 = Temp2;
-	DAC->DAC_CR1 = Temp3;
-	ADC0->ADC_CR2 = Temp4;
+	ADC0->ADC_CR1 &= ~BIT(8);
+	ADC0->ADC_CR1 |= BIT(6);
+	DAC->DAC_CR1 &= ~BIT(4);
+	SYSCTRL->LDO25_CR &= ~BIT(4);
+    SYSCTRL->ANA_CTRL &= ~(BIT(7)|BIT(5)|BIT(4));
 	WDT_Feed();
 	SysTickAddSleepTime((RTC_GetUTC() - StartTick) * CORE_TICK_1S);
 	Timer_WakeupRun();
