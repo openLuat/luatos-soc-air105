@@ -50,15 +50,13 @@ int luat_i2c_close(int id) {
 }
 
 int luat_i2c_send(int id, int addr, void* buff, size_t len) {
-    I2C_BlockWrite(id, addr, (const uint8_t *)buff, len, 100, NULL, NULL);
+	return I2C_BlockWrite(id, addr, (const uint8_t *)buff, len, 100, NULL, NULL);
     // I2C_Prepare(id, addr, 1, NULL, NULL);
     // I2C_MasterXfer(id, I2C_OP_WRITE, 0, buff, len, 20);
-    return 0;
 }
 
 int luat_i2c_recv(int id, int addr, void* buff, size_t len) {
-    I2C_BlockRead(id, addr, 0, (uint8_t *)buff, len, 100, NULL, NULL);
+	return I2C_BlockRead(id, addr, 0, (uint8_t *)buff, len, 100, NULL, NULL);
     // I2C_Prepare(id, addr, 1, NULL, NULL);
     // I2C_MasterXfer(id, I2C_OP_READ, 0, buff, len, 20);
-    return 0;
 }

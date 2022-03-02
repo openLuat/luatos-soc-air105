@@ -40,6 +40,7 @@ typedef struct
 {
 	Buffer_Struct FileBuffer;
 	Buffer_Struct JPEGSavePath;
+	Timer_t *CheckTimer;
 	uint8_t *DataCache;
 	uint32_t TotalSize;
 	uint32_t CurSize;
@@ -56,6 +57,7 @@ typedef struct
 	uint8_t JPEGEncodeDone;
 	uint8_t PWMID;
 	uint8_t I2CID;
+	uint8_t NewDataFlag;
 }Camera_CtrlStruct;
 
 static Camera_CtrlStruct prvCamera;
@@ -64,6 +66,22 @@ static struct luat_camera_conf camera_conf;
 
 static luat_lcd_conf_t* lcd_conf;
 static uint8_t draw_lcd = 0;
+
+static int32_t prvCamera_DataTimeout(void *pData, void *pParam)
+{
+	if (!prvCamera.NewDataFlag)
+	{
+	    rtos_msg_t msg = {0};
+	    {
+	        msg.handler = l_camera_handler;
+	        msg.ptr = NULL;
+	        msg.arg1 = 0;
+	        msg.arg2 = 0;
+	        luat_msgbus_put(&msg, 1);
+		}
+	}
+	prvCamera.NewDataFlag = 0;
+}
 
 static void Camera_SaveJPEGData(void *Cxt, void *pData, int Size)
 {
@@ -170,6 +188,7 @@ static int32_t prvCamera_DCMICB(void *pData, void *pParam){
 
     uint8_t zbar_scan = (uint8_t)pParam;
     Buffer_Struct *RxBuf = (Buffer_Struct *)pData;
+    prvCamera.NewDataFlag = 1;
     if (prvCamera.CaptureMode){
     	if (!pData){
     		if (prvCamera.CaptureWait && prvCamera.JPEGEncodeDone)
@@ -276,6 +295,7 @@ static int32_t prvCamera_DCMICB(void *pData, void *pParam){
 
 int luat_camera_init(luat_camera_conf_t *conf){
     
+	int error = ERROR_NONE;
 	GPIO_Iomux(GPIOD_01, 3);
 	GPIO_Iomux(GPIOD_02, 3);
 	GPIO_Iomux(GPIOD_03, 3);
@@ -287,7 +307,14 @@ int luat_camera_init(luat_camera_conf_t *conf){
     GPIO_Iomux(GPIOE_01, 3);
 	GPIO_Iomux(GPIOE_02, 3);
 	GPIO_Iomux(GPIOE_03, 3);
-
+	if (!prvCamera.CheckTimer)
+	{
+		prvCamera.CheckTimer = Timer_Create(prvCamera_DataTimeout, NULL, NULL);
+	}
+	else
+	{
+		Timer_Stop(prvCamera.CheckTimer);
+	}
     memcpy(&camera_conf, conf, sizeof(luat_camera_conf_t));
     lcd_conf = conf->lcd_conf;
     draw_lcd = conf->draw_lcd;
@@ -305,7 +332,10 @@ int luat_camera_init(luat_camera_conf_t *conf){
     prvCamera.PWMID = conf->pwm_id;
     luat_i2c_setup(conf->i2c_id,1,NULL);
     for(size_t i = 0; i < conf->init_cmd_size; i++){
-        luat_i2c_send(conf->i2c_id, conf->i2c_addr, &(conf->init_cmd[i]), 2);
+        if (luat_i2c_send(conf->i2c_id, conf->i2c_addr, &(conf->init_cmd[i]), 2))
+        {
+        	error = -ERROR_OPERATION_FAILED;
+        }
         i++;
 	}
     prvCamera.I2CID = conf->i2c_id;
@@ -320,7 +350,7 @@ int luat_camera_init(luat_camera_conf_t *conf){
 //        DCMI_SetCROPConfig(1, (conf->sensor_height-prvCamera.Height)/2, ((conf->sensor_width-prvCamera.Width)/2)*prvCamera.DataBytes, prvCamera.Height - 1, prvCamera.DataBytes*prvCamera.Width - 1);
 //        DCMI_CaptureSwitch(1, 0,lcd_conf->w, lcd_conf->h, prvCamera.DataBytes, &prvCamera.drawVLen);
 //    }
-    return 0;
+    return error;
 }
 
 int luat_camera_start(int id)
@@ -339,6 +369,8 @@ int luat_camera_start(int id)
         DCMI_SetCROPConfig(1, (camera_conf.sensor_height-prvCamera.Height)/2, ((camera_conf.sensor_width-prvCamera.Width)/2)*prvCamera.DataBytes, prvCamera.Height - 1, prvCamera.DataBytes*prvCamera.Width - 1);
         DCMI_CaptureSwitch(1, 0,lcd_conf->w, lcd_conf->h, prvCamera.DataBytes, &prvCamera.drawVLen);
     }
+    prvCamera.NewDataFlag = 0;
+    Timer_StartMS(prvCamera.CheckTimer, 1000, 1);
     return 0;
 }
 
@@ -363,12 +395,13 @@ int luat_camera_capture(int id, uint8_t quality, const char *path)
 	prvCamera.CaptureMode = 1;
 	prvCamera.CaptureWait = 1;
 	prvCamera.JPEGEncodeDone = 1;
-
+	Timer_StartMS(prvCamera.CheckTimer, 1000, 1);
     return 0;
 }
 
 int luat_camera_stop(int id)
 {
+	Timer_Stop(prvCamera.CheckTimer);
 	DCMI_CaptureSwitch(0, 0, 0, 0, 0, NULL);
 	if (prvCamera.DataCache)
 	{
