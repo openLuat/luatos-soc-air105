@@ -6,16 +6,23 @@
 #include "luat_log.h"
 
 int luat_pm_request(int mode) {
-    if (mode != LUAT_PM_SLEEP_MODE_LIGHT || mode == LUAT_PM_SLEEP_MODE_DEEP) {
-        LLOGW("only pm.LIGHT/pm.DEEP supported");
-        return -1;
-    }
-    uint8_t i;
+//    if (mode != LUAT_PM_SLEEP_MODE_LIGHT || mode == LUAT_PM_SLEEP_MODE_DEEP) {
+//        LLOGW("only pm.LIGHT/pm.DEEP supported");
+//        return -1;
+//    }
+//    uint8_t i;
 //    for(i = UART_ID1; i< UART_MAX; i++)
 //    {
 //    	Uart_Sleep(i, 0);
 //    }
-    PM_SetDriverRunFlag(PM_DRV_DBG, 0);
+	if (mode != LUAT_PM_SLEEP_MODE_IDLE)
+	{
+		PM_SetDriverRunFlag(PM_DRV_DBG, 0);
+	}
+	else
+	{
+		PM_SetDriverRunFlag(PM_DRV_DBG, 1);
+	}
     return 0;
 }
 

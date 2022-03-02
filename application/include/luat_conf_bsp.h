@@ -74,7 +74,7 @@
 
 #define LUAT_USE_OTA
 
-// 多虚拟机支持,实验性,一般不启用 
+// 多虚拟机支持,实验性,一般不启用
 // #define LUAT_USE_VMX 1 
 // #define LUAT_USE_NES
 
@@ -158,10 +158,12 @@ extern unsigned int gLVFlashTime;
 
 #define LV_NO_BLOCK_FLUSH
 #define time(X)	luat_time(X)
-#endif
 
 #define LV_USE_PERF_MONITOR     1
+#define __LVGL_SLEEP_ENABLE__
+
 #ifndef __DEBUG__
 #undef LV_USE_PERF_MONITOR
 #endif
-//#define LV_ATTRIBUTE_FAST_MEM	__attribute__((section (".RamFunc")))
+
+#endif

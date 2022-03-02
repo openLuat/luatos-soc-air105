@@ -281,7 +281,11 @@ void luat_base_init(void)
   gLVFlashTime = 33;
 	lv_init();
 	lv_timer = Timer_Create(_lvgl_handler, NULL, NULL);
+#ifdef __LVGL_SLEEP_ENABLE__
+    luat_lvgl_tick_sleep(1);
+#else
 	Timer_StartMS(lv_timer, LVGL_TICK_PERIOD, 1);
+#endif
 #endif
 }
 
