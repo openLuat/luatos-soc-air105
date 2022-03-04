@@ -58,6 +58,7 @@ static void luat_shell(void *sdata)
 		Task_GetEvent(prvhShell, CORE_EVENT_ID_ANY, &Event, NULL, 0);
 		len = 1;
 		while (len > 0 && len < 512) {
+			memset(buff, 0, 512);
             len = Uart_RxBufferRead(0, buff, 512);
             if (len > 0 && len < 512){
                 buff[len] = 0x00; // 确保结尾

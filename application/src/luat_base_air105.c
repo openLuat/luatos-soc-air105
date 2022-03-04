@@ -201,7 +201,7 @@ static const luaL_Reg loadedlibs[] = {
   {NULL, NULL}
 };
 
-
+void luat_lvgl_tick_sleep(uint8_t OnOff);
 // 按不同的rtconfig加载不同的库函数
 void luat_openlibs(lua_State *L) {
     // 初始化队列服务
@@ -232,6 +232,7 @@ void luat_os_standy(int timeout) {
 }
 
 void luat_ota_reboot(int timeout_ms) {
+	luat_lvgl_tick_sleep(1);
   if (timeout_ms > 0)
     luat_timer_mdelay(timeout_ms);
   SystemReset();
@@ -262,6 +263,11 @@ void luat_lvgl_tick_sleep(uint8_t OnOff)
 	{
 		Timer_Stop(lv_timer);
 	}
+}
+#else
+void luat_lvgl_tick_sleep(uint8_t OnOff)
+{
+
 }
 #endif
 

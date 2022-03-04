@@ -33,7 +33,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
-
+#include "app_interface.h"
 
 //------------------------------------------------
 //  管理系统内存
@@ -86,7 +86,6 @@ void* luat_heap_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
 //            return ptr;
 //        }
 //    }
-
     if (nsize)
     {
     	void* ptmp = pvPortMalloc(nsize);
@@ -100,7 +99,10 @@ void* luat_heap_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
     		{
     			memcpy(ptmp, ptr, osize);
     		}
-    		vPortFree(ptr);
+    		if (((uint32_t)ptr & __SRAM_BASE_ADDR__) == __SRAM_BASE_ADDR__)
+    		{
+    			vPortFree(ptr);
+    		}
     		return ptmp;
     	}
     	else if (osize >= nsize)
@@ -108,7 +110,10 @@ void* luat_heap_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
     		return ptr;
     	}
     }
-    vPortFree(ptr);
+	if (((uint32_t)ptr & __SRAM_BASE_ADDR__) == __SRAM_BASE_ADDR__)
+	{
+		vPortFree(ptr);
+	}
     return NULL;
 }
 
