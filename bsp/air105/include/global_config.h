@@ -40,7 +40,7 @@
 #define __SRAM_BASE_ADDR__ (0x20000000)
 #define __APP_START_MAGIC__ (0x5ae1f0b5)
 #ifndef __BUILD_OS__
-#define __FUNC_IN_RAM__ __attribute__((section (".RamFunc")))
+#define __FUNC_IN_RAM__
 #else
 #define __FUNC_IN_RAM__	__attribute__((section (".RamFunc")))
 #endif

@@ -83,11 +83,7 @@
 #define configCPU_CLOCK_HZ                (SystemCoreClock)
 #define configTICK_RATE_HZ                ((TickType_t)100)
 #define configMINIMAL_STACK_SIZE          ((uint16_t)512)
-#ifdef __LUATOS__
-#define configTOTAL_HEAP_SIZE             ((size_t)(264 * 1024))
-#else
-#define configTOTAL_HEAP_SIZE             ((size_t)(64 * 1024))
-#endif
+#define configTOTAL_HEAP_SIZE             ((size_t)(32 * 1024))
 #define configMAX_TASK_NAME_LEN           (16)
 #define configUSE_TRACE_FACILITY          0
 #define configUSE_16_BIT_TICKS            0

@@ -20,6 +20,12 @@
  */
 
 #include "bl_inc.h"
+#ifdef __RUN_IN_RAM__
+#define __disable_irq()
+#define __disable_fault_irq()
+#define __enable_fault_irq()
+#define __enable_irq()
+#endif
 
 void __FUNC_IN_RAM__ CACHE_CleanAll(CACHE_TypeDef *Cache)
 {

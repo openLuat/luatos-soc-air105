@@ -57,7 +57,8 @@ void OutFlash_Test(void)
 	Head.DataCRC32 = 0xffffffff;
 	for(copyaddr = __FLASH_APP_START_ADDR__; copyaddr < (__FLASH_APP_START_ADDR__ + 1024 * 1024); copyaddr += 65536)
 	{
-		memcpy(DataBuf, copyaddr, 65536);
+		DBG("%x", copyaddr);
+		memcpy(DataBuf, copyaddr, SPI_FLASH_BLOCK_SIZE);
 		if (!flag)
 		{
 			flag = 1;
@@ -140,3 +141,28 @@ void InFlash_Test(void)
 //	crc32[1] = CRC32_Cal(CRC32_Table, __FLASH_APP_START_ADDR__ + 1024 * 1024, 1024 * 1024, 0xffffffff);
 //	DBG("%x,%x,%u",crc32[0], crc32[1], crc32[1] - crc32[0]);
 }
+void prvFOTA_Test(void *p)
+{
+	if (!p)
+	{
+		InFlash_Test();
+	}
+	else
+	{
+		OutFlash_Test();
+	}
+	Task_Exit();
+}
+
+void FOTA_InFlashInit(void)
+{
+	Task_Create(prvFOTA_Test, NULL, 1024, SERVICE_TASK_PRO, "fota task");
+}
+
+void FOTA_OutFlashInit(void)
+{
+	Task_Create(prvFOTA_Test, 1, 1024, SERVICE_TASK_PRO, "fota task");
+}
+
+//INIT_TASK_EXPORT(FOTA_InFlashInit, "3");
+//INIT_TASK_EXPORT(FOTA_OutFlashInit, "3");

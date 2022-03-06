@@ -1086,13 +1086,3 @@ void Core_VHIDUploadStop(uint8_t USB_ID)
 	USB_StackStopDeviceTx(pVHID->USB_ID, pVHID->ToHostEpIndex, 0);
 	USB_StackEpIntOnOff(pVHID->USB_ID, pVHID->ToHostEpIndex, 0, 1);
 }
-
-static void prvUSB_AppTask(void *pParam)
-{
-
-}
-
-void USB_AppTaskInit(void)
-{
-
-}

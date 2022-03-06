@@ -5,14 +5,14 @@ ENTRY(Reset_Handler)
 
 _stext = ORIGIN(FLASH);
 _Min_Heap_Size = 0 ;	/* required amount of heap  */
-_Min_Stack_Size = 0x4000 ;	/* required amount of stack */
+_Min_Stack_Size = 0x2000 ;	/* required amount of stack */
 _estack = ORIGIN(RAM) + _Min_Stack_Size + _Min_Heap_Size;	/* start of "RAM" Ram type memory */
 _sstack = ORIGIN(RAM); /* start of "RAM" Ram type memory */
 __ram_end = ORIGIN(RAM) + LENGTH(RAM);
 /* Memories definition */
 MEMORY
 {
-    RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 640K
+    RAM    (xrw)    : ORIGIN = 0x20000400,   LENGTH = 639K
     FLASH    (rx)    : ORIGIN = 0x1010000,   LENGTH = 2944K
 }
 

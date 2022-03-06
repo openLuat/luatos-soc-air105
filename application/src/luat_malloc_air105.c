@@ -27,7 +27,7 @@
 #include <string.h>//add for memset
 #include "bget.h"
 #include "luat_malloc.h"
-
+#include "luat_bget.h"
 #define LUAT_LOG_TAG "heap"
 #include "luat_log.h"
 
@@ -35,6 +35,8 @@
 #include "task.h"
 #include "app_interface.h"
 
+static luat_bget_t luavm_pool;
+static uint64_t luavm_pool_data[25 * 1024];
 //------------------------------------------------
 //  管理系统内存
 
@@ -62,7 +64,11 @@ void* luat_heap_calloc(size_t count, size_t _size) {
     return ptr;
 }
 //------------------------------------------------
-
+void luat_vm_pool_init(void)
+{
+	luat_bget_init(&luavm_pool);
+	luat_bpool(&luavm_pool, luavm_pool_data, sizeof(luavm_pool_data));
+}
 //------------------------------------------------
 // ---------- 管理 LuaVM所使用的内存----------------
 void* luat_heap_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
@@ -88,7 +94,7 @@ void* luat_heap_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
 //    }
     if (nsize)
     {
-    	void* ptmp = pvPortMalloc(nsize);
+    	void* ptmp = luat_bget(&luavm_pool, nsize);
     	if (ptmp)
     	{
     		if (osize > nsize)
@@ -101,7 +107,7 @@ void* luat_heap_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
     		}
     		if (((uint32_t)ptr & __SRAM_BASE_ADDR__) == __SRAM_BASE_ADDR__)
     		{
-    			vPortFree(ptr);
+    			luat_brel(&luavm_pool, ptr);
     		}
     		return ptmp;
     	}
@@ -112,15 +118,18 @@ void* luat_heap_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
     }
 	if (((uint32_t)ptr & __SRAM_BASE_ADDR__) == __SRAM_BASE_ADDR__)
 	{
-		vPortFree(ptr);
+		luat_brel(&luavm_pool, ptr);
 	}
     return NULL;
 }
 
 void luat_meminfo_luavm(size_t *total, size_t *used, size_t *max_used) {
-	*used = configTOTAL_HEAP_SIZE - xPortGetFreeHeapSize();
-	*max_used = configTOTAL_HEAP_SIZE - xPortGetMinimumEverFreeHeapSize();
-    *total = configTOTAL_HEAP_SIZE;
+	long curalloc, totfree, maxfree;
+	unsigned long nget, nrel;
+	luat_bstats(&luavm_pool, &curalloc, &totfree, &maxfree, &nget, &nrel);
+	*used = curalloc;
+	*max_used = luat_bstatsmaxget(&luavm_pool);
+    *total = curalloc + totfree;
 }
 
 void luat_meminfo_sys(size_t *total, size_t *used, size_t *max_used) {

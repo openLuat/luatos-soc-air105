@@ -201,6 +201,7 @@ static const luaL_Reg loadedlibs[] = {
   {NULL, NULL}
 };
 
+
 void luat_lvgl_tick_sleep(uint8_t OnOff);
 // 按不同的rtconfig加载不同的库函数
 void luat_openlibs(lua_State *L) {
@@ -277,7 +278,7 @@ void luat_base_init(void)
 {
 	luat_gpio_init();
 
-
+	luat_vm_pool_init();
 
 #ifdef LUAT_USE_SHELL
   luat_shell_poweron(0);

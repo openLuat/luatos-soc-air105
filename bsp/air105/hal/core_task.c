@@ -109,6 +109,11 @@ HANDLE Task_Create(TaskFun_t EntryFunction, void *Param, uint32_t StackSize, uin
 	return Handle;
 }
 
+void Task_Exit(void)
+{
+	vTaskDelete(NULL);
+}
+
 void Task_SendEvent(HANDLE TaskHandle, uint32_t ID, uint32_t P1, uint32_t P2, uint32_t P3)
 {
 	if (!TaskHandle) return;
