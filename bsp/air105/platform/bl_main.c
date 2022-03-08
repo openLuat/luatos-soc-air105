@@ -381,8 +381,8 @@ static void BL_SpiInit(uint8_t SpiID, uint8_t *Pin)
 		case GPIOB_15:
 			GPIO_Iomux(GPIOB_15,0);
 			break;
-		case GPIOC_12:
-			GPIO_Iomux(GPIOC_12,2);
+		case GPIOC_15:
+			GPIO_Iomux(GPIOC_15,2);
 			break;
 		}
 		switch(Pin[2])
