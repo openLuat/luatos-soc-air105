@@ -61,6 +61,205 @@ enum
 	SDCARD_STATE_WRITE,
 };
 
+static const uint8_t prvSDHC_StandardInquiryData[STANDARD_INQUIRY_DATA_LEN] =
+{
+		0x00, //磁盘设备
+		0x80, //其中最高位D7为RMB。RMB=0，表示不可移除设备。如果RMB=1，则为可移除设备。
+		0x02, //各种版本号
+		0x02, //数据响应格式 0x02
+		0x1F, //附加数据长度，为31字节
+		0x00, //保留
+		0x00, //保留
+		0x00, //保留
+		'A','I','R','M','2','M',' ',' ',
+		'L','U','A','T','O','S','-','S','O','C',' ','U','S','B',' ',' ',
+		'1','.','0','0'
+};
+
+extern const uint8_t prvCore_MSCPage00InquiryData[LENGTH_INQUIRY_PAGE00];
+/* USB Mass storage VPD Page 0x80 Inquiry Data for Unit Serial Number */
+extern const uint8_t prvCore_MSCPage80InquiryData[LENGTH_INQUIRY_PAGE80];
+/* USB Mass storage sense 6 Data */
+extern const uint8_t prvCore_MSCModeSense6data[MODE_SENSE6_LEN];
+/* USB Mass storage sense 10  Data */
+extern const uint8_t prvCore_MSCModeSense10data[MODE_SENSE10_LEN];
+
+
+
+static int32_t prvSDHC_SCSIInit(uint8_t LUN, void *pUserData)
+{
+	SDHC_SPICtrlStruct *pSDHC = pUserData;
+	if (!SDHC_IsReady(pSDHC))
+	{
+		SDHC_SpiInitCard(pSDHC);
+	}
+	return SDHC_IsReady(pSDHC)?ERROR_NONE:-ERROR_OPERATION_FAILED;
+}
+
+static int32_t prvSDHC_SCSIGetCapacity(uint8_t LUN, uint32_t *BlockNum, uint32_t *BlockSize, void *pUserData)
+{
+	SDHC_SPICtrlStruct *pSDHC = pUserData;
+	*BlockSize = pSDHC->Info.LogBlockSize;
+	*BlockNum = pSDHC->Info.LogBlockNbr;
+	return 0;
+}
+
+static int32_t prvSDHC_SCSIIsReady(uint8_t LUN, void *pUserData)
+{
+	SDHC_SPICtrlStruct *pSDHC = pUserData;
+	return SDHC_IsReady(pSDHC)?ERROR_NONE:-ERROR_OPERATION_FAILED;
+}
+
+static int32_t prvSDHC_SCSIIsWriteProtected(uint8_t LUN, void *pUserData)
+{
+	return 0;
+}
+
+static int32_t prvSDHC_SCSIReadNext(uint8_t LUN, void *pUserData);
+static int32_t prvSDHC_SCSIPreRead(uint8_t LUN, uint32_t BlockAddress, uint32_t BlockNums, void *pUserData)
+{
+	SDHC_SPICtrlStruct *pSDHC = pUserData;
+	if ((BlockAddress + BlockNums) > pSDHC->Info.LogBlockNbr)
+	{
+		return -1;
+	}
+	pSDHC->CurBlock = BlockAddress;
+	pSDHC->EndBlock = BlockAddress + BlockNums;
+
+	prvSDHC_SCSIReadNext(LUN, pUserData);
+	return 0;
+}
+
+static int32_t prvSDHC_SCSIRead(uint8_t LUN, uint32_t Len, uint8_t **pOutData, uint32_t *OutLen, void *pUserData)
+{
+	SDHC_SPICtrlStruct *pSDHC = pUserData;
+#if 1
+	*pOutData = DBuffer_GetCache(pSDHC->SCSIDataBuf, 1);
+	*OutLen = DBuffer_GetDataLen(pSDHC->SCSIDataBuf, 1);
+	if (*OutLen > Len)
+	{
+		*OutLen = Len;
+	}
+	DBuffer_SetDataLen(pSDHC->SCSIDataBuf, 0, 1);
+	DBuffer_SwapCache(pSDHC->SCSIDataBuf);
+//	Task_DelayMS(1);
+#else
+	uint32_t ReadBlocks;
+	if (pSDHC->EndBlock <= pSDHC->CurBlock) return -1;
+
+	if ( ((pSDHC->EndBlock - pSDHC->CurBlock) << 9) > pSDHC->SCSIDataBuf->MaxLen)
+	{
+		ReadBlocks = pSDHC->SCSIDataBuf->MaxLen >> 9;
+	}
+	else
+	{
+		ReadBlocks = pSDHC->EndBlock - pSDHC->CurBlock;
+	}
+	SDHC_SpiReadBlocks(pSDHC, DBuffer_GetCache(pSDHC->SCSIDataBuf, 1), pSDHC->CurBlock, ReadBlocks);
+	pSDHC->CurBlock += ReadBlocks;
+	*pOutData = DBuffer_GetCache(pSDHC->SCSIDataBuf, 1);
+	*OutLen = ReadBlocks << 9;
+#endif
+	return SDHC_IsReady(pSDHC)?ERROR_NONE:-ERROR_OPERATION_FAILED;
+}
+
+static int32_t prvSDHC_SCSIReadNext(uint8_t LUN, void *pUserData)
+{
+#if 1
+	SDHC_SPICtrlStruct *pSDHC = pUserData;
+	uint32_t ReadBlocks;
+	if (pSDHC->EndBlock <= pSDHC->CurBlock) return -1;
+
+	if ( ((pSDHC->EndBlock - pSDHC->CurBlock) << 9) > pSDHC->SCSIDataBuf->MaxLen)
+	{
+		ReadBlocks = pSDHC->SCSIDataBuf->MaxLen >> 9;
+	}
+	else
+	{
+		ReadBlocks = pSDHC->EndBlock - pSDHC->CurBlock;
+	}
+	SDHC_SpiReadBlocks(pSDHC, DBuffer_GetCache(pSDHC->SCSIDataBuf, 1), pSDHC->CurBlock, ReadBlocks);
+	pSDHC->CurBlock += ReadBlocks;
+	DBuffer_SetDataLen(pSDHC->SCSIDataBuf, ReadBlocks << 9, 1);
+#endif
+	return ERROR_NONE;
+}
+
+
+static int32_t prvSDHC_SCSIPreWrite(uint8_t LUN, uint32_t BlockAddress, uint32_t BlockNums, void *pUserData)
+{
+	SDHC_SPICtrlStruct *pSDHC = pUserData;
+	if (!SDHC_IsReady(pSDHC)) return -1;
+	if ((BlockAddress + BlockNums) > pSDHC->Info.LogBlockNbr)
+	{
+		return -1;
+	}
+	pSDHC->CurBlock = BlockAddress;
+	pSDHC->EndBlock = BlockAddress + BlockNums;
+	DBuffer_SetDataLen(pSDHC->SCSIDataBuf, 0, 1);
+	return 0;
+}
+
+static int32_t prvSDHC_SCSIWrite(uint8_t LUN, uint8_t *Data, uint32_t Len, void *pUserData)
+{
+	SDHC_SPICtrlStruct *pSDHC = pUserData;
+	uint32_t WriteBlocks = Len >> 9;
+	if (!SDHC_IsReady(pSDHC)) return -1;
+	if (pSDHC->EndBlock <= pSDHC->CurBlock) return -1;
+	memcpy(DBuffer_GetCache(pSDHC->SCSIDataBuf, 1) + DBuffer_GetDataLen(pSDHC->SCSIDataBuf, 1), Data, Len);
+	DBuffer_SetDataLen(pSDHC->SCSIDataBuf, DBuffer_GetDataLen(pSDHC->SCSIDataBuf, 1) + Len, 1);
+	return ERROR_NONE;
+}
+
+static int32_t prvSDHC_SCSIDoWrite(uint8_t LUN, void *pUserData)
+{
+	SDHC_SPICtrlStruct *pSDHC = pUserData;
+	uint32_t WriteBlocks = DBuffer_GetDataLen(pSDHC->SCSIDataBuf, 1) >> 9;
+	if (pSDHC->EndBlock <= pSDHC->CurBlock) return -1;
+	if (WriteBlocks)
+	{
+		if (WriteBlocks > (pSDHC->EndBlock - pSDHC->CurBlock))
+		{
+			WriteBlocks = pSDHC->EndBlock - pSDHC->CurBlock;
+		}
+		SDHC_SpiWriteBlocks(pSDHC, DBuffer_GetCache(pSDHC->SCSIDataBuf, 1), pSDHC->CurBlock, WriteBlocks);
+		DBuffer_SetDataLen(pSDHC->SCSIDataBuf, 0, 1);
+	}
+	pSDHC->CurBlock += WriteBlocks;
+	return ERROR_NONE;
+}
+
+static int32_t prvSDHC_SCSIUserCmd(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
+{
+	return -1;
+}
+
+static int32_t prvSDHC_SCSIGetMaxLUN(uint8_t *LUN, void *pUserData)
+{
+	*LUN = 0;
+}
+
+const USB_StorageSCSITypeDef prvSDHC_SCSIFun =
+{
+		prvSDHC_SCSIGetMaxLUN,
+		prvSDHC_SCSIInit,
+		prvSDHC_SCSIGetCapacity,
+		prvSDHC_SCSIIsReady,
+		prvSDHC_SCSIIsWriteProtected,
+		prvSDHC_SCSIPreRead,
+		prvSDHC_SCSIRead,
+		prvSDHC_SCSIReadNext,
+		prvSDHC_SCSIPreWrite,
+		prvSDHC_SCSIWrite,
+		prvSDHC_SCSIDoWrite,
+		prvSDHC_SCSIUserCmd,
+		&prvSDHC_StandardInquiryData,
+		&prvCore_MSCPage00InquiryData,
+		&prvCore_MSCPage80InquiryData,
+		&prvCore_MSCModeSense6data,
+		&prvCore_MSCModeSense10data,
+};
+
 static void SDHC_SpiCS(SDHC_SPICtrlStruct *Ctrl, uint8_t OnOff)
 {
 	uint8_t Temp[1] = {0xff};

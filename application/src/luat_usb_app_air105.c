@@ -26,6 +26,7 @@
 
 #define LUAT_LOG_TAG "luat.usbapp"
 #include "luat_log.h"
+extern void *luat_spi_get_sdhc_ctrl(void);
 
 int32_t luat_usb_app_vhid_cb(void *pData, void *pParam);
 
@@ -50,4 +51,14 @@ void luat_usb_app_vhid_upload(uint8_t usb_id, uint8_t *key_data, uint16_t len)
 void luat_usb_app_vhid_cancel_upload(uint8_t usb_id)
 {
 	Core_VHIDUploadStop(usb_id);
+}
+
+void luat_usb_udisk_attach_sdhc(uint8_t usb_id)
+{
+	Core_UDiskAttachSDHC(usb_id, luat_spi_get_sdhc_ctrl());
+}
+
+void luat_usb_udisk_detach_sdhc(uint8_t usb_id)
+{
+	Core_UDiskDetachSDHC(usb_id);
 }

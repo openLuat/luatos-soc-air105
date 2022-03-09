@@ -35,7 +35,7 @@ void __FUNC_IN_RAM__ CACHE_CleanAll(CACHE_TypeDef *Cache)
 	Cache->CACHE_REF |= CACHE_REFRESH;
 	while ((Cache->CACHE_REF & CACHE_REFRESH));
 }
-#if 0 //没什么用，没有ROM里的API好用
+#ifdef __RUN_IN_RAM__
 typedef struct
 {
     uint8_t Instruction;
@@ -48,12 +48,11 @@ typedef struct
 
 }FLASH_CommandTypeDef;
 #define QSPI_FIFO_NUM	32
-#define __FLASH_DISABLE_IRQ__
 
 #define FLASH_QSPI_TIMEOUT_DEFAULT_CNT	(19000) //18944
 #define FLASH_QSPI_ACCESS_REQ_ENABLE	(0x00000001U)
 #define FLASH_QSPI_FLASH_READY_ENABLE	(0x0000006BU)
-static int32_t __FUNC_IN_RAM__ prvQSPI_Command(FLASH_CommandTypeDef *cmd, int32_t timeout)
+static int32_t prvQSPI_Command(FLASH_CommandTypeDef *cmd, int32_t timeout)
 {
 	int32_t i;
 	int32_t status = -ERROR_OPERATION_FAILED;
@@ -74,7 +73,7 @@ static int32_t __FUNC_IN_RAM__ prvQSPI_Command(FLASH_CommandTypeDef *cmd, int32_
 	return status;
 }
 
-static int32_t __FUNC_IN_RAM__ prvQSPI_WriteEnable(QSPI_BusModeTypeDef bus_mode)
+static int32_t prvQSPI_WriteEnable(QSPI_BusModeTypeDef bus_mode)
 {
 	FLASH_CommandTypeDef sCommand;
 
@@ -99,7 +98,7 @@ static int32_t __FUNC_IN_RAM__ prvQSPI_WriteEnable(QSPI_BusModeTypeDef bus_mode)
 }
 
 //PP,QPP,Sector Erase,Block Erase, Chip Erase, Write Status Reg, Erase Security Reg
-static int32_t __FUNC_IN_RAM__ prvQSPI_IsBusy(QSPI_BusModeTypeDef bus_mode)
+int32_t prvQSPI_IsBusy(QSPI_BusModeTypeDef bus_mode)
 {
 	FLASH_CommandTypeDef sCommand;
 
@@ -127,58 +126,40 @@ static int32_t __FUNC_IN_RAM__ prvQSPI_IsBusy(QSPI_BusModeTypeDef bus_mode)
 	return ERROR_NONE;
 }
 
-int32_t __FUNC_IN_RAM__ Flash_Erase(uint32_t Address, uint32_t Length)
+int32_t Flash_EraseStart(uint32_t Address, uint8_t IsBlock)
 {
 	FLASH_CommandTypeDef sCommand;
-	uint32_t TotalLen = 0;
-	uint32_t FlashAddress, DummyLen;
 	Address &= (uint32_t)(0x00FFFFFF);
 	while (CACHE->CACHE_CS & CACHE_IS_BUSY);
 	sCommand.BusMode = QSPI_BUSMODE_111;
 	sCommand.CmdFormat = QSPI_CMDFORMAT_CMD8_ADDR24;
-	while (TotalLen < Length)
+
+	if (prvQSPI_WriteEnable(sCommand.BusMode) != 0)
 	{
-		if (prvQSPI_WriteEnable(sCommand.BusMode) != 0)
-		{
-			return -ERROR_OPERATION_FAILED;
-		}
-		FlashAddress = Address + TotalLen;
-		DummyLen = Length - TotalLen;
-		if (!(FlashAddress & SPI_FLASH_BLOCK_MASK) && (DummyLen >= SPI_FLASH_BLOCK_SIZE))
-		{
-			sCommand.Instruction = SPIFLASH_CMD_BE;
-			TotalLen += SPI_FLASH_BLOCK_SIZE;
-		}
-		else
-		{
-			sCommand.Instruction = SPIFLASH_CMD_SE;
-			TotalLen += SPI_FLASH_SECTOR_SIZE;
-		}
-		sCommand.Address = FlashAddress;
-#if (defined __FLASH_DISABLE_IRQ__)
-		__disable_irq();
-#endif
-		if (prvQSPI_Command(&sCommand, FLASH_QSPI_TIMEOUT_DEFAULT_CNT))
-		{
-#if (defined __FLASH_DISABLE_IRQ__)
-			CACHE_CleanAll(CACHE);
-			__enable_irq();
-#endif
-			return -ERROR_OPERATION_FAILED;
-		}
-
-		while(prvQSPI_IsBusy(sCommand.BusMode));
-#if (defined __FLASH_DISABLE_IRQ__)
-		__enable_irq();
-#endif
-
+		return -ERROR_OPERATION_FAILED;
 	}
-#if (defined __FLASH_DISABLE_IRQ__)
-	CACHE_CleanAll(CACHE);
-#endif
+	if (IsBlock)
+	{
+		sCommand.Instruction = SPIFLASH_CMD_BE;
+	}
+	else
+	{
+		sCommand.Instruction = SPIFLASH_CMD_SE;
+	}
+	sCommand.Address = Address;
+	if (prvQSPI_Command(&sCommand, FLASH_QSPI_TIMEOUT_DEFAULT_CNT))
+	{
+		return -ERROR_OPERATION_FAILED;
+	}
 	return ERROR_NONE;
 }
 
+int32_t Flash_CheckBusy(void)
+{
+	return prvQSPI_IsBusy(QSPI_BUSMODE_111);
+}
+#endif
+#if 0
 int32_t __FUNC_IN_RAM__ Flash_Program(uint32_t Address, const uint8_t *pBuf, uint32_t Len)
 {
 	FLASH_CommandTypeDef sCommand;

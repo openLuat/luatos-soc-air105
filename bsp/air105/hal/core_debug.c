@@ -35,7 +35,7 @@
 #define DBG_BUF_SIZE (4090)
 #define DBG_TXBUF_SIZE DBG_BUF_SIZE
 #define DBG_RXBUF_SIZE DBG_BUF_SIZE
-#define DBG_RXBUF_BAND (10)
+#define DBG_RXBUF_BAND (3)
 #endif
 
 typedef struct
@@ -51,7 +51,11 @@ typedef struct
 #else
 	uint8_t CacheData[DBG_BUF_SIZE * 2];
 #endif
+#ifdef __RUN_IN_RAM__
+	uint8_t RxData[__FLASH_BLOCK_SIZE__];
+#else
 	uint8_t RxData[DBG_BUF_SIZE * 2];
+#endif
 	uint8_t TxBuf[DBG_TXBUF_SIZE];
 	uint8_t RxDMABuf[DBG_RXBUF_BAND][DBG_RXBUF_SIZE + 16];
 	uint8_t AppMode;

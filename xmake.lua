@@ -77,6 +77,8 @@ target("bootloader.elf")
     -- set kind
     set_kind("binary")
     set_targetdir("$(buildir)/out")
+
+    add_defines("__RUN_IN_RAM__")
     -- add deps
     add_files("Third_Party/cm_backtrace/*.c",{public = true})
     --add_files("Third_Party/cm_backtrace/fault_handler/gcc/cmb_fault.S",{public = true})
@@ -100,7 +102,7 @@ target("bootloader.elf")
     add_includedirs("Third_Party/lzma/include",{public = true})
 
     -- add files
-    add_files("bsp/air105/platform/startup_full.s")
+    add_files("bsp/air105/platform/startup_run_in_ram.s")
     add_files("bsp/air105/platform/bl_main.c")
     add_files("bsp/air105/hal/*.c")
     -- add_files("bsp/air105/chip/src/*.c")
@@ -114,8 +116,10 @@ target("bootloader.elf")
 
 	after_build(function(target)
         sdk_dir = target:toolchains()[1]:sdkdir().."/"
-        os.exec(sdk_dir .. "bin/arm-none-eabi-objcopy -O binary --gap-fill=0xff $(buildir)/out/bootloader.elf $(buildir)/out/bootloader.bin")
+        -- os.exec(sdk_dir .. "bin/arm-none-eabi-objcopy -O binary --gap-fill=0xff $(buildir)/out/bootloader.elf $(buildir)/out/bootloader.bin")
         os.exec(sdk_dir .. "bin/arm-none-eabi-objcopy -O ihex $(buildir)/out/bootloader.elf $(buildir)/out/bootloader.hex")
+        os.exec("./project/air105/hex2bin.exe $(buildir)/out/bootloader.hex")
+        
         io.writefile("$(buildir)/out/bootloader.list", os.iorun(sdk_dir .. "bin/arm-none-eabi-objdump -h -S $(buildir)/out/bootloader.elf"))
         io.writefile("$(buildir)/out/bootloader.size", os.iorun(sdk_dir .. "bin/arm-none-eabi-size $(buildir)/out/bootloader.elf"))
         -- os.run(sdk_dir .. "bin/arm-none-eabi-objdump -h -S $(buildir)/out/bootloader.elf > $(buildir)/out/bootloader.list")

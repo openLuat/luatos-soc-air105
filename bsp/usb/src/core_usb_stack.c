@@ -1096,7 +1096,6 @@ void USB_StackAnalyzeDeviceEpRx(uint8_t USB_ID, uint8_t EpIndex)
 	{
 		USBCore->pEpCtrl[EpIndex].RxBuf.Pos = 0;
 		EpData.IsDataStage = (EpData.Len < USBCore->pEpCtrl[EpIndex].MaxPacketLen)?0:1;
-
 		if (USBCore->pEpCtrl[EpIndex].CB(&EpData, USBCore->pEpCtrl[EpIndex].pData))
 		{
 			USB_SetDeviceEPStatus(USBCore->pHWCtrl, EpIndex, 1, USB_EP_STATE_STALL);

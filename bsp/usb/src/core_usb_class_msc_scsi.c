@@ -67,6 +67,8 @@ static const SCSI_CmdFun prvSCSI_CmdFunList []=
 
 };
 
+
+
 static void prvUSB_SendCSW(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
 {
 	pMSC->CSW.dTag = pMSC->CBW.dTag;
@@ -84,7 +86,18 @@ static void prvUSB_SendCSW(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *
 	pMSC->XferTotalLen = 0;
 	pMSC->XferDoneLen = 0;
 	pMSC->LastXferLen = 0;
-	USB_StackTxEpData(pEpData->USB_ID, pMSC->ToHostEpIndex, &pMSC->CSW, USB_MSC_BOT_CSW_LENGTH, USB_MSC_BOT_CSW_LENGTH, 0);
+	USB_StackTxEpData(pMSC->USB_ID, pMSC->ToHostEpIndex, &pMSC->CSW, USB_MSC_BOT_CSW_LENGTH, USB_MSC_BOT_CSW_LENGTH, 0);
+	Timer_Stop(pMSC->ReadTimer);
+}
+
+static int32_t prvUSB_MSCTimeout(void *pData, void *pParam)
+{
+	MSC_SCSICtrlStruct *pMSC = (void *)pParam;
+	DBG("!");
+	pMSC->CSWStatus = USB_MSC_CSW_CMD_FAILED;
+	USB_StackStopDeviceTx(pMSC->USB_ID, pMSC->ToHostEpIndex, 0);
+	USB_StackSetEpStatus(pMSC->USB_ID, pMSC->ToHostEpIndex, 1, USB_EP_STATE_STALL);
+	prvUSB_SendCSW(NULL, pMSC);
 }
 
 static void prvUSB_SendBotData(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
@@ -129,11 +142,14 @@ void USB_SCSISetSenseState(MSC_SCSICtrlStruct *pMSC, uint8_t Skey, uint8_t ASC, 
 
 void USB_MSCHandle(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
 {
+	pMSC->USB_ID = pEpData->USB_ID;
 	if (pEpData->IsToDevice)
 	{
 		switch(pMSC->BotState)
 		{
 		case USB_MSC_BOT_STATE_CSW:
+			DBG("!");
+			pMSC->BotState = USB_MSC_BOT_STATE_IDLE;
 		case USB_MSC_BOT_STATE_IDLE:
 			if (pMSC->CSW.bStatus)
 			{
@@ -154,10 +170,12 @@ void USB_MSCHandle(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
 				}
 				pMSC->XferDoneLen = 0;
 				prvUSB_SCSIHandleCmd(pEpData, pMSC);
-
 				if (!pMSC->CBW.dDataLength)
 				{
-					prvUSB_SendCSW(pEpData, pMSC);
+					if (pMSC->BotState != USB_MSC_BOT_STATE_CSW)
+					{
+						prvUSB_SendCSW(pEpData, pMSC);
+					}
 				}
 				else if ((pMSC->BotState != USB_MSC_BOT_STATE_DATA_OUT_TO_DEVICE) && (pMSC->BotState != USB_MSC_BOT_STATE_DATA_IN_TO_HOST) )
 				{
@@ -193,6 +211,9 @@ void USB_MSCHandle(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
 		case USB_MSC_BOT_STATE_DATA_IN_TO_HOST:
 			prvUSB_SCSIHandleToHostData(pEpData, pMSC);
 			break;
+		case USB_MSC_BOT_STATE_IDLE:
+			DBG("!");
+			break;
 		default:
 			DBG("%d", pMSC->BotState);
 			pMSC->CSWStatus = USB_MSC_CSW_CMD_FAILED;
@@ -203,6 +224,7 @@ void USB_MSCHandle(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
 	}
 	return ;
 ERROR_OUT:
+	DBG("!");
 	pMSC->CSWStatus = USB_MSC_CSW_CMD_FAILED;
 	USB_StackSetEpStatus(pEpData->USB_ID, pMSC->ToDeviceEpIndex, 1, USB_EP_STATE_STALL);
 	prvUSB_SendCSW(pEpData, pMSC);
@@ -232,6 +254,7 @@ static void prvUSB_SCSIHandleCmd(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlSt
 CMD_PROC_END:
 	if (Result)
 	{
+		DBG("%02x", pMSC->CBW.CB[0]);
 		if (!pMSC->Sense.Skey)
 		{
 			USB_SCSISetSenseState(pMSC, SENSE_KEY_ILLEGAL_REQUEST, INVALID_COMMAND_OPERATION_CODE, 0, NULL);
@@ -276,7 +299,7 @@ static void prvUSB_SCSIHandleToDeviceData(USB_EndpointDataStruct *pEpData, MSC_S
 	{
 		prvUSB_SendCSW(pEpData, pMSC);
 	}
-
+	pUserFun->DoWrite(pMSC->CBW.bLUN, pMSC->pUserData);
 }
 
 static void prvUSB_SCSIHandleToHostData(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
@@ -286,13 +309,13 @@ static void prvUSB_SCSIHandleToHostData(USB_EndpointDataStruct *pEpData, MSC_SCS
 	uint32_t TxLen;
 	USB_StorageSCSITypeDef *pUserFun = (USB_StorageSCSITypeDef *)pMSC->pSCSIUserFunList;
 	pMSC->XferDoneLen += pMSC->LastXferLen;
-//	DBG("%u,%u,%u", pMSC->XferTotalLen, pMSC->XferDoneLen, pMSC->LastXferLen);
 	if (pMSC->XferDoneLen >= pMSC->XferTotalLen)
 	{
 		prvUSB_SendCSW(pEpData, pMSC);
 		return;
 	}
 	Result = pUserFun->Read(pMSC->CBW.bLUN, pMSC->XferTotalLen - pMSC->XferDoneLen, &TxData, &TxLen, pMSC->pUserData);
+//	DBG("%u,%u,%u,%u", pMSC->XferTotalLen, pMSC->XferDoneLen, pMSC->LastXferLen, TxLen);
 	if (Result)
 	{
 		DBG("sense error %x,%x,%x", pMSC->Sense.Skey, pMSC->Sense.ASC, pMSC->Sense.ASCQ);
@@ -307,11 +330,14 @@ static void prvUSB_SCSIHandleToHostData(USB_EndpointDataStruct *pEpData, MSC_SCS
 	{
 		pMSC->LastXferLen = TxLen;
 		USB_StackTxEpData(pEpData->USB_ID, pMSC->ToHostEpIndex, TxData, TxLen, TxLen, 0);
+
 	}
+	pUserFun->ReadNext(pMSC->CBW.bLUN, pMSC->pUserData);
 }
 
 void USB_MSCReset(MSC_SCSICtrlStruct *pMSC)
 {
+	USB_StorageSCSITypeDef *pUserFun = (USB_StorageSCSITypeDef *)pMSC->pSCSIUserFunList;
 	OS_ReInitBuffer(&pMSC->BotDataBuffer, 512);
 	memset(&pMSC->CSW, 0, sizeof(MSC_BOT_CSWTypeDef));
 	memset(&pMSC->CBW, 0, sizeof(MSC_BOT_CBWTypeDef));
@@ -321,7 +347,8 @@ void USB_MSCReset(MSC_SCSICtrlStruct *pMSC)
 	pMSC->XferDoneLen = 0;
 	pMSC->LastXferLen = 0;
 	pMSC->BotState = USB_MSC_BOT_STATE_IDLE;
-	pMSC->MediumState == SCSI_MEDIUM_UNLOCKED;
+	pMSC->MediumState = SCSI_MEDIUM_UNLOCKED;
+	pUserFun->Init(0, pMSC->pUserData);
 }
 
 static int32_t prvSCSI_TestUnitReady(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
@@ -609,6 +636,7 @@ static int32_t prvSCSI_Read(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct 
 	int ret = pUserFun->GetCapacity(pMSC->CBW.bLUN, &BlockNum, &BlockSize, pMSC->pUserData);
 	uint32_t BlockNums, CurBLKAddress;
 	CurBLKAddress = BytesGetBe32(&pMSC->CBW.CB[2]);
+	if (!pMSC->ReadTimer) pMSC->ReadTimer = Timer_Create(prvUSB_MSCTimeout, pMSC, NULL);
 	switch(pMSC->CBW.CB[0])
 	{
 	case SCSI_READ10:
@@ -668,6 +696,8 @@ static int32_t prvSCSI_Read(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct 
 	pMSC->LastXferLen = TxLen;
 	USB_StackTxEpData(pEpData->USB_ID, pMSC->ToHostEpIndex, TxData, TxLen, TxLen, 0);
 	pMSC->BotState = USB_MSC_BOT_STATE_DATA_IN_TO_HOST;
+	pUserFun->ReadNext(pMSC->CBW.bLUN, pMSC->pUserData);
+	Timer_StartMS(pMSC->ReadTimer, 1000, 0);
     return 0;
 }
 
@@ -700,7 +730,7 @@ static int32_t prvSCSI_Write(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct
 	}
 
     /* case 10 : Ho <> Di */
-    if ((pMSC->CBW.bmFlags & 0x80U) != 0x80U)
+    if ((pMSC->CBW.bmFlags & 0x80U) == 0x80U)
     {
     	USB_SCSISetSenseState(pMSC, SENSE_KEY_ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND, 0, NULL);
     	return -1;
@@ -715,6 +745,7 @@ static int32_t prvSCSI_Write(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct
 
     if (pUserFun->IsReady(pMSC->CBW.bLUN, pMSC->pUserData) != 0)
     {
+    	DBG("!");
     	USB_SCSISetSenseState(pMSC, SENSE_KEY_NOT_READY, MEDIUM_NOT_PRESENT, 0, NULL);
     	return -1;
     }
@@ -722,6 +753,7 @@ static int32_t prvSCSI_Write(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct
     /* cases 4,5 : Hi <> Dn */
     if (pMSC->CBW.dDataLength != (BlockNums * BlockSize))
     {
+    	DBG("!");
     	USB_SCSISetSenseState(pMSC, SENSE_KEY_ILLEGAL_REQUEST, INVALID_FIELED_IN_COMMAND, 0, NULL);
     	return -1;
     }

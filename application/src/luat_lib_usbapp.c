@@ -125,7 +125,31 @@ static int l_usb_vhid_cancel_upload(lua_State* L) {
     return 0;
 }
 
+/*
+USB U盘设备挂载SDHC，TF卡
+@api usbapp.udisk_attach_sdhc(id)
+@int 设备id,默认为0
+@return nil 无返回值
+@usage
+usbapp.udisk_attach_sdhc(0)
+*/
+static int l_usb_udisk_attach_sdhc(lua_State* L) {
+    luat_usb_app_vhid_cancel_upload(USB_ID0);
+    return 0;
+}
 
+/*
+USB U盘设备去除挂载SDHC，TF卡
+@api usbapp.udisk_detach_sdhc(id)
+@int 设备id,默认为0
+@return nil 无返回值
+@usage
+usbapp.udisk_detach_sdhc(0)
+*/
+static int l_usb_udisk_detach_sdhc(lua_State* L) {
+    luat_usb_app_vhid_cancel_upload(USB_ID0);
+    return 0;
+}
 #include "rotable.h"
 static const rotable_Reg reg_usbapp[] =
 {
@@ -133,6 +157,8 @@ static const rotable_Reg reg_usbapp[] =
     { "stop",               l_usb_stop,                 0},
     { "vhid_upload",        l_usb_vhid_upload,          0},
     { "vhid_cancel_upload", l_usb_vhid_cancel_upload,   0},
+	{ "udisk_attach_sdhc", l_usb_udisk_attach_sdhc,   0},
+	{ "udisk_detach_sdhc", l_usb_udisk_detach_sdhc,   0},
 
     { "HID_NOT_READY",      NULL,   USB_HID_NOT_READY},
     { "HID_READY",          NULL,   USB_HID_READY},

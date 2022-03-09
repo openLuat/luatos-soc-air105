@@ -382,3 +382,8 @@ void luat_spi_set_sdhc_ctrl(block_disk_t *disk)
 {
 	disk->opts = &sdhc_spi_disk_opts;
 }
+
+void *luat_spi_get_sdhc_ctrl(void)
+{
+	return luat_fatfs_spi_ctrl;
+}

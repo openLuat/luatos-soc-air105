@@ -91,6 +91,15 @@ typedef struct
 	uint32_t MaxLen;
 }Buffer_Struct;
 
+
+typedef struct
+{
+	uint8_t *pCache[2];
+	uint32_t pCacheLen[2];
+	uint32_t MaxLen;
+	uint8_t CurCacheSn;
+}DBuffer_Struct;
+
 typedef union
 {
 	void *p;
@@ -148,6 +157,7 @@ enum
 	DEV_EVENT_ID_START = 0xf0200000,
 	DEV_SPIFLASH_SPI_DONE,
 	DEV_SDHC_SPI_DONE,
+	USB_APP_EVENT_ID_START = 0xf0300000,
 	USER_EVENT_ID_START = 0xf1000000,
 	INVALID_EVENT_ID = 0xffffffff,
 };
@@ -239,6 +249,14 @@ int32_t OS_ReSizeBuffer(Buffer_Struct *Buf, uint32_t Size);
 int32_t OS_BufferWrite(Buffer_Struct *Buf, void *Data, uint32_t Len);
 int32_t OS_BufferWriteLimit(Buffer_Struct *Buf, void *Data, uint32_t Len);
 void OS_BufferRemove(Buffer_Struct *Buf, uint32_t Len);
+void DBuffer_Init(DBuffer_Struct *DBuf, uint32_t Size);
+void DBuffer_ReInit(DBuffer_Struct *DBuf, uint32_t Size);
+void DBuffer_DeInit(DBuffer_Struct *DBuf);
+void *DBuffer_GetCache(DBuffer_Struct *DBuf, uint8_t IsCurrent);
+void DBuffer_SwapCache(DBuffer_Struct *DBuf);
+void DBuffer_SetDataLen(DBuffer_Struct *DBuf, uint32_t Len, uint8_t IsCurrent);
+uint32_t DBuffer_GetDataLen(DBuffer_Struct *DBuf, uint8_t IsCurrent);
+
 
 void Buffer_StaticInit(Buffer_Struct *Buf, void *Src, uint32_t MaxLen);
 int32_t Buffer_StaticWrite(Buffer_Struct *Buf, void *Data, uint32_t Len);

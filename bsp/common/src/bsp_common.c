@@ -191,6 +191,50 @@ int32_t Buffer_StaticWrite(Buffer_Struct *Buf, void *Data, uint32_t Len)
 	return Len;
 }
 
+void DBuffer_Init(DBuffer_Struct *DBuf, uint32_t Size)
+{
+	memset(DBuf, 0, sizeof(DBuffer_Struct));
+	DBuf->pCache[0] = malloc(Size);
+	DBuf->pCache[1] = malloc(Size);
+	DBuf->MaxLen = Size;
+}
+
+void DBuffer_ReInit(DBuffer_Struct *DBuf, uint32_t Size)
+{
+	if (DBuf->pCache[0]) free(DBuf->pCache[0]);
+	if (DBuf->pCache[1]) free(DBuf->pCache[1]);
+	DBuffer_Init(DBuf, Size);
+}
+
+void DBuffer_DeInit(DBuffer_Struct *DBuf)
+{
+	free(DBuf->pCache[0]);
+	free(DBuf->pCache[1]);
+	DBuf->pCache[0] = NULL;
+	DBuf->pCache[1] = NULL;
+	DBuf->MaxLen = 0;
+}
+
+void *DBuffer_GetCache(DBuffer_Struct *DBuf, uint8_t IsCurrent)
+{
+	return DBuf->pCache[IsCurrent?DBuf->CurCacheSn:!DBuf->CurCacheSn];
+}
+
+void DBuffer_SwapCache(DBuffer_Struct *DBuf)
+{
+	DBuf->CurCacheSn = !DBuf->CurCacheSn;
+}
+
+void DBuffer_SetDataLen(DBuffer_Struct *DBuf, uint32_t Len, uint8_t IsCurrent)
+{
+	DBuf->pCacheLen[IsCurrent?DBuf->CurCacheSn:!DBuf->CurCacheSn] = Len;
+}
+
+uint32_t DBuffer_GetDataLen(DBuffer_Struct *DBuf, uint8_t IsCurrent)
+{
+	return DBuf->pCacheLen[IsCurrent?DBuf->CurCacheSn:!DBuf->CurCacheSn];
+}
+
 //void Buffer_Remove(Buffer_Struct *Buf, uint32_t Len)
 //{
 //	uint32_t RestLen;

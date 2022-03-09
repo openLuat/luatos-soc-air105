@@ -55,3 +55,45 @@ void Test_USBStart(void)
 	Core_VUartInit(VIRTUAL_UART0, 0, 1, 0, 0, 0, prvTest_USBCB);
 //	Core_VUartSetRxTimeout(VIRTUAL_UART0, 200);
 }
+
+void prvUSB_Test(void *p)
+{
+	SDHC_SPICtrlStruct SDHC;
+	memset(&SDHC, 0, sizeof(SDHC));
+	SDHC.SpiID = SPI_ID0;
+	SDHC.CSPin = GPIOC_13;
+	SDHC.IsSpiDMAMode = 0;
+//	SDHC.NotifyTask = Task_GetCurrent();
+//	SDHC.TaskCB = prvEventCB;
+    SDHC.SDHCReadBlockTo = 5 * CORE_TICK_1MS;
+    SDHC.SDHCWriteBlockTo = 25 * CORE_TICK_1MS;
+    SDHC.IsPrintData = 0;
+    GPIO_Iomux(GPIOC_12,2);
+    GPIO_Iomux(GPIOC_14,2);
+    GPIO_Iomux(GPIOC_15,2);
+    GPIO_Config(SDHC.CSPin, 0, 1);
+    SPI_MasterInit(SDHC.SpiID, 8, SPI_MODE_0, 400000, NULL, NULL);
+
+    SDHC_SpiInitCard(&SDHC);
+    if (SDHC.IsInitDone)
+    {
+    	SPI_SetNewConfig(SDHC.SpiID, 24000000, SPI_MODE_0);
+    	SDHC_SpiReadCardConfig(&SDHC);
+    	DBG("卡容量 %ublock", SDHC.Info.LogBlockNbr);
+    	Test_USBStart();
+    	Core_UDiskAttachSDHC(0, &SDHC);
+    	Core_USBDefaultDeviceStart(0);
+    }
+    else
+    {
+    	Test_USBStart();
+    	Core_USBDefaultDeviceStart(0);
+    }
+	Task_Exit();
+}
+void USB_TestInit(void)
+{
+	Task_Create(prvUSB_Test, NULL, 2 * 1024, SERVICE_TASK_PRO, "usb task");
+}
+
+//INIT_TASK_EXPORT(USB_TestInit, "3");

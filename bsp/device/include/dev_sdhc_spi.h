@@ -106,6 +106,9 @@ typedef struct
 	CBFuncEx_t TaskCB;
 	uint32_t Size;							//flash的大小KB
 	uint32_t OCR;
+	DBuffer_Struct *SCSIDataBuf;
+	uint32_t CurBlock;
+	uint32_t EndBlock;
 	uint16_t WriteWaitCnt;
 	uint8_t CSPin;
 	uint8_t SpiID;

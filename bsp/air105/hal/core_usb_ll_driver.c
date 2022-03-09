@@ -1668,9 +1668,8 @@ void USB_DeviceXfer(HANDLE hUSB, uint8_t EpIndex)
 	USB_EndpointCtrlStruct *pEpCtrl = &hwUSB->EpCtrl[EpIndex];
 	USB_EndpointDataStruct EpData;
 	uint16_t TxLen, i;
-	EpData.USB_ID = USB_ID0;
-	EpData.EpIndex = EpIndex;
-	EpData.IsToDevice = 0;
+
+
 	if (pEpCtrl->TxBuf.Data)
 	{
 		if (pEpCtrl->TxBuf.Pos >= pEpCtrl->TxBuf.MaxLen)
@@ -1743,6 +1742,9 @@ XFER_DONE:
 	memset(&pEpCtrl->TxBuf, 0, sizeof(Buffer_Struct));
 	if (EpIndex)
 	{
+		memset(&EpData, 0, sizeof(EpData));
+		EpData.USB_ID = USB_ID0;
+		EpData.EpIndex = EpIndex;
 		pEpCtrl->CB(&EpData, pEpCtrl->pData);
 	}
 	else

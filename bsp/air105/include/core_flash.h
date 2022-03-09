@@ -53,4 +53,9 @@ int32_t Flash_Erase(uint32_t Address, uint32_t Length);
   * @retval 0成功，其他失败
   */
 int32_t Flash_Program(uint32_t Address, const uint8_t *pBuf, uint32_t Len);
+
+#ifdef __RUN_IN_RAM__
+int32_t Flash_EraseStart(uint32_t Address, uint8_t IsBlock);
+int32_t Flash_CheckBusy(void);
+#endif
 #endif

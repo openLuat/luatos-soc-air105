@@ -20,14 +20,16 @@
  */
 
 #include "user.h"
-
 enum
 {
 	DEVICE_INTERFACE_HID_SN,
 	DEVICE_INTERFACE_MSC_SN,
 	DEVICE_INTERFACE_SERIAL_SN,
 	DEVICE_INTERFACE_MAX,
+	USB_HW_ACTION = USB_APP_EVENT_ID_START + 1,
+	USBD_MSC_CB,
 };
+
 #define DEVICE_HID_KEYBOARD_EP_IN		(0x01)
 #define DEVICE_HID_KEYBOARD_EP_OUT		(0x01)
 #define DEVICE_MASS_STORAGE_EP_IN		(0x02)
@@ -77,9 +79,116 @@ typedef struct
 	uint8_t ToDeviceEpIndex;
 }Virtual_UartCtrlStruct;
 
-static MSC_SCSICtrlStruct prvLuatOS_SCSI;
+typedef struct
+{
+	MSC_SCSICtrlStruct tSCSI;
+	Virtual_UDiskCtrlStruct tUDisk;
+	DBuffer_Struct DataBuf;
+	SDHC_SPICtrlStruct *pSDHC;
+	HANDLE hTaskHandle;
+}USB_AppCtrlStruct;
+
+static const uint8_t prvCore_StandardInquiryData[STANDARD_INQUIRY_DATA_LEN] =
+{
+		0x00, //磁盘设备
+		0x00, //其中最高位D7为RMB。RMB=0，表示不可移除设备。如果RMB=1，则为可移除设备。
+		0x02, //各种版本号
+		0x02, //数据响应格式 0x02
+		0x1F, //附加数据长度，为31字节
+		0x00, //保留
+		0x00, //保留
+		0x00, //保留
+		'A','I','R','M','2','M',' ',' ',
+		'L','U','A','T','O','S','-','S','O','C',' ','U','S','B',' ',' ',
+		'1','.','0','0'
+};
+
+const uint8_t prvCore_MSCPage00InquiryData[LENGTH_INQUIRY_PAGE00] =
+{
+	0x00,
+	0x00,
+	0x00,
+	(LENGTH_INQUIRY_PAGE00 - 4U),
+	0x00,
+	0x80
+};
+
+/* USB Mass storage VPD Page 0x80 Inquiry Data for Unit Serial Number */
+const uint8_t prvCore_MSCPage80InquiryData[LENGTH_INQUIRY_PAGE80] =
+{
+	0x00,
+	0x80,
+	0x00,
+	LENGTH_INQUIRY_PAGE80,
+	0x20,     /* Put Product Serial number */
+	0x20,
+	0x20,
+	0x20
+};
+
+/* USB Mass storage sense 6 Data */
+const uint8_t prvCore_MSCModeSense6data[MODE_SENSE6_LEN] =
+{
+	0x22,
+	0x00,
+	0x00,
+	0x00,
+	0x08,
+	0x12,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00
+};
+
+
+/* USB Mass storage sense 10  Data */
+const uint8_t prvCore_MSCModeSense10data[MODE_SENSE10_LEN] =
+{
+	0x00,
+	0x26,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x08,
+	0x12,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00,
+	0x00
+};
+
+static USB_AppCtrlStruct prvUSBApp;
 static Virtual_HIDCtrlStruct prvLuatOS_VirtualHID;
-static Virtual_UDiskCtrlStruct prvLuatOS_VirtualUDisk;
 static Virtual_UartCtrlStruct prvLuatOS_VirtualUart[VIRTUAL_UART_MAX];
 
 /* LangID = 0x0409: U.S. English */
@@ -349,104 +458,7 @@ static const USB_FullConfigStruct prvCore_FullConfig =
 		.pFullConfig = {&prvCore_Config, NULL, NULL},
 };
 
-static const uint8_t prvCore_StandardInquiryData[STANDARD_INQUIRY_DATA_LEN] =
-{
-		0x00, //磁盘设备
-		0x00, //其中最高位D7为RMB。RMB=0，表示不可移除设备。如果RMB=1，则为可移除设备。
-		0x02, //各种版本号
-		0x02, //数据响应格式 0x02
-		0x1F, //附加数据长度，为31字节
-		0x00, //保留
-		0x00, //保留
-		0x00, //保留
-		'A','I','R','M','2','M',' ',' ',
-		'L','U','A','T','O','S','-','S','O','C',' ','U','S','B',' ',' ',
-		'1','.','0','0'
-};
 
-static const uint8_t prvCore_MSCPage00InquiryData[LENGTH_INQUIRY_PAGE00] =
-{
-	0x00,
-	0x00,
-	0x00,
-	(LENGTH_INQUIRY_PAGE00 - 4U),
-	0x00,
-	0x80
-};
-
-/* USB Mass storage VPD Page 0x80 Inquiry Data for Unit Serial Number */
-static const uint8_t prvCore_MSCPage80InquiryData[LENGTH_INQUIRY_PAGE80] =
-{
-	0x00,
-	0x80,
-	0x00,
-	LENGTH_INQUIRY_PAGE80,
-	0x20,     /* Put Product Serial number */
-	0x20,
-	0x20,
-	0x20
-};
-
-/* USB Mass storage sense 6 Data */
-static const uint8_t prvCore_MSCModeSense6data[MODE_SENSE6_LEN] =
-{
-	0x22,
-	0x00,
-	0x00,
-	0x00,
-	0x08,
-	0x12,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00
-};
-
-
-/* USB Mass storage sense 10  Data */
-static const uint8_t prvCore_MSCModeSense10data[MODE_SENSE10_LEN] =
-{
-	0x00,
-	0x26,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x08,
-	0x12,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00,
-	0x00
-};
 
 static int32_t prvCore_SCSIInit(uint8_t LUN, void *pUserData)
 {
@@ -455,8 +467,8 @@ static int32_t prvCore_SCSIInit(uint8_t LUN, void *pUserData)
 
 static int32_t prvCore_SCSIGetCapacity(uint8_t LUN, uint32_t *BlockNum, uint32_t *BlockSize, void *pUserData)
 {
-	*BlockNum = prvLuatOS_VirtualUDisk.BlockTotalNums;
-	*BlockSize = prvLuatOS_VirtualUDisk.BlockSize;
+	*BlockNum = prvUSBApp.tUDisk.BlockTotalNums;
+	*BlockSize = prvUSBApp.tUDisk.BlockSize;
 	return 0;
 }
 
@@ -472,46 +484,57 @@ static int32_t prvCore_SCSIIsWriteProtected(uint8_t LUN, void *pUserData)
 
 static int32_t prvCore_SCSIPreRead(uint8_t LUN, uint32_t BlockAddress, uint32_t BlockNums, void *pUserData)
 {
-	if ((BlockAddress + BlockNums) * prvLuatOS_VirtualUDisk.BlockSize > VIRTUAL_UDISK_LEN)
+	if ((BlockAddress + BlockNums) * prvUSBApp.tUDisk.BlockSize > VIRTUAL_UDISK_LEN)
 	{
 		return -1;
 	}
-	prvLuatOS_VirtualUDisk.CurAddress = BlockAddress * prvLuatOS_VirtualUDisk.BlockSize;
+	prvUSBApp.tUDisk.CurAddress = BlockAddress * prvUSBApp.tUDisk.BlockSize;
 	return 0;
 }
 
 static int32_t prvCore_SCSIRead(uint8_t LUN, uint32_t Len, uint8_t **pOutData, uint32_t *OutLen, void *pUserData)
 {
-	if (Len + prvLuatOS_VirtualUDisk.CurAddress > VIRTUAL_UDISK_LEN)
+	if (Len + prvUSBApp.tUDisk.CurAddress > VIRTUAL_UDISK_LEN)
 	{
 		return -1;
 	}
-	*pOutData = &prvLuatOS_VirtualUDisk.VirtualData[prvLuatOS_VirtualUDisk.CurAddress];
+	*pOutData = &prvUSBApp.tUDisk.VirtualData[prvUSBApp.tUDisk.CurAddress];
 	*OutLen = Len;
-	prvLuatOS_VirtualUDisk.CurAddress += Len;
+	prvUSBApp.tUDisk.CurAddress += Len;
+	return 0;
+}
+
+static int32_t prvCore_SCSIReadNext(uint8_t LUN, void *pUserData)
+{
 	return 0;
 }
 
 static int32_t prvCore_SCSIPreWrite(uint8_t LUN, uint32_t BlockAddress, uint32_t BlockNums, void *pUserData)
 {
-	if ((BlockAddress + BlockNums) * prvLuatOS_VirtualUDisk.BlockSize > VIRTUAL_UDISK_LEN)
+	if ((BlockAddress + BlockNums) * prvUSBApp.tUDisk.BlockSize > VIRTUAL_UDISK_LEN)
 	{
 		return -1;
 	}
-	prvLuatOS_VirtualUDisk.CurAddress = BlockAddress * prvLuatOS_VirtualUDisk.BlockSize;
+	prvUSBApp.tUDisk.CurAddress = BlockAddress * prvUSBApp.tUDisk.BlockSize;
 	return 0;
 }
 
 static int32_t prvCore_SCSIWrite(uint8_t LUN, uint8_t *Data, uint32_t Len, void *pUserData)
 {
-	if (Len + prvLuatOS_VirtualUDisk.CurAddress > VIRTUAL_UDISK_LEN)
+	if (Len + prvUSBApp.tUDisk.CurAddress > VIRTUAL_UDISK_LEN)
 	{
 		return -1;
 	}
-	memcpy(&prvLuatOS_VirtualUDisk.VirtualData[prvLuatOS_VirtualUDisk.CurAddress], Data, Len);
-	prvLuatOS_VirtualUDisk.CurAddress += Len;
+	memcpy(&prvUSBApp.tUDisk.VirtualData[prvUSBApp.tUDisk.CurAddress], Data, Len);
+	prvUSBApp.tUDisk.CurAddress += Len;
 	return 0;
 }
+
+static int32_t prvCore_SCSIDoWrite(uint8_t LUN, void *pUserData)
+{
+	return 0;
+}
+
 static int32_t prvCore_SCSIUserCmd(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
 {
 	return -1;
@@ -521,6 +544,7 @@ static int32_t prvCore_SCSIGetMaxLUN(uint8_t *LUN, void *pUserData)
 {
 	*LUN = 0;
 }
+
 static const USB_StorageSCSITypeDef prvCore_SCSIFun =
 {
 		prvCore_SCSIGetMaxLUN,
@@ -530,8 +554,10 @@ static const USB_StorageSCSITypeDef prvCore_SCSIFun =
 		prvCore_SCSIIsWriteProtected,
 		prvCore_SCSIPreRead,
 		prvCore_SCSIRead,
+		prvCore_SCSIReadNext,
 		prvCore_SCSIPreWrite,
 		prvCore_SCSIWrite,
+		prvCore_SCSIDoWrite,
 		prvCore_SCSIUserCmd,
 		&prvCore_StandardInquiryData,
 		&prvCore_MSCPage00InquiryData,
@@ -592,7 +618,7 @@ static int32_t prvCore_USBEp0CB(void *pData, void *pParam)
 {
 	int32_t Result = -ERROR_CMD_NOT_SUPPORT;
 	USB_EndpointDataStruct *pEpData = (USB_EndpointDataStruct *)pData;
-	USB_StorageSCSITypeDef *pUserFun = (USB_StorageSCSITypeDef *)prvLuatOS_SCSI.pSCSIUserFunList;
+	USB_StorageSCSITypeDef *pUserFun = (USB_StorageSCSITypeDef *)prvUSBApp.tSCSI.pSCSIUserFunList;
 	uint16_t wLength, wValue;
 	Virtual_UartCtrlStruct *pVUart;
 //	DBG("%d,%d,%d,%d", pEpData->USB_ID, pEpData->EpIndex, pEpData->IsToDevice, pEpData->Len);
@@ -635,8 +661,8 @@ static int32_t prvCore_USBEp0CB(void *pData, void *pParam)
 				}
 				break;
 			case MSC_GET_MAX_LUN:
-				pUserFun->GetMaxLUN(&prvLuatOS_SCSI.LogicalUnitNum, prvLuatOS_SCSI.pUserData);
-				USB_StackTxEpData(pEpData->USB_ID, pEpData->EpIndex, &prvLuatOS_SCSI.LogicalUnitNum, 1, wLength, 1);
+				pUserFun->GetMaxLUN(&prvUSBApp.tSCSI.LogicalUnitNum, prvUSBApp.tSCSI.pUserData);
+				USB_StackTxEpData(pEpData->USB_ID, pEpData->EpIndex, &prvUSBApp.tSCSI.LogicalUnitNum, 1, wLength, 1);
 
 				Result = ERROR_NONE;
 				break;
@@ -652,7 +678,45 @@ static int32_t prvCore_USBEp0CB(void *pData, void *pParam)
 static int32_t prvCore_MSCCB(void *pData, void *pParam)
 {
 	USB_EndpointDataStruct *pEpData = (USB_EndpointDataStruct *)pData;
-	USB_MSCHandle(pEpData, &prvLuatOS_SCSI);
+	USB_EndpointDataStruct *pEpDataSave;
+	switch(prvUSBApp.tSCSI.BotState)
+	{
+	case USB_MSC_BOT_STATE_DATA_OUT_TO_DEVICE:
+	case USB_MSC_BOT_STATE_DATA_IN_TO_HOST:
+		goto MSC_RUN_IN_TASK;
+		break;
+	default:
+		if (pEpData->IsToDevice && pEpData->Data)
+		{
+			switch(pEpData->Data[15])
+			{
+			case SCSI_READ10:
+			case SCSI_READ12:
+			case SCSI_READ16:
+				goto MSC_RUN_IN_TASK;
+				break;
+			}
+
+		}
+		break;
+	}
+	USB_MSCHandle(pEpData, &prvUSBApp.tSCSI);
+	return ERROR_NONE;
+MSC_RUN_IN_TASK:
+	pEpDataSave = malloc(sizeof(USB_EndpointDataStruct));
+	memcpy(pEpDataSave, pEpData, sizeof(USB_EndpointDataStruct));
+	if (pEpData->Data && pEpData->Len)
+	{
+		pEpDataSave->Data = malloc(pEpData->Len);
+		memcpy(pEpDataSave->Data, pEpData->Data, pEpData->Len);
+	}
+	else
+	{
+		pEpDataSave->Data = NULL;
+		pEpDataSave->Len = 0;
+	}
+	Task_SendEvent(prvUSBApp.hTaskHandle, USBD_MSC_CB, pEpDataSave, &prvUSBApp.tSCSI, pParam);
+
 	return ERROR_NONE;
 }
 
@@ -738,7 +802,7 @@ static int32_t prvCore_USBStateCB(void *pData, void *pParam)
 	{
 	case USBD_BUS_TYPE_DISCONNECT:
 		prvCore_VHIDSetReady(0);
-		USB_MSCReset(&prvLuatOS_SCSI);
+		USB_MSCReset(&prvUSBApp.tSCSI);
 		for(i = 0; i < VIRTUAL_UART_MAX; i++)
 		{
 			prvLuatOS_VirtualUart[i].USBOnOff = 0;
@@ -758,12 +822,15 @@ void Core_USBDefaultDeviceStart(uint8_t USB_ID)
 	prvLuatOS_VirtualHID.USB_ID = USB_ID;
 	prvLuatOS_VirtualHID.IsReady = 0;
 	prvLuatOS_VirtualHID.ToHostEpIndex = DEVICE_HID_KEYBOARD_EP_IN;
-	prvLuatOS_VirtualUDisk.BlockTotalNums = VIRTUAL_UDISK_BLOCKS_NUMS;
-	prvLuatOS_VirtualUDisk.BlockSize = VIRTUAL_UDISK_BLOCKS_LEN;
-	prvLuatOS_SCSI.LogicalUnitNum = 0;
-	prvLuatOS_SCSI.ToHostEpIndex = DEVICE_MASS_STORAGE_EP_IN;
-	prvLuatOS_SCSI.ToDeviceEpIndex = DEVICE_MASS_STORAGE_EP_OUT;
-	prvLuatOS_SCSI.pSCSIUserFunList = &prvCore_SCSIFun;
+	prvUSBApp.tUDisk.BlockTotalNums = VIRTUAL_UDISK_BLOCKS_NUMS;
+	prvUSBApp.tUDisk.BlockSize = VIRTUAL_UDISK_BLOCKS_LEN;
+	prvUSBApp.tSCSI.LogicalUnitNum = 0;
+	prvUSBApp.tSCSI.ToHostEpIndex = DEVICE_MASS_STORAGE_EP_IN;
+	prvUSBApp.tSCSI.ToDeviceEpIndex = DEVICE_MASS_STORAGE_EP_OUT;
+	if (!prvUSBApp.tSCSI.pSCSIUserFunList)
+	{
+		prvUSBApp.tSCSI.pSCSIUserFunList = &prvCore_SCSIFun;
+	}
 	if (!prvLuatOS_VirtualHID.CB)
 	{
 		prvLuatOS_VirtualHID.CB = prvCore_VHIDDummyCB;
@@ -808,8 +875,8 @@ void Core_USBDefaultDeviceStart(uint8_t USB_ID)
 	}
 	prvLuatOS_VirtualUart[VIRTUAL_UART0].ToDeviceEpIndex = DEVICE_GENERIC_SERIAL_EP_IN;
 	prvLuatOS_VirtualUart[VIRTUAL_UART0].ToHostEpIndex = DEVICE_GENERIC_SERIAL_EP_OUT;
-	prvLuatOS_VirtualUDisk.VirtualData = prvLuatOS_VirtualUart[VIRTUAL_UART0].TxCacheBuf.Data;
-	USB_MSCReset(&prvLuatOS_SCSI);
+	prvUSBApp.tUDisk.VirtualData = prvLuatOS_VirtualUart[0].TxCacheBuf.Data;
+	USB_MSCReset(&prvUSBApp.tSCSI);
 
 	USB_StackStartDevice(USB_ID);
 }
@@ -1086,3 +1153,83 @@ void Core_VHIDUploadStop(uint8_t USB_ID)
 	USB_StackStopDeviceTx(pVHID->USB_ID, pVHID->ToHostEpIndex, 0);
 	USB_StackEpIntOnOff(pVHID->USB_ID, pVHID->ToHostEpIndex, 0, 1);
 }
+
+#ifdef __BUILD_OS__
+
+static void prvCore_USBAppTask(void *pParam)
+{
+	OS_EVENT Event;
+	USB_EndpointDataStruct *pEpData;
+	while(1)
+	{
+		Task_GetEventByMS(prvUSBApp.hTaskHandle, CORE_EVENT_ID_ANY, &Event, NULL, 0);
+		switch(Event.ID)
+		{
+		case USB_HW_ACTION:
+			switch (Event.Param2)
+			{
+			case SERV_USB_RESET_END:
+				DBG("USB%d reset", Event.Param1);
+				Task_DelayMS(1);
+				USB_StackDeviceAfterDisconnect(Event.Param1);
+				break;
+			case SERV_USB_RESUME_END:
+				Task_DelayMS(20);
+				USB_ResumeEnd(Event.Param3);
+				break;
+			case SERV_USB_SUSPEND:
+				DBG("USB%d suspend", Event.Param1);
+				break;
+			case SERV_USB_RESUME:
+				break;
+			}
+			break;
+		case USBD_MSC_CB:
+			pEpData = (USB_EndpointDataStruct *)Event.Param1;
+//			DBG("%d,%d,%d,%d", pEpData->USB_ID, pEpData->EpIndex, pEpData->IsToDevice, pEpData->Len);
+			USB_MSCHandle(pEpData, Event.Param2);
+			free(pEpData->Data);
+			free(Event.Param1);
+			WDT_Feed();
+			break;
+		}
+	}
+}
+
+
+void Core_USBAction(uint8_t USB_ID, uint8_t Action, void *pParam)
+{
+	Task_SendEvent(prvUSBApp.hTaskHandle, USB_HW_ACTION, USB_ID, Action, pParam);
+}
+
+extern const USB_StorageSCSITypeDef prvSDHC_SCSIFun;
+void Core_UDiskAttachSDHC(uint8_t USB_ID, void *pCtrl)
+{
+	if (!prvUSBApp.pSDHC)
+	{
+		prvUSBApp.pSDHC = malloc(sizeof(SDHC_SPICtrlStruct));
+	}
+	memcpy(prvUSBApp.pSDHC, pCtrl, sizeof(SDHC_SPICtrlStruct));
+	prvUSBApp.tSCSI.pSCSIUserFunList = &prvSDHC_SCSIFun;
+	prvUSBApp.tSCSI.pUserData = prvUSBApp.pSDHC;
+	DBuffer_ReInit(&prvUSBApp.DataBuf, 8 * 1024);
+	prvUSBApp.pSDHC->SCSIDataBuf = &prvUSBApp.DataBuf;
+
+}
+
+void Core_UDiskDetachSDHC(uint8_t USB_ID)
+{
+	prvUSBApp.tSCSI.pSCSIUserFunList = &prvCore_SCSIFun;
+	prvUSBApp.tSCSI.pUserData = NULL;
+	free(prvUSBApp.pSDHC);
+	prvUSBApp.pSDHC = NULL;
+	DBuffer_DeInit(&prvUSBApp.DataBuf);
+}
+
+void Core_USBAppGlobalInit(void)
+{
+	prvUSBApp.hTaskHandle = Task_Create(prvCore_USBAppTask, NULL,2 * 1024, USB_TASK_PRO, "usb app");
+}
+
+INIT_TASK_EXPORT(Core_USBAppGlobalInit, "2");
+#endif

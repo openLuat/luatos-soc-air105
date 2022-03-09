@@ -28,7 +28,7 @@ uint32_t SystemCoreClock;
 #define FW_UPGRADE_START_TIME	300
 #define FW_UPGRADE_ALL_TIME	2000
 #define FW_UPGRADE_DATA_TIME 50
-#define FW_OTA_FLASH_BUF_LEN	4096
+#define FW_OTA_FLASH_BUF_LEN	SPI_FLASH_BLOCK_SIZE
 enum
 {
 	FW_UPGRADE_STATE_IDLE,
@@ -66,8 +66,6 @@ typedef  void (*pFunction)(void);
 static uint32_t CRC32_Table[256];
 static BL_CtrlStuct prvBL;
 static SPIFlash_CtrlStruct prvSPIFlash;
-
-
 
 void Jump_AppRun(uint32_t Address)
 {
@@ -111,14 +109,6 @@ void BL_UnlockFlash(void)
 void BL_LockFlash(void)
 {
 
-}
-
-void BL_EraseSector(uint32_t address)
-{
-	Flash_EraseSector(address, 0);
-//	BL_DBG("%x", address);
-//	FLASH_EraseSector(address);
-//	CACHE_CleanAll(CACHE);
 }
 
 static void BL_OTAErase(uint32_t Address, uint32_t Len)
@@ -200,7 +190,7 @@ uint8_t BL_RunLzmaBlock(uint8_t *Head, uint8_t HeadLen)
 		prvBL.NextLzmaHeaderSize = HeadLen;
 		prvBL.NextLzmaData = prvBL.FWDataBuffer.Data;
 		prvBL.NextLzmaDataLen = prvBL.FWDataBuffer.Pos;
-		OS_InitBuffer(&prvBL.FWDataBuffer, SPI_FLASH_BLOCK_SIZE);
+		OS_InitBuffer(&prvBL.FWDataBuffer, __FLASH_BLOCK_SIZE__);
 		prvBL.NextLzmaAddress = 0;
 		return ERROR_NONE;
 	}
@@ -212,7 +202,7 @@ uint8_t BL_RunLzmaBlock(uint8_t *Head, uint8_t HeadLen)
 
 void Local_Upgrade(void)
 {
-	uint8_t *FullData = malloc(SPI_FLASH_BLOCK_SIZE);
+	DBuffer_Struct DBuf;
 	uint32_t FinishLen = 0;
 	uint32_t ProgramLen, CRC32, i;
 	uint64_t AllToTick = GetSysTick() + FW_UPGRADE_START_TIME * CORE_TICK_1MS;
@@ -223,6 +213,7 @@ void Local_Upgrade(void)
 	uint32_t CurLzmaDataLen;
 	uint8_t CurLzmaHead[LZMA_PROPS_SIZE + 8];
 	uint8_t CurLzmaHeadLen;
+	DBuffer_Init(&DBuf, __FLASH_BLOCK_SIZE__);
 	DBG_Response(DBG_DEVICE_FW_UPGRADE_READY, ERROR_NONE, &ConnectCnt, 1);
 	while(!prvBL.ForceOut)
 	{
@@ -248,25 +239,72 @@ void Local_Upgrade(void)
 			break;
 		case FW_UPGRADE_STATE_RUN:
 		case FW_UPGRADE_STATE_WAIT_END:
+			if (DBuffer_GetDataLen(&DBuf, 0))
+			{
+				DBuffer_SwapCache(&DBuf);
+				DBuffer_SetDataLen(&DBuf, 0, 0);
+				goto PROGRAM_BLOCK;
+			}
 			if (prvBL.NextLzmaData)
 			{
-				WDT_Feed();
 				CurLzmaData = prvBL.NextLzmaData;
 				CurLzmaDataLen = prvBL.NextLzmaDataLen;
 				memcpy(CurLzmaHead, prvBL.NextLzmaHeader, prvBL.NextLzmaHeaderSize);
 				CurLzmaHeadLen = prvBL.NextLzmaHeaderSize;
 				prvBL.NextLzmaData = NULL;
-				ProgramLen = __FLASH_BLOCK_SIZE__;
-				LzmaUncompress(FullData, &ProgramLen, CurLzmaData, &CurLzmaDataLen, CurLzmaHead, CurLzmaHeadLen);
-				Flash_Erase(prvBL.FWStartAddress + FinishLen, __FLASH_BLOCK_SIZE__);
-				Flash_Program(prvBL.FWStartAddress + FinishLen, FullData, ProgramLen);
+				if (!CurLzmaHead[0])
+				{
+					memcpy(DBuffer_GetCache(&DBuf, 1), CurLzmaData, CurLzmaDataLen);
+					DBuffer_SetDataLen(&DBuf, CurLzmaDataLen, 1);
+				}
+				else
+				{
+					ProgramLen = __FLASH_BLOCK_SIZE__;
+					LzmaUncompress(DBuffer_GetCache(&DBuf, 1), &ProgramLen, CurLzmaData, &CurLzmaDataLen, CurLzmaHead, CurLzmaHeadLen);
+					DBuffer_SetDataLen(&DBuf, ProgramLen, 1);
+				}
 				free(CurLzmaData);
 				CurLzmaData = NULL;
-				FinishLen += ProgramLen;
-				DataToTick = GetSysTick() + FW_UPGRADE_DATA_TIME * CORE_TICK_1MS;
-				AllToTick = GetSysTick() + FW_UPGRADE_ALL_TIME * CORE_TICK_1MS;
-			}
 
+				goto PROGRAM_BLOCK;
+			}
+			goto PROGRAM_CHECK;
+PROGRAM_BLOCK:
+			WDT_Feed();
+			if (memcmp(prvBL.FWStartAddress + FinishLen, DBuffer_GetCache(&DBuf, 1), DBuffer_GetDataLen(&DBuf, 1)))
+			{
+				Flash_EraseStart(prvBL.FWStartAddress + FinishLen, 1);
+				while(Flash_CheckBusy())
+				{
+					if (prvBL.NextLzmaData && !DBuffer_GetDataLen(&DBuf, 0))
+					{
+						CurLzmaData = prvBL.NextLzmaData;
+						CurLzmaDataLen = prvBL.NextLzmaDataLen;
+						memcpy(CurLzmaHead, prvBL.NextLzmaHeader, prvBL.NextLzmaHeaderSize);
+						CurLzmaHeadLen = prvBL.NextLzmaHeaderSize;
+						prvBL.NextLzmaData = NULL;
+						if (!CurLzmaHead[0])
+						{
+							memcpy(DBuffer_GetCache(&DBuf, 0), CurLzmaData, CurLzmaDataLen);
+							DBuffer_SetDataLen(&DBuf, CurLzmaDataLen, 0);
+						}
+						else
+						{
+							ProgramLen = __FLASH_BLOCK_SIZE__;
+							LzmaUncompress(DBuffer_GetCache(&DBuf, 0), &ProgramLen, CurLzmaData, &CurLzmaDataLen, CurLzmaHead, CurLzmaHeadLen);
+							DBuffer_SetDataLen(&DBuf, ProgramLen, 0);
+						}
+						free(CurLzmaData);
+						CurLzmaData = NULL;
+					}
+				}
+				CACHE_CleanAll(CACHE);
+				Flash_Program(prvBL.FWStartAddress + FinishLen, DBuffer_GetCache(&DBuf, 1), DBuffer_GetDataLen(&DBuf, 1));
+			}
+			FinishLen += DBuffer_GetDataLen(&DBuf, 1);
+			DataToTick = GetSysTick() + FW_UPGRADE_DATA_TIME * CORE_TICK_1MS;
+			AllToTick = GetSysTick() + FW_UPGRADE_ALL_TIME * CORE_TICK_1MS;
+PROGRAM_CHECK:
 			if (FinishLen >= prvBL.FWTotalLen)
 			{
 				CACHE_CleanAll(CACHE);
@@ -295,9 +333,9 @@ void Local_Upgrade(void)
 	}
 	if (ConnectOK)
 	{
-		BL_EraseSector(__FLASH_OTA_INFO_ADDR__);
+		BL_OTAErase(__FLASH_OTA_INFO_ADDR__, __FLASH_SECTOR_SIZE__);
 	}
-	free(FullData);
+	DBuffer_DeInit(&DBuf);
 }
 
 static int32_t BL_OTAReadDataInFlash(void *pData, void *pParam)
@@ -545,7 +583,7 @@ OTA_END:
 	}
 	else
 	{
-		BL_EraseSector(__FLASH_OTA_INFO_ADDR__);
+		BL_OTAErase(__FLASH_OTA_INFO_ADDR__, __FLASH_SECTOR_SIZE__);
 	}
 
 }
@@ -553,7 +591,12 @@ OTA_END:
 void SystemInit(void)
 {
 	SYSCTRL->LDO25_CR = (1 << 5);
+#ifdef __RUN_IN_RAM__
+	memcpy(__SRAM_BASE_ADDR__, &__isr_start_address, 1024);
+	SCB->VTOR = __SRAM_BASE_ADDR__;
+#else
 	SCB->VTOR = (uint32_t)(&__isr_start_address);
+#endif
 #ifdef __USE_XTL__
 	SYSCTRL->FREQ_SEL = 0x20000000 | SYSCTRL_FREQ_SEL_HCLK_DIV_1_2 | (1 << 13) | SYSCTRL_FREQ_SEL_CLOCK_SOURCE_EXT | SYSCTRL_FREQ_SEL_XTAL_192Mhz;
 #else

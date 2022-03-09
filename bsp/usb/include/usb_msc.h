@@ -108,6 +108,7 @@ typedef struct
 	Buffer_Struct BotDataBuffer;
 	SCSI_SenseTypeDef Sense;
 	HANDLE pSCSIUserFunList;
+	Timer_t *ReadTimer;
 	void *pUserData;
 	uint32_t XferDoneLen;
 	uint32_t LastXferLen;
@@ -118,6 +119,7 @@ typedef struct
 	uint8_t ToHostEpIndex;
 	uint8_t ToDeviceEpIndex;
 	uint8_t LogicalUnitNum;
+	uint8_t USB_ID;
 }MSC_SCSICtrlStruct;
 
 typedef struct
@@ -129,8 +131,10 @@ typedef struct
 	int32_t (* IsWriteProtected)(uint8_t LUN, void *pUserData);
 	int32_t (* PreRead)(uint8_t LUN, uint32_t BlockAddress, uint32_t BlockNums, void *pUserData);
 	int32_t (* Read)(uint8_t LUN, uint32_t Len, void **pOutData, uint32_t *OutLen, void *pUserData);
+	int32_t (* ReadNext)(uint8_t LUN, void *pUserData);
 	int32_t (* PreWrite)(uint8_t LUN, uint32_t BlockAddress, uint32_t BlockNums, void *pUserData);
 	int32_t (* Write)(uint8_t LUN, uint8_t *Data, uint32_t Len, void *pUserData);
+	int32_t (* DoWrite)(uint8_t LUN, void *pUserData);
 	int32_t (* UserCmd)(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC);
 	void *pStandardInquiry;
 	void *pPage00InquiryData;

@@ -1,16 +1,17 @@
 /* Entry Point */
 ENTRY(Reset_Handler)
 
-_stext = ORIGIN(FLASH);
+_stext = ORIGIN(CODE);
 _Min_Heap_Size = 0 ;	/* required amount of heap  */
-_Min_Stack_Size = 0x10000 ;	/* required amount of stack */
+_Min_Stack_Size = 0x4000 ;	/* required amount of stack */
 _estack = ORIGIN(RAM) + _Min_Stack_Size + _Min_Heap_Size;	/* start of "RAM" Ram type memory */
 _sstack = ORIGIN(RAM); /* start of "RAM" Ram type memory */
 __ram_end = ORIGIN(RAM) + LENGTH(RAM);
 /* Memories definition */
 MEMORY
 {
-    RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 640K
+    RAM    (xrw)    : ORIGIN = 0x20010000,   LENGTH = 576K
+    CODE   (rx)    : ORIGIN = 0x20000400,   LENGTH = 63K
     FLASH    (rx)    : ORIGIN = 0x01001000,   LENGTH = 56K
 }
 
@@ -31,10 +32,15 @@ SECTIONS
     {
         . = ALIGN(4);
         *startup_full.o(.text .text.*)
+        *startup_full.s.o(.text .text.*)
+        *startup_run_in_ram.o(.text .text.*)
+        *startup_run_in_ram.s.o(.text .text.*)
     } >FLASH
+    _sitext = LOADADDR(.text);
     .text :
     {
         . = ALIGN(4);
+        _sstext = .;
         *(.text)           /* .text sections (code) */
         *(.text*)          /* .text* sections (code) */
         *(.glue_7)         /* glue arm to thumb code */
@@ -46,7 +52,7 @@ SECTIONS
 
         . = ALIGN(4);
         _etext = .;        /* define a global symbols at end of code */
-    } >FLASH
+    } >CODE AT> FLASH
 
     /* Constant data into "FLASH" Rom type memory */
     .rodata :
@@ -55,13 +61,13 @@ SECTIONS
         *(.rodata)         /* .rodata sections (constants, strings, etc.) */
         *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
         . = ALIGN(4);
-    } >FLASH
+    } >CODE AT> FLASH
 
     .ARM.extab   : {
         . = ALIGN(4);
         *(.ARM.extab* .gnu.linkonce.armextab.*)
         . = ALIGN(4);
-    } >FLASH
+    } >CODE AT> FLASH
 
     .ARM : {
         . = ALIGN(4);
@@ -69,7 +75,7 @@ SECTIONS
         *(.ARM.exidx*)
         __exidx_end = .;
         . = ALIGN(4);
-    } >FLASH
+    } >CODE AT> FLASH
 
     .preinit_array     :
     {
@@ -78,7 +84,7 @@ SECTIONS
         KEEP (*(.preinit_array*))
         PROVIDE_HIDDEN (__preinit_array_end = .);
         . = ALIGN(4);
-    } >FLASH
+    } >CODE AT> FLASH
 
     .init_array :
     {
@@ -88,7 +94,7 @@ SECTIONS
         KEEP (*(.init_array*))
         PROVIDE_HIDDEN (__init_array_end = .);
         . = ALIGN(4);
-    } >FLASH
+    } >CODE AT> FLASH
 
     .fini_array :
     {
@@ -98,7 +104,7 @@ SECTIONS
         KEEP (*(.fini_array*))
         PROVIDE_HIDDEN (__fini_array_end = .);
         . = ALIGN(4);
-    } >FLASH
+    } >CODE AT> FLASH
     
     .preinit_fun_array :
     {
@@ -108,7 +114,7 @@ SECTIONS
         KEEP (*(.preinit_fun_array*))
         __preinit_fun_array_end = .;
         . = ALIGN(4);
-    } > FLASH
+    } >CODE AT> FLASH
     
     .init_fun_array :
     {
@@ -118,7 +124,7 @@ SECTIONS
         KEEP (*(.init_fun_array*))
         __init_fun_array_end = .;
         . = ALIGN(4);
-    } > FLASH
+    } >CODE AT> FLASH
     
     .task_fun_array :
     {
@@ -128,7 +134,8 @@ SECTIONS
         KEEP (*(.task_fun_array*))
         __task_fun_array_end = .;
         . = ALIGN(4);
-    } > FLASH
+        _setext = .;
+    } >CODE AT> FLASH
     
     /* User_heap_stack section, used to check that there is enough "RAM" Ram  type memory left */
     ._user_heap_stack :

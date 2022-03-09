@@ -41,7 +41,6 @@ enum
 {
 	SERVICE_LCD_DRAW = SERVICE_EVENT_ID_START + 1,
 	SERVICE_CAMERA_DRAW,
-	SERVICE_USB_ACTION,
 	SERVICE_DECODE_QR,
 	SERVICE_SCAN_KEYBOARD,
 	SERVICE_ENCODE_JPEG_START,
@@ -235,25 +234,7 @@ static void prvService_Task(void* params)
 		case SERVICE_SCAN_KEYBOARD:
 			SoftKB_ScanOnce();
 			break;
-		case SERVICE_USB_ACTION:
-			switch (Event.Param2)
-			{
-			case SERV_USB_RESET_END:
-				DBG("USB%d reset", Event.Param1);
-				Task_DelayMS(1);
-				USB_StackDeviceAfterDisconnect(Event.Param1);
-				break;
-			case SERV_USB_RESUME_END:
-				Task_DelayMS(20);
-				USB_ResumeEnd(Event.Param3);
-				break;
-			case SERV_USB_SUSPEND:
-				DBG("USB%d suspend", Event.Param1);
-				break;
-			case SERV_USB_RESUME:
-				break;
-			}
-			break;
+
 		case SERVICE_DECODE_QR:
 			if (Event.Param3)
 			{
@@ -451,11 +432,6 @@ void Core_DecodeQR(uint8_t *ImageData, uint16_t ImageW, uint16_t ImageH,  CBData
 	Task_SendEvent(prvService.ServiceHandle, SERVICE_DECODE_QR, ImageData, uPV.u32, CB);
 }
 
-void Core_USBAction(uint8_t USB_ID, uint8_t Action, void *pParam)
-{
-	Task_SendEvent(prvService.ServiceHandle, SERVICE_USB_ACTION, USB_ID, Action, pParam);
-}
-
 void Core_ScanKeyBoard(void)
 {
 	Task_SendEvent(prvService.ServiceHandle, SERVICE_SCAN_KEYBOARD, 0, 0, 0);
@@ -593,5 +569,5 @@ void Core_UserTaskInit(void)
 
 INIT_TASK_EXPORT(Core_HWTaskInit, "0");
 INIT_TASK_EXPORT(Core_ServiceInit, "1");
-INIT_TASK_EXPORT(Core_UserTaskInit, "2");
+INIT_TASK_EXPORT(Core_UserTaskInit, "5");
 #endif
