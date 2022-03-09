@@ -118,7 +118,7 @@ target("bootloader.elf")
         sdk_dir = target:toolchains()[1]:sdkdir().."/"
         -- os.exec(sdk_dir .. "bin/arm-none-eabi-objcopy -O binary --gap-fill=0xff $(buildir)/out/bootloader.elf $(buildir)/out/bootloader.bin")
         os.exec(sdk_dir .. "bin/arm-none-eabi-objcopy -O ihex $(buildir)/out/bootloader.elf $(buildir)/out/bootloader.hex")
-        os.exec("./project/air105/hex2bin.exe $(buildir)/out/bootloader.hex")
+        os.exec(sdk_dir .. "bin/arm-none-eabi-objcopy -I ihex -O binary $(buildir)/out/bootloader.hex $(buildir)/out/bootloader.bin")
         
         io.writefile("$(buildir)/out/bootloader.list", os.iorun(sdk_dir .. "bin/arm-none-eabi-objdump -h -S $(buildir)/out/bootloader.elf"))
         io.writefile("$(buildir)/out/bootloader.size", os.iorun(sdk_dir .. "bin/arm-none-eabi-size $(buildir)/out/bootloader.elf"))
