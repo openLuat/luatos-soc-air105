@@ -41,7 +41,6 @@ void lv_png_init(void);
 void lv_split_jpeg_init(void);
 #endif
 
-LUAMOD_API int luaopen_gtfont( lua_State *L );
 LUAMOD_API int luaopen_usbapp( lua_State *L );
 
 static const luaL_Reg loadedlibs[] = {
@@ -196,6 +195,9 @@ static const luaL_Reg loadedlibs[] = {
 #endif 
 #ifdef LUAT_USE_NES   
   {"nes", luaopen_nes}, 
+#endif
+#ifdef LUAT_USE_SOFTKB
+  {"softkb", luaopen_softkb}, 
 #endif
   {"usbapp", luaopen_usbapp},
   {NULL, NULL}

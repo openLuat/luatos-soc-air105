@@ -254,7 +254,7 @@ static void prvUSB_SCSIHandleCmd(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlSt
 CMD_PROC_END:
 	if (Result)
 	{
-		DBG("%02x", pMSC->CBW.CB[0]);
+		//DBG("%02x", pMSC->CBW.CB[0]);
 		if (!pMSC->Sense.Skey)
 		{
 			USB_SCSISetSenseState(pMSC, SENSE_KEY_ILLEGAL_REQUEST, INVALID_COMMAND_OPERATION_CODE, 0, NULL);

@@ -316,6 +316,8 @@ if with_luatos then
 
     add_files(luatos.."components/camera/*.c")
     add_includedirs(luatos.."components/camera")
+    add_files(luatos.."components/soft_keyboard/*.c")
+    add_includedirs(luatos.."components/soft_keyboard")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})

@@ -19,32 +19,34 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef __APP_INTERFACE_H__
-#define __APP_INTERFACE_H__
-#include "global_config.h"
-#include "platform_define.h"
-#include "resource_map.h"
-#include "bsp_common.h"
-#include "core_dma.h"
-#include "core_flash.h"
-#include "core_debug.h"
-#include "core_tick.h"
-#include "core_otp.h"
-#include "core_timer.h"
-#include "core_i2c.h"
-#include "core_spi.h"
-#include "core_wdt.h"
-#include "core_rtc.h"
-#include "core_pm.h"
-#include "core_hwtimer.h"
-#include "core_service.h"
-#include "core_keyboard.h"
-#include "core_dcmi.h"
-#include "core_rng.h"
-#include "core_task.h"
-#include "core_soft_keyboard.h"
-#include "lfs.h"
-#include "usb_driver.h"
-#include "usb_hid.h"
-void FileSystem_Init(void);
-#endif
+#include "luat_base.h"
+#include "luat_softkeyboard.h"
+#include "luat_malloc.h"
+#include "luat_msgbus.h"
+
+#include "app_interface.h"
+
+#define LUAT_LOG_TAG "soft_keyboard"
+#include "luat_log.h"
+
+static void l_softkeyboard_irq_cb(void *pData, void *pParam) {
+    rtos_msg_t msg = {0};
+    msg.handler = l_softkeyboard_handler;
+    msg.arg1 = 0;
+    msg.arg2 = (uint16_t) pData;
+    msg.ptr = (((uint32_t)pData) >> 16) & 0x1;
+    luat_msgbus_put(&msg, 0);
+}
+
+int luat_softkeyboard_init(luat_softkeyboard_conf_t *conf){
+	SoftKB_Setup(6250, 4, 2, 0, l_softkeyboard_irq_cb, NULL);
+	SoftKB_IOConfig(conf->inio, conf->inio_num, conf->outio, conf->outio_num, 0);
+    SoftKB_Start();
+    return 0;
+}
+
+int luat_softkeyboard_deinit(luat_softkeyboard_conf_t *conf){
+    SoftKB_Stop();
+    return 0;
+}
+

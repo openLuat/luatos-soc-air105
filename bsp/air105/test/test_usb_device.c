@@ -50,9 +50,34 @@ static int32_t prvTest_USBCB(void *pData, void *pParam)
 	}
 }
 
+int32_t prvTest_HIDCB(void *pData, void *pParam)
+{
+	Buffer_Struct *Buf;
+	switch((uint32_t)pParam)
+	{
+	case USB_HID_NOT_READY:
+		DBG("hid disconnected");
+		break;
+	case USB_HID_READY:
+		DBG("hid connected");
+		break;
+	case USB_HID_SEND_DONE:
+		DBG("hid send ok");
+		break;
+	default:
+		Buf = (Buffer_Struct *)pParam;
+		DBG("hid get data:");
+		DBG_HexPrintf(Buf->Data, Buf->Pos);
+		Core_VHIDSendRawData(0, "just Test Once!\n", 16);
+		break;
+	}
+    return 0;
+}
+
 void Test_USBStart(void)
 {
 	Core_VUartInit(VIRTUAL_UART0, 0, 1, 0, 0, 0, prvTest_USBCB);
+	Core_VHIDInit(0, prvTest_HIDCB);
 //	Core_VUartSetRxTimeout(VIRTUAL_UART0, 200);
 }
 

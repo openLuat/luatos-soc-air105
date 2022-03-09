@@ -86,6 +86,8 @@ typedef struct
 	DBuffer_Struct DataBuf;
 	SDHC_SPICtrlStruct *pSDHC;
 	HANDLE hTaskHandle;
+	uint8_t *pHIDReport;
+	uint16_t HIDReportLen;
 }USB_AppCtrlStruct;
 
 static const uint8_t prvCore_StandardInquiryData[STANDARD_INQUIRY_DATA_LEN] =
@@ -309,7 +311,7 @@ static const usb_interface_descriptor_t prvCore_HIDInterfaceDesc =
 		.bNumEndpoints = 2,
 		.bInterfaceClass = UICLASS_HID,
 		.bInterfaceSubClass = 0,
-		.bInterfaceProtocol = UIPROTO_BOOT_KEYBOARD,
+		.bInterfaceProtocol = 0,
 		.iInterface = USBD_IDX_INTERFACE0_STR + 1,
 };
 
@@ -377,7 +379,26 @@ static const usb_hid_descriptor_t  prvCore_HIDDesc =
 		.wDescriptorLength = {63,0},
 };
 
-static const char prvCore_HIDReportDesc[63] = {
+static const char prvCore_HIDCustomReportDescriptor[34] = {
+	    0x06, 0x00, 0xff,              // USAGE_PAGE (Vendor Defined Page 1)
+	    0x09, 0x00,                    // USAGE (Undefined)
+	    0xa1, 0x01,                    // COLLECTION (Application)
+	    0x09, 0x00,                    //   USAGE (Undefined)
+	    0x75, 0x08,                    //   REPORT_SIZE (8)
+	    0x95, 0x08,                    //   REPORT_COUNT (8)
+	    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+	    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+	    0x81, 0x02,                    // INPUT (Data,Var,Abs)
+	    0x09, 0x00,                    //   USAGE (Undefined)
+	    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+	    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+	    0x95, 0x08,                    //   REPORT_COUNT (8)
+	    0x75, 0x08,                    //   REPORT_SIZE (8)
+	    0x91, 0x02,                    //   OUTPUT (Data,Var,Abs)
+	    0xc0                           // END_COLLECTION
+};
+
+static const char prvCore_HIDKeyboardReportDesc[64] = {
 	    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
 	    0x09, 0x06,                    // USAGE (Keyboard)
 	    0xa1, 0x01,                    // COLLECTION (Application)
@@ -404,7 +425,7 @@ static const char prvCore_HIDReportDesc[63] = {
 	    0x95, 0x06,                    //   REPORT_COUNT (6)
 	    0x75, 0x08,                    //   REPORT_SIZE (8)
 	    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-	    0x25, 0xff,                    //   LOGICAL_MAXIMUM (255)
+	    0x26, 0x00, 0xff,             	  //   LOGICAL_MAXIMUM (255)
 	    0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
 	    0x19, 0x00,                    //   USAGE_MINIMUM (Reserved (no event indicated))
 	    0x29, 0x65,                    //   USAGE_MAXIMUM (Keyboard Application)
@@ -414,9 +435,12 @@ static const char prvCore_HIDReportDesc[63] = {
 
 static int32_t prvCore_GetHIDDesc(void *pData, void *pParam)
 {
+	usb_hid_descriptor_t HIDDesc;
 	if (pData)
 	{
-		memcpy(pData, &prvCore_HIDDesc, sizeof(usb_hid_descriptor_t));
+		HIDDesc = prvCore_HIDDesc;
+		BytesPutLe16(HIDDesc.wDescriptorLength, prvUSBApp.HIDReportLen);
+		memcpy(pData, &HIDDesc, sizeof(usb_hid_descriptor_t));
 	}
 	return sizeof(usb_hid_descriptor_t);
 }
@@ -655,7 +679,7 @@ static int32_t prvCore_USBEp0CB(void *pData, void *pParam)
 				switch(pEpData->pLastRequest->wValue[1])
 				{
 				case USB_HID_REPORT_DESC:
-					USB_StackTxEpData(pEpData->USB_ID, pEpData->EpIndex, prvCore_HIDReportDesc, sizeof(prvCore_HIDReportDesc), wLength, 1);
+					USB_StackTxEpData(pEpData->USB_ID, pEpData->EpIndex, prvUSBApp.pHIDReport, prvUSBApp.HIDReportLen, wLength, 1);
 					Result = ERROR_NONE;
 					break;
 				}
@@ -725,9 +749,13 @@ static int32_t prvCore_HIDCB(void *pData, void *pParam)
 	USB_EndpointDataStruct *pEpData = (USB_EndpointDataStruct *)pData;
 	uint32_t USB_ID = (uint32_t)pParam;
 	Virtual_HIDCtrlStruct *pVHID = &prvLuatOS_VirtualHID;
+	Buffer_Struct Buf;
 	if (pEpData->IsToDevice)
 	{
 		prvCore_VHIDSetReady(1);
+		Buf.Data = pEpData->Data;
+		Buf.Pos = pEpData->Len;
+		pVHID->CB(prvLuatOS_VirtualHID.USB_ID, &Buf);
 	}
 	else
 	{
@@ -827,6 +855,11 @@ void Core_USBDefaultDeviceStart(uint8_t USB_ID)
 	prvUSBApp.tSCSI.LogicalUnitNum = 0;
 	prvUSBApp.tSCSI.ToHostEpIndex = DEVICE_MASS_STORAGE_EP_IN;
 	prvUSBApp.tSCSI.ToDeviceEpIndex = DEVICE_MASS_STORAGE_EP_OUT;
+	if (!prvUSBApp.pHIDReport)
+	{
+		prvUSBApp.pHIDReport = &prvCore_HIDKeyboardReportDesc;
+		prvUSBApp.HIDReportLen = sizeof(prvCore_HIDKeyboardReportDesc);
+	}
 	if (!prvUSBApp.tSCSI.pSCSIUserFunList)
 	{
 		prvUSBApp.tSCSI.pSCSIUserFunList = &prvCore_SCSIFun;
@@ -1141,6 +1174,19 @@ ADD_REST:
 	OS_InitBuffer(&pVHID->TxCacheBuf, VIRTUAL_VHID_BUFFER_LEN);
 	USB_StackTxEpData(pVHID->USB_ID, pVHID->ToHostEpIndex, pVHID->TxBuf.Data, pVHID->TxBuf.MaxLen, pVHID->TxBuf.MaxLen, 1);
 UPLOAD_END:
+	USB_StackEpIntOnOff(pVHID->USB_ID, pVHID->ToHostEpIndex, 0, 1);
+}
+
+void Core_VHIDSendRawData(uint8_t USB_ID, uint8_t *Data, uint16_t Len)
+{
+	if (!prvLuatOS_VirtualHID.IsReady) return;
+	USB_HIDKeyValue HIDKey;
+	Virtual_HIDCtrlStruct *pVHID = &prvLuatOS_VirtualHID;
+	USB_StackEpIntOnOff(pVHID->USB_ID, pVHID->ToHostEpIndex, 0, 0);
+	OS_BufferWrite(&pVHID->TxCacheBuf, Data, Len);
+	Buffer_StaticInit(&pVHID->TxBuf, pVHID->TxCacheBuf.Data, pVHID->TxCacheBuf.Pos);
+	OS_InitBuffer(&pVHID->TxCacheBuf, VIRTUAL_VHID_BUFFER_LEN);
+	USB_StackTxEpData(pVHID->USB_ID, pVHID->ToHostEpIndex, pVHID->TxBuf.Data, pVHID->TxBuf.MaxLen, pVHID->TxBuf.MaxLen, 1);
 	USB_StackEpIntOnOff(pVHID->USB_ID, pVHID->ToHostEpIndex, 0, 1);
 }
 

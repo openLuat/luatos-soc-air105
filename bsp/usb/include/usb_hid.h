@@ -215,7 +215,7 @@ typedef struct
 		struct
 		{
 			uint8_t NumsLock:1;
-			uint8_t l1  :1;
+			uint8_t CapsLock:1;
 			uint8_t l2:1;
 			uint8_t l3:1;
 			uint8_t Kana:1;
