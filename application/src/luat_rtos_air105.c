@@ -31,7 +31,7 @@
 #include "luat_log.h"
 
 int luat_thread_start(luat_thread_t* thread){
-    Task_Create(thread->thread, NULL, thread->stack_size, thread->priority, thread->name);
+    Task_Create(thread->entry, NULL, thread->stack_size, thread->priority, thread->name);
     return 0;
 }
 
