@@ -107,9 +107,11 @@ typedef struct
 	MSC_BOT_CSWTypeDef  CSW;
 	Buffer_Struct BotDataBuffer;
 	SCSI_SenseTypeDef Sense;
+	uint64_t TestTime;
 	HANDLE pSCSIUserFunList;
 	Timer_t *ReadTimer;
 	void *pUserData;
+	uint32_t ReadTimeout;
 	uint32_t XferDoneLen;
 	uint32_t LastXferLen;
 	uint32_t XferTotalLen;//实际上需要发送的总数据量，有可能和CBW要求的不一样

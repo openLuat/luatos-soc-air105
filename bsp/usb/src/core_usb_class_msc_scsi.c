@@ -93,11 +93,9 @@ static void prvUSB_SendCSW(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *
 static int32_t prvUSB_MSCTimeout(void *pData, void *pParam)
 {
 	MSC_SCSICtrlStruct *pMSC = (void *)pParam;
-	DBG("!");
-	pMSC->CSWStatus = USB_MSC_CSW_CMD_FAILED;
-	USB_StackStopDeviceTx(pMSC->USB_ID, pMSC->ToHostEpIndex, 0);
-	USB_StackSetEpStatus(pMSC->USB_ID, pMSC->ToHostEpIndex, 1, USB_EP_STATE_STALL);
-	prvUSB_SendCSW(NULL, pMSC);
+	DBG("bot timeout!, reboot usb");
+	Core_USBDefaultDeviceStart(pMSC->USB_ID);
+
 }
 
 static void prvUSB_SendBotData(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
@@ -169,6 +167,7 @@ void USB_MSCHandle(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
 					goto ERROR_OUT;
 				}
 				pMSC->XferDoneLen = 0;
+//				pMSC->TestTime = GetSysTickUS();
 				prvUSB_SCSIHandleCmd(pEpData, pMSC);
 				if (!pMSC->CBW.dDataLength)
 				{
@@ -311,6 +310,7 @@ static void prvUSB_SCSIHandleToHostData(USB_EndpointDataStruct *pEpData, MSC_SCS
 	pMSC->XferDoneLen += pMSC->LastXferLen;
 	if (pMSC->XferDoneLen >= pMSC->XferTotalLen)
 	{
+//		DBG("%llu", GetSysTickUS() - pMSC->TestTime);
 		prvUSB_SendCSW(pEpData, pMSC);
 		return;
 	}
@@ -650,7 +650,6 @@ static int32_t prvSCSI_Read(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct 
 		BlockNums = BytesGetBe32(&pMSC->CBW.CB[10]);
 		break;
 	}
-
     /* case 10 : Ho <> Di */
     if ((pMSC->CBW.bmFlags & 0x80U) != 0x80U)
     {
@@ -692,12 +691,11 @@ static int32_t prvSCSI_Read(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct 
 		DBG("!");
 		return -1;
 	}
-
 	pMSC->LastXferLen = TxLen;
 	USB_StackTxEpData(pEpData->USB_ID, pMSC->ToHostEpIndex, TxData, TxLen, TxLen, 0);
 	pMSC->BotState = USB_MSC_BOT_STATE_DATA_IN_TO_HOST;
 	pUserFun->ReadNext(pMSC->CBW.bLUN, pMSC->pUserData);
-	Timer_StartMS(pMSC->ReadTimer, 1000, 0);
+	Timer_StartMS(pMSC->ReadTimer, pMSC->ReadTimeout, 0);
     return 0;
 }
 

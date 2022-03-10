@@ -99,6 +99,10 @@ static int32_t prvSDHC_SCSIInit(uint8_t LUN, void *pUserData)
 static int32_t prvSDHC_SCSIGetCapacity(uint8_t LUN, uint32_t *BlockNum, uint32_t *BlockSize, void *pUserData)
 {
 	SDHC_SPICtrlStruct *pSDHC = pUserData;
+	if (!pSDHC->Info.LogBlockSize || !pSDHC->Info.LogBlockNbr)
+	{
+		SDHC_SpiReadCardConfig(pSDHC);
+	}
 	*BlockSize = pSDHC->Info.LogBlockSize;
 	*BlockNum = pSDHC->Info.LogBlockNbr;
 	return 0;
@@ -121,11 +125,17 @@ static int32_t prvSDHC_SCSIPreRead(uint8_t LUN, uint32_t BlockAddress, uint32_t 
 	SDHC_SPICtrlStruct *pSDHC = pUserData;
 	if ((BlockAddress + BlockNums) > pSDHC->Info.LogBlockNbr)
 	{
+		DBG("%u,%u,%u", BlockAddress, BlockNums, pSDHC->Info.LogBlockNbr);
 		return -1;
 	}
 	pSDHC->CurBlock = BlockAddress;
 	pSDHC->EndBlock = BlockAddress + BlockNums;
-
+	if ((pSDHC->PreCurBlock == pSDHC->CurBlock) && pSDHC->PreEndBlock)
+	{
+//		DBG("%u,%u,%u", pSDHC->PreCurBlock, pSDHC->CurBlock, pSDHC->PreEndBlock);
+		pSDHC->CurBlock = pSDHC->PreEndBlock;
+		return 0;
+	}
 	prvSDHC_SCSIReadNext(LUN, pUserData);
 	return 0;
 }
@@ -142,7 +152,10 @@ static int32_t prvSDHC_SCSIRead(uint8_t LUN, uint32_t Len, uint8_t **pOutData, u
 	}
 	DBuffer_SetDataLen(pSDHC->SCSIDataBuf, 0, 1);
 	DBuffer_SwapCache(pSDHC->SCSIDataBuf);
-//	Task_DelayMS(1);
+	if (pSDHC->USBDelayTime)	//不得不降速
+	{
+		Task_DelayMS(pSDHC->USBDelayTime);
+	}
 #else
 	uint32_t ReadBlocks;
 	if (pSDHC->EndBlock <= pSDHC->CurBlock) return -1;
@@ -168,7 +181,15 @@ static int32_t prvSDHC_SCSIReadNext(uint8_t LUN, void *pUserData)
 #if 1
 	SDHC_SPICtrlStruct *pSDHC = pUserData;
 	uint32_t ReadBlocks;
-	if (pSDHC->EndBlock <= pSDHC->CurBlock) return -1;
+	if (pSDHC->EndBlock <= pSDHC->CurBlock)
+	{
+		ReadBlocks = pSDHC->SCSIDataBuf->MaxLen >> 9;
+		pSDHC->PreCurBlock = pSDHC->EndBlock;
+		SDHC_SpiReadBlocks(pSDHC, DBuffer_GetCache(pSDHC->SCSIDataBuf, 1), pSDHC->PreCurBlock, ReadBlocks);
+		pSDHC->PreEndBlock = pSDHC->PreCurBlock + ReadBlocks;
+		DBuffer_SetDataLen(pSDHC->SCSIDataBuf, pSDHC->SCSIDataBuf->MaxLen, 1);
+		return ERROR_NONE;
+	}
 
 	if ( ((pSDHC->EndBlock - pSDHC->CurBlock) << 9) > pSDHC->SCSIDataBuf->MaxLen)
 	{
@@ -203,7 +224,6 @@ static int32_t prvSDHC_SCSIPreWrite(uint8_t LUN, uint32_t BlockAddress, uint32_t
 static int32_t prvSDHC_SCSIWrite(uint8_t LUN, uint8_t *Data, uint32_t Len, void *pUserData)
 {
 	SDHC_SPICtrlStruct *pSDHC = pUserData;
-	uint32_t WriteBlocks = Len >> 9;
 	if (!SDHC_IsReady(pSDHC)) return -1;
 	if (pSDHC->EndBlock <= pSDHC->CurBlock) return -1;
 	memcpy(DBuffer_GetCache(pSDHC->SCSIDataBuf, 1) + DBuffer_GetDataLen(pSDHC->SCSIDataBuf, 1), Data, Len);
@@ -218,6 +238,7 @@ static int32_t prvSDHC_SCSIDoWrite(uint8_t LUN, void *pUserData)
 	if (pSDHC->EndBlock <= pSDHC->CurBlock) return -1;
 	if (WriteBlocks)
 	{
+
 		if (WriteBlocks > (pSDHC->EndBlock - pSDHC->CurBlock))
 		{
 			WriteBlocks = pSDHC->EndBlock - pSDHC->CurBlock;
@@ -448,7 +469,7 @@ static int32_t SDHC_SpiWriteBlockData(SDHC_SPICtrlStruct *Ctrl)
 	uint8_t *pBuf;
 	Ctrl->SPIError = 0;
 	Ctrl->SDHCError = 0;
-	OpEndTick = GetSysTick() + Ctrl->SDHCWriteBlockTo * CORE_TICK_1MS;
+	OpEndTick = GetSysTick() + Ctrl->SDHCWriteBlockTo;
 	while( (Ctrl->DataBuf.Pos < Ctrl->DataBuf.MaxLen) && (GetSysTick() < OpEndTick) )
 	{
 		Ctrl->TempData[0] = 0xff;
@@ -499,14 +520,14 @@ static int32_t SDHC_SpiWriteBlockData(SDHC_SPICtrlStruct *Ctrl)
 			goto SDHC_SPIWRITEBLOCKDATA_DONE;
 		}
 		Ctrl->DataBuf.Pos++;
-		OpEndTick = GetSysTick() + Ctrl->SDHCWriteBlockTo * CORE_TICK_1MS;
+		OpEndTick = GetSysTick() + Ctrl->SDHCWriteBlockTo;
 	}
 	Result = ERROR_NONE;
 SDHC_SPIWRITEBLOCKDATA_DONE:
 	Ctrl->TempData[0] = 0xfd;
 	SPI_BlockTransfer(Ctrl->SpiID, Ctrl->TempData, Ctrl->TempData, 1);
 
-	OpEndTick = GetSysTick() + Ctrl->SDHCWriteBlockTo * CORE_TICK_1MS * Ctrl->DataBuf.MaxLen;
+	OpEndTick = GetSysTick() + Ctrl->SDHCWriteBlockTo * Ctrl->DataBuf.MaxLen;
 	DoneFlag = 0;
 	while( (GetSysTick() < OpEndTick) && !DoneFlag )
 	{
@@ -522,7 +543,6 @@ SDHC_SPIWRITEBLOCKDATA_DONE:
 			}
 		}
 	}
-
 	SDHC_SpiCS(Ctrl, 0);
 
 	return Result;
@@ -537,8 +557,7 @@ static int32_t SDHC_SpiReadBlockData(SDHC_SPICtrlStruct *Ctrl)
 	uint8_t *pBuf;
 	Ctrl->SPIError = 0;
 	Ctrl->SDHCError = 0;
-
-	OpEndTick = GetSysTick() + Ctrl->SDHCReadBlockTo * CORE_TICK_1MS;
+	OpEndTick = GetSysTick() + Ctrl->SDHCReadBlockTo;
 	while( (Ctrl->DataBuf.Pos < Ctrl->DataBuf.MaxLen) && (GetSysTick() < OpEndTick) )
 	{
 
@@ -577,7 +596,7 @@ READ_REST_DATA:
 			goto SDHC_SPIREADBLOCKDATA_DONE;
 		}
 		Ctrl->DataBuf.Pos++;
-		OpEndTick = GetSysTick() + Ctrl->SDHCReadBlockTo * CORE_TICK_1MS;
+		OpEndTick = GetSysTick() + Ctrl->SDHCReadBlockTo;
 	}
 	Result = ERROR_NONE;
 
@@ -653,7 +672,6 @@ void SDHC_SpiReadCardConfig(void *pSDHC)
 	SD_CardInfo *pCardInfo = &Ctrl->Info;
 	uint64_t Temp;
 	uint8_t flag_SDHC = (Ctrl->OCR & 0x40000000) >> 30;
-
 	if (Ctrl->Info.CardCapacity) return;
 
 	if (SDHC_SpiCmd(Ctrl, CMD9, 0, 0))
@@ -882,6 +900,7 @@ SDHC_SPIREADBLOCKS_START:
 	if (Ctrl->DataBuf.Pos != Ctrl->DataBuf.MaxLen)
 	{
 		Retry++;
+		DBG("%d", Retry);
 		if (Retry > 3)
 		{
 			Ctrl->SDHCError = 1;
@@ -891,6 +910,7 @@ SDHC_SPIREADBLOCKS_START:
 	}
 	return;
 SDHC_SPIREADBLOCKS_ERROR:
+	DBG("!");
 	Ctrl->IsInitDone = 0;
 	Ctrl->SDHCError = 1;
 	return;
@@ -901,8 +921,8 @@ void *SDHC_SpiCreate(uint8_t SpiID, uint8_t CSPin)
 	SDHC_SPICtrlStruct *Ctrl = zalloc(sizeof(SDHC_SPICtrlStruct));
 	Ctrl->CSPin = CSPin;
 	Ctrl->SpiID = SpiID;
-	Ctrl->SDHCReadBlockTo = 5 * CORE_TICK_1MS;
-	Ctrl->SDHCWriteBlockTo = 25 * CORE_TICK_1MS;
+	Ctrl->SDHCReadBlockTo = 50 * CORE_TICK_1MS;
+	Ctrl->SDHCWriteBlockTo = 250 * CORE_TICK_1MS;
 //	Ctrl->IsPrintData = 1;
 	return Ctrl;
 }
@@ -922,6 +942,7 @@ uint8_t SDHC_IsReady(void *pSDHC)
 	}
 	else
 	{
+		DBG("!");
 		return 0;
 	}
 }

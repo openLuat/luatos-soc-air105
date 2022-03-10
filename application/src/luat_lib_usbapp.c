@@ -134,7 +134,7 @@ USB U盘设备挂载SDHC，TF卡
 usbapp.udisk_attach_sdhc(0)
 */
 static int l_usb_udisk_attach_sdhc(lua_State* L) {
-    luat_usb_app_vhid_cancel_upload(USB_ID0);
+	luat_usb_udisk_attach_sdhc(USB_ID0);
     return 0;
 }
 
@@ -147,7 +147,7 @@ USB U盘设备去除挂载SDHC，TF卡
 usbapp.udisk_detach_sdhc(0)
 */
 static int l_usb_udisk_detach_sdhc(lua_State* L) {
-    luat_usb_app_vhid_cancel_upload(USB_ID0);
+	luat_usb_udisk_detach_sdhc(USB_ID0);
     return 0;
 }
 #include "rotable.h"
