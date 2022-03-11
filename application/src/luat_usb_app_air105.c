@@ -48,6 +48,11 @@ void luat_usb_app_vhid_upload(uint8_t usb_id, uint8_t *key_data, uint16_t len)
 	Core_VHIDUploadData(usb_id, key_data, len);
 }
 
+void luat_usb_app_vhid_upload_raw(uint8_t usb_id, uint8_t *key_data)
+{
+	Core_VHIDSendRawData(usb_id, key_data,8);
+}
+
 void luat_usb_app_vhid_cancel_upload(uint8_t usb_id)
 {
 	Core_VHIDUploadStop(usb_id);
