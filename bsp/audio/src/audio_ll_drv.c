@@ -117,20 +117,35 @@ static int32_t prvAudio_RunDAC(Audio_StreamStruct *pStream)
 
 static int32_t prvAudio_WriteDACRaw(Audio_StreamStruct *pStream, uint8_t *pByteData, uint32_t ByteLen)
 {
-	uint32_t i;
+	uint32_t i, VaildLen;
 	uint32_t DiffBit;
+	uint16_t *wTemp;
 	Audio_DataBlockStruct *Block = zalloc(sizeof(Audio_DataBlockStruct));
+	VaildLen = ByteLen >> (pStream->ChannelCount >> 1);
+	DBG("%u,%u", ByteLen, VaildLen);
 	if (pStream->BitDepth > 8)
 	{
-		Block->uPV.pu8 = malloc(ByteLen);
+		Block->uPV.pu8 = malloc(VaildLen);
 		if (!Block->uPV.pu8)
 		{
 			free(Block);
 			DBG("no mem!");
 			return -ERROR_NO_MEMORY;
 		}
-		memcpy(Block->uPV.pu8, pByteData, ByteLen);
-		Block->Len = ByteLen >> 1;
+		Block->Len = VaildLen >> 1;
+		if (2 == pStream->ChannelCount)
+		{
+			wTemp = pByteData;
+			for(i = 0; i < Block->Len; i++)
+			{
+				Block->uPV.pu16[i] = wTemp[i * 2];
+			}
+		}
+		else
+		{
+			memcpy(Block->uPV.pu8, pByteData, VaildLen);
+		}
+
 		if (pStream->IsDataSigned)
 		{
 			for(i = 0; i < Block->Len; i++)
@@ -158,20 +173,20 @@ static int32_t prvAudio_WriteDACRaw(Audio_StreamStruct *pStream, uint8_t *pByteD
 	}
 	else
 	{
-		Block->uPV.pu8 = malloc(ByteLen * 2);
+		Block->uPV.pu8 = malloc(VaildLen * 2);
 		if (!Block->uPV.pu8)
 		{
 			free(Block);
 			DBG("no mem!");
 			return -ERROR_NO_MEMORY;
 		}
-		Block->Len = ByteLen;
+		Block->Len = VaildLen;
 		DiffBit = prvAudio.DACBit - 8;
 		if (pStream->IsDataSigned)
 		{
 			for(i = 0; i < Block->Len; i++)
 			{
-				Block->uPV.pu16[i] = ((pByteData[i] + 0x80) & 0x00ff);
+				Block->uPV.pu16[i] = ((pByteData[i * pStream->ChannelCount] + 0x80) & 0x00ff);
 				Block->uPV.pu16[i] <<= DiffBit;
 			}
 		}
@@ -179,7 +194,7 @@ static int32_t prvAudio_WriteDACRaw(Audio_StreamStruct *pStream, uint8_t *pByteD
 		{
 			for(i = 0; i < Block->Len; i++)
 			{
-				Block->uPV.pu16[i] = pByteData[i];
+				Block->uPV.pu16[i] = pByteData[i * pStream->ChannelCount];
 				Block->uPV.pu16[i] <<= DiffBit;
 			}
 		}

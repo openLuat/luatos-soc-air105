@@ -200,6 +200,7 @@ static const luaL_Reg loadedlibs[] = {
   {"softkb", luaopen_softkb}, 
 #endif
   {"usbapp", luaopen_usbapp},
+  {"audio", luaopen_multimedia_audio},
   {NULL, NULL}
 };
 

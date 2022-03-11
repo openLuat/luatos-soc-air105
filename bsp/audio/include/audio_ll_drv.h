@@ -25,7 +25,7 @@ typedef struct
 	llist_head DataHead;
 	uint32_t SampleRate;
 	uint8_t BitDepth;
-	uint8_t ChannelCount;	//声道，目前只有1
+	uint8_t ChannelCount;	//声道，目前只有1或者2
 	auStreamFormat_t Format;
 	auStreamBusType_t BusType;	//音频总线类型，DAC, IIS之类的
 	uint8_t BusID;		//音频总线ID

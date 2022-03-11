@@ -42,6 +42,7 @@
 #include "core_dcmi.h"
 #include "core_rng.h"
 #include "core_task.h"
+#include "audio_ll_drv.h"
 #include "core_soft_keyboard.h"
 #include "lfs.h"
 #include "usb_driver.h"

@@ -145,6 +145,7 @@ target("lvgl")
     --add_includedirs("bsp/common",{public = true})
 	add_includedirs("bsp/common/include",{public = true})
     add_includedirs("bsp/cmsis/include",{public = true})
+    add_includedirs("bsp/audio/include",{public = true})
     add_includedirs(luatos.."luat/packages/lfs")
     add_includedirs(luatos.."lua/include",{public = true})
     add_includedirs(luatos.."luat/include",{public = true})
@@ -316,8 +317,12 @@ if with_luatos then
 
     add_files(luatos.."components/camera/*.c")
     add_includedirs(luatos.."components/camera")
+
     add_files(luatos.."components/soft_keyboard/*.c")
     add_includedirs(luatos.."components/soft_keyboard")
+
+    add_files(luatos.."components/multimedia/*.c")
+    add_includedirs(luatos.."components/multimedia")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})
