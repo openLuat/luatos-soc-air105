@@ -73,6 +73,7 @@ void Core_VUartBufferTxStop(uint8_t UartID);
 
 void Core_VHIDInit(uint8_t USB_ID, CBFuncEx_t CB);
 void Core_VHIDUploadData(uint8_t USB_ID, uint8_t *Data, uint16_t Len);
+void Core_VHIDSendRawData(uint8_t USB_ID, uint8_t *Data, uint16_t Len);
 void Core_VHIDUploadStop(uint8_t USB_ID);
 
 void Core_UDiskAttachSDHC(uint8_t USB_ID, void *pCtrl);
