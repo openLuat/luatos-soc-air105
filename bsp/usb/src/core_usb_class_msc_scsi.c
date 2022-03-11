@@ -695,7 +695,11 @@ static int32_t prvSCSI_Read(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct 
 	USB_StackTxEpData(pEpData->USB_ID, pMSC->ToHostEpIndex, TxData, TxLen, TxLen, 0);
 	pMSC->BotState = USB_MSC_BOT_STATE_DATA_IN_TO_HOST;
 	pUserFun->ReadNext(pMSC->CBW.bLUN, pMSC->pUserData);
-	Timer_StartMS(pMSC->ReadTimer, pMSC->ReadTimeout, 0);
+	if (pMSC->ReadTimeout)
+	{
+		Timer_StartMS(pMSC->ReadTimer, pMSC->ReadTimeout, 0);
+	}
+
     return 0;
 }
 
