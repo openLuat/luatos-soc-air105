@@ -54,7 +54,9 @@ int luat_audio_start_raw(uint8_t multimedia_id, uint8_t audio_format, uint8_t nu
 
 int luat_audio_write_raw(uint8_t multimedia_id, uint8_t *data, uint32_t len)
 {
-	return Audio_WriteRaw(&prvAudioStream, data, len);
+	if (len)
+		return Audio_WriteRaw(&prvAudioStream, data, len);
+	return -1;
 }
 
 

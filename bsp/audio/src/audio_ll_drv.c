@@ -122,7 +122,7 @@ static int32_t prvAudio_WriteDACRaw(Audio_StreamStruct *pStream, uint8_t *pByteD
 	uint16_t *wTemp;
 	Audio_DataBlockStruct *Block = zalloc(sizeof(Audio_DataBlockStruct));
 	VaildLen = ByteLen >> (pStream->ChannelCount >> 1);
-	DBG("%u,%u", ByteLen, VaildLen);
+	//DBG("%u,%u", ByteLen, VaildLen);
 	if (pStream->BitDepth > 8)
 	{
 		Block->uPV.pu8 = malloc(VaildLen);
