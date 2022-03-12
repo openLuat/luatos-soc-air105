@@ -112,6 +112,29 @@ static int l_usb_vhid_upload(lua_State* L) {
 }
 
 /*
+USB HID设备上传数据
+@api usbapp.rawKey(id, data)
+@int 设备id,默认为0
+@string 数据，需为定长的8字节
+@return bool 成功返回true,否则返回false
+@usage
+-- HID上传数据
+usbapp.rawKey(0, string.char(0x08,0,0x15,0,0,0,0,0)) -- usb hid会模拟敲出win+r
+*/
+static int l_usb_vhid_upload_raw(lua_State* L) {
+    size_t len;
+    const char* data = luaL_checklstring(L, 2, &len);
+    if (len > 8) {
+        luat_usb_app_vhid_upload_raw(USB_ID0, data);
+        lua_pushboolean(L, 1);
+    }
+    else {
+        lua_pushboolean(L, 0);
+    }
+    return 1;
+}
+
+/*
 USB HID设备取消上传数据
 @api usbapp.vhid_cancel_upload(id)
 @int 设备id,默认为0
@@ -134,7 +157,7 @@ USB U盘设备挂载SDHC，TF卡
 usbapp.udisk_attach_sdhc(0)
 */
 static int l_usb_udisk_attach_sdhc(lua_State* L) {
-    luat_usb_app_vhid_cancel_upload(USB_ID0);
+	luat_usb_udisk_attach_sdhc(USB_ID0);
     return 0;
 }
 
@@ -147,7 +170,7 @@ USB U盘设备去除挂载SDHC，TF卡
 usbapp.udisk_detach_sdhc(0)
 */
 static int l_usb_udisk_detach_sdhc(lua_State* L) {
-    luat_usb_app_vhid_cancel_upload(USB_ID0);
+	luat_usb_udisk_detach_sdhc(USB_ID0);
     return 0;
 }
 #include "rotable.h"
@@ -156,6 +179,7 @@ static const rotable_Reg reg_usbapp[] =
     { "start",              l_usb_start,                0},
     { "stop",               l_usb_stop,                 0},
     { "vhid_upload",        l_usb_vhid_upload,          0},
+    { "rawKey",        l_usb_vhid_upload_raw,          0},
     { "vhid_cancel_upload", l_usb_vhid_cancel_upload,   0},
 	{ "udisk_attach_sdhc", l_usb_udisk_attach_sdhc,   0},
 	{ "udisk_detach_sdhc", l_usb_udisk_detach_sdhc,   0},

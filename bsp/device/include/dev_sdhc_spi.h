@@ -107,6 +107,8 @@ typedef struct
 	uint32_t Size;							//flash的大小KB
 	uint32_t OCR;
 	DBuffer_Struct *SCSIDataBuf;
+	uint32_t PreCurBlock;
+	uint32_t PreEndBlock;
 	uint32_t CurBlock;
 	uint32_t EndBlock;
 	uint16_t WriteWaitCnt;
@@ -122,11 +124,13 @@ typedef struct
 	uint8_t TempData[__SDHC_BLOCK_LEN__ + 8];
 	uint8_t IsPrintData;
 	uint8_t IsMMC;
+	uint8_t USBDelayTime;
 }SDHC_SPICtrlStruct;
 
 
 
 void SDHC_SpiInitCard(void *pSDHC);
+void SDHC_SpiReadCardConfig(void *pSDHC);
 void SDHC_SpiReadCardInfo(void *pSDHC);
 void SDHC_SpiWriteBlocks(void *pSDHC, const uint8_t *Buf, uint32_t StartLBA, uint32_t BlockNums);
 void SDHC_SpiReadBlocks(void *pSDHC, uint8_t *Buf, uint32_t StartLBA, uint32_t BlockNums);

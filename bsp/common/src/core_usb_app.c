@@ -425,7 +425,7 @@ static const char prvCore_HIDKeyboardReportDesc[64] = {
 	    0x95, 0x06,                    //   REPORT_COUNT (6)
 	    0x75, 0x08,                    //   REPORT_SIZE (8)
 	    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-	    0x26, 0x00, 0xff,             	  //   LOGICAL_MAXIMUM (255)
+	    0x26, 0xff, 0x00,             	  //   LOGICAL_MAXIMUM (255)
 	    0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
 	    0x19, 0x00,                    //   USAGE_MINIMUM (Reserved (no event indicated))
 	    0x29, 0x65,                    //   USAGE_MAXIMUM (Keyboard Application)
@@ -703,30 +703,6 @@ static int32_t prvCore_MSCCB(void *pData, void *pParam)
 {
 	USB_EndpointDataStruct *pEpData = (USB_EndpointDataStruct *)pData;
 	USB_EndpointDataStruct *pEpDataSave;
-	switch(prvUSBApp.tSCSI.BotState)
-	{
-	case USB_MSC_BOT_STATE_DATA_OUT_TO_DEVICE:
-	case USB_MSC_BOT_STATE_DATA_IN_TO_HOST:
-		goto MSC_RUN_IN_TASK;
-		break;
-	default:
-		if (pEpData->IsToDevice && pEpData->Data)
-		{
-			switch(pEpData->Data[15])
-			{
-			case SCSI_READ10:
-			case SCSI_READ12:
-			case SCSI_READ16:
-				goto MSC_RUN_IN_TASK;
-				break;
-			}
-
-		}
-		break;
-	}
-	USB_MSCHandle(pEpData, &prvUSBApp.tSCSI);
-	return ERROR_NONE;
-MSC_RUN_IN_TASK:
 	pEpDataSave = malloc(sizeof(USB_EndpointDataStruct));
 	memcpy(pEpDataSave, pEpData, sizeof(USB_EndpointDataStruct));
 	if (pEpData->Data && pEpData->Len)
@@ -740,7 +716,6 @@ MSC_RUN_IN_TASK:
 		pEpDataSave->Len = 0;
 	}
 	Task_SendEvent(prvUSBApp.hTaskHandle, USBD_MSC_CB, pEpDataSave, &prvUSBApp.tSCSI, pParam);
-
 	return ERROR_NONE;
 }
 
@@ -1234,6 +1209,18 @@ static void prvCore_USBAppTask(void *pParam)
 			pEpData = (USB_EndpointDataStruct *)Event.Param1;
 //			DBG("%d,%d,%d,%d", pEpData->USB_ID, pEpData->EpIndex, pEpData->IsToDevice, pEpData->Len);
 			USB_MSCHandle(pEpData, Event.Param2);
+//			USB_StackEpIntOnOff(pEpData->USB_ID, DEVICE_MASS_STORAGE_EP_IN, 0, 0);
+//			USB_StackEpIntOnOff(pEpData->USB_ID, DEVICE_MASS_STORAGE_EP_OUT, 1, 0);
+//			if (prvUSBApp.BlockCmd)
+//			{
+//				prvUSBApp.BlockCmd--;
+//			}
+//			else
+//			{
+//				DBG("!!!");
+//			}
+//			USB_StackEpIntOnOff(pEpData->USB_ID, DEVICE_MASS_STORAGE_EP_IN, 0, 1);
+//			USB_StackEpIntOnOff(pEpData->USB_ID, DEVICE_MASS_STORAGE_EP_OUT, 1, 1);
 			free(pEpData->Data);
 			free(Event.Param1);
 			WDT_Feed();
@@ -1258,9 +1245,10 @@ void Core_UDiskAttachSDHC(uint8_t USB_ID, void *pCtrl)
 	memcpy(prvUSBApp.pSDHC, pCtrl, sizeof(SDHC_SPICtrlStruct));
 	prvUSBApp.tSCSI.pSCSIUserFunList = &prvSDHC_SCSIFun;
 	prvUSBApp.tSCSI.pUserData = prvUSBApp.pSDHC;
+	prvUSBApp.tSCSI.ReadTimeout = 500;
 	DBuffer_ReInit(&prvUSBApp.DataBuf, 8 * 1024);
+	prvUSBApp.pSDHC->USBDelayTime = 0;	//如果USB不稳定，可调加大USBDelayTime
 	prvUSBApp.pSDHC->SCSIDataBuf = &prvUSBApp.DataBuf;
-
 }
 
 void Core_UDiskDetachSDHC(uint8_t USB_ID)

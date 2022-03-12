@@ -77,7 +77,7 @@ int32_t prvTest_HIDCB(void *pData, void *pParam)
 void Test_USBStart(void)
 {
 	Core_VUartInit(VIRTUAL_UART0, 0, 1, 0, 0, 0, prvTest_USBCB);
-	Core_VHIDInit(0, prvTest_HIDCB);
+//	Core_VHIDInit(0, prvTest_HIDCB);
 //	Core_VUartSetRxTimeout(VIRTUAL_UART0, 200);
 }
 
@@ -86,16 +86,16 @@ void prvUSB_Test(void *p)
 	SDHC_SPICtrlStruct SDHC;
 	memset(&SDHC, 0, sizeof(SDHC));
 	SDHC.SpiID = SPI_ID0;
-	SDHC.CSPin = GPIOC_13;
+	SDHC.CSPin = GPIOB_13;
 	SDHC.IsSpiDMAMode = 0;
 //	SDHC.NotifyTask = Task_GetCurrent();
 //	SDHC.TaskCB = prvEventCB;
-    SDHC.SDHCReadBlockTo = 5 * CORE_TICK_1MS;
-    SDHC.SDHCWriteBlockTo = 25 * CORE_TICK_1MS;
+    SDHC.SDHCReadBlockTo = 50 * CORE_TICK_1MS;
+    SDHC.SDHCWriteBlockTo = 250 * CORE_TICK_1MS;
     SDHC.IsPrintData = 0;
-    GPIO_Iomux(GPIOC_12,2);
-    GPIO_Iomux(GPIOC_14,2);
-    GPIO_Iomux(GPIOC_15,2);
+    GPIO_Iomux(GPIOB_12,0);
+    GPIO_Iomux(GPIOB_14,0);
+    GPIO_Iomux(GPIOB_15,0);
     GPIO_Config(SDHC.CSPin, 0, 1);
     SPI_MasterInit(SDHC.SpiID, 8, SPI_MODE_0, 400000, NULL, NULL);
 
