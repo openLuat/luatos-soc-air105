@@ -55,12 +55,11 @@ void HWTimer_Stop(uint8_t HWTimerID);
  * @param HWTimerID 硬件定时器ID
  * @param nCount 操作步骤总数
  * @param Repeat 重复次数
- * @param InputByte IO读取的次数，注意每8次1个byte，不足8个也算1个byte
  * @param CmdDoneCB 全部完成后回调函数
  * @param pCmdDoneParam 回调函数的用户参数
  *
  */
-void HWTimer_InitOperationQueue(uint8_t HWTimerID, uint32_t nCount, uint32_t Repeat, uint32_t InputByte, CBFuncEx_t CmdDoneCB, void *pCmdDoneParam);
+void HWTimer_InitOperationQueue(uint8_t HWTimerID, uint32_t nCount, uint32_t Repeat, CBFuncEx_t CmdDoneCB, void *pCmdDoneParam);
 /**
  * @brief 加入IO操作序列
  *
@@ -99,14 +98,6 @@ void HWTimer_AddEndCmdInOperationQueue(uint8_t HWTimerID);
  * @return =0未完成，其他已完成
  */
 uint8_t HWTimer_CheckOperationQueueDone(uint8_t HWTimerID);
-/**
- * @brief 获取IO操作序列中IO读取的值
- *
- * @param HWTimerID 硬件定时器ID
- * @param Value copy的空间
- * @return 获取的byte数，和init时InputByte一致
- */
-int HWTimer_GetOperationQueueInputResult(uint8_t HWTimerID, uint8_t *Value);
 
 /**
  * @brief 获取IO操作序列中捕获状态
@@ -117,4 +108,8 @@ int HWTimer_GetOperationQueueInputResult(uint8_t HWTimerID, uint8_t *Value);
  * @return 捕获次数
  */
 uint32_t HWTimer_GetOperationQueueCaptureResult(uint8_t HWTimerID, CBFuncEx_t CB, void *pParam);
+
+uint32_t HWTimer_GetOperationQueueLen(uint8_t HWTimerID);
+
+OPQueue_CmdStruct *HWTimer_GetOperationQueue(uint8_t HWTimerID);
 #endif

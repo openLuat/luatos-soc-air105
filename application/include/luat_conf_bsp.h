@@ -163,7 +163,7 @@ extern unsigned int gLVFlashTime;
 
 #define LV_USE_PERF_MONITOR     1
 #define __LVGL_SLEEP_ENABLE__
-
+#define __LUATOS_TICK_64BIT__
 #define LUAT_USE_MEMORY_OPTIMIZATION_CODE_MMAP
 
 #ifndef __DEBUG__

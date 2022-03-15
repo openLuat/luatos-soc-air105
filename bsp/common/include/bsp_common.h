@@ -223,7 +223,7 @@ typedef struct
     	uint16_t Time;	//delay时间，us
     } uArg;
     uint8_t Operation;	//操作类型
-    uint8_t Arg1;		//IO操作时为IOpin，delay操作时则为微调值，0~47，48为1us
+    uint8_t PinOrDelay;		//IO操作时为IOpin，delay操作时则为微调值，0~47，48为1us
 }OPQueue_CmdStruct;
 
 __attribute__((weak)) uint8_t OS_CheckInIrq(void);

@@ -21,6 +21,11 @@
 
 #include "user.h"
 
+
+enum
+{
+	EV_USER_DHT11_TEST_DONE = USER_EVENT_ID_START + 1,
+};
 typedef struct
 {
 	uint32_t LastValue;
@@ -42,7 +47,6 @@ static int32_t DHT11_ReadBit(void *pData, void *pParam)
 //		DBG("%u", Cmd->uParam.MaxCnt);
 		break;
 	case 1:
-//		DBG("%u", Cmd->uParam.MaxCnt);
 		DHT11->LastValue = Cmd->uParam.MaxCnt;
 		DHT11->BitPos = 7;
 		DHT11->BytePos = 0;
@@ -51,7 +55,7 @@ static int32_t DHT11_ReadBit(void *pData, void *pParam)
 	default:
 		diff = (Cmd->uParam.MaxCnt - DHT11->LastValue);
 		DHT11->LastValue = Cmd->uParam.MaxCnt;
-//		DBG("%u,%u,%u,%u", DHT11->BytePos, DHT11->BitPos, diff, Cmd->uParam.MaxCnt);
+//		DBG("%u,%u,%u,%u,%u", DHT11->BytePos, DHT11->BitPos, diff, Cmd->uParam.MaxCnt,Cmd->PinOrDelay);
 		if (diff > (100 * SYS_TIMER_1US))
 		{
 			DHT11->Data[DHT11->BytePos] |= (1 << DHT11->BitPos);
@@ -69,42 +73,60 @@ static int32_t DHT11_ReadBit(void *pData, void *pParam)
 	}
 	DHT11->Pos++;
 }
+static int32_t prvDHT11_TestCB(void *pData, void *pParam)
+{
+	Task_SendEvent(pParam, EV_USER_DHT11_TEST_DONE, 0, 0, 0);
+}
 
-
-void DHT11_TestOnce(uint8_t Pin, CBFuncEx_t CB)
+void DHT11_TestOnce(uint8_t Pin)
 {
 	uint8_t HWTimerID = HW_TIMER0;
 	uint32_t i;
 	OPQueue_CmdStruct OPCmd;
 	HANDLE TaskHandle = Task_GetCurrent();
-	HWTimer_InitOperationQueue(HWTimerID, 100, 1, 0, CB, TaskHandle);
-	OPCmd.Operation = OP_QUEUE_CMD_SET_GPIO_DIR_OUT;
-	OPCmd.Arg1 = Pin;
+	HWTimer_InitOperationQueue(HWTimerID, 100, 1, prvDHT11_TestCB, TaskHandle);
+	OPCmd.Operation = OP_QUEUE_CMD_SET_GPIO_DIR_IN;
+	OPCmd.PinOrDelay = Pin;
 	OPCmd.uArg.IOArg.Level = 0;
 	OPCmd.uArg.IOArg.PullMode = OP_QUEUE_CMD_IO_PULL_UP;
 	HWTimer_AddOperation(HWTimerID, &OPCmd);
 	OPCmd.Operation = OP_QUEUE_CMD_ONE_TIME_DELAY;
-	OPCmd.Arg1 = 0;
-	OPCmd.uArg.Time = 20000;
+	OPCmd.PinOrDelay = 0;
+	OPCmd.uArg.Time = 60000;
 	HWTimer_AddOperation(HWTimerID, &OPCmd);
 
+	OPCmd.Operation = OP_QUEUE_CMD_SET_GPIO_DIR_OUT;
+	OPCmd.PinOrDelay = Pin;
+	OPCmd.uArg.IOArg.Level = 0;
+	OPCmd.uArg.IOArg.PullMode = OP_QUEUE_CMD_IO_PULL_NONE;
+	HWTimer_AddOperation(HWTimerID, &OPCmd);
+	OPCmd.Operation = OP_QUEUE_CMD_ONE_TIME_DELAY;
+	OPCmd.PinOrDelay = 0;
+	OPCmd.uArg.Time = 18000;
+	HWTimer_AddOperation(HWTimerID, &OPCmd);
 
 	OPCmd.Operation = OP_QUEUE_CMD_CAPTURE_SET;
-	OPCmd.Arg1 = Pin;
+	OPCmd.PinOrDelay = Pin;
 	OPCmd.uArg.ExitArg.ExtiMode = OP_QUEUE_CMD_IO_EXTI_DOWN;
 	OPCmd.uArg.ExitArg.PullMode = OP_QUEUE_CMD_IO_PULL_UP;
 	OPCmd.uParam.MaxCnt = 100 * SYS_TIMER_1MS;
 	HWTimer_AddOperation(HWTimerID, &OPCmd);
 
 	OPCmd.Operation = OP_QUEUE_CMD_CAPTURE;
-	OPCmd.Arg1 = Pin;
+	OPCmd.PinOrDelay = 0xff;
 	OPCmd.uArg.IOArg.Level = 0xff;
-	for(i = 0; i < 43; i++) //40bit data+2bit start+1bit end
+	OPCmd.uParam.MaxCnt = 0;
+	for(i = 0; i < 42; i++) //40bit data+2bit start+1bit end
 	{
 		HWTimer_AddOperation(HWTimerID, &OPCmd);
 	}
 	OPCmd.Operation = OP_QUEUE_CMD_CAPTURE_END;
-	OPCmd.Arg1 = Pin;
+	OPCmd.PinOrDelay = Pin;
+	HWTimer_AddOperation(HWTimerID, &OPCmd);
+	OPCmd.Operation = OP_QUEUE_CMD_SET_GPIO_DIR_IN;
+	OPCmd.PinOrDelay = Pin;
+	OPCmd.uArg.IOArg.Level = 0;
+	OPCmd.uArg.IOArg.PullMode = OP_QUEUE_CMD_IO_PULL_UP;
 	HWTimer_AddOperation(HWTimerID, &OPCmd);
 	HWTimer_StartOperationQueue(HWTimerID);
 }
@@ -125,4 +147,26 @@ void DHT11_TestResult(void)
 		DBG("check error %x,%x", DHT11.Data[4], DHT11.Data[5]);
 		DBG_HexPrintf(DHT11.Data, 4);
 	}
+	HWTimer_Stop(HWTimerID);
 }
+
+static void prvDHT11_Test(void *p)
+{
+	OS_EVENT Event;
+	while(1)
+	{
+		DBG("test start");
+		DHT11_TestOnce(GPIOD_06);
+		Task_GetEvent(Task_GetCurrent(), EV_USER_DHT11_TEST_DONE, &Event, NULL, 200 * SYS_TIMER_1MS);
+		DHT11_TestResult();
+		Task_DelayMS(1000);
+	}
+
+}
+
+void DHT11_TestInit(void)
+{
+	Task_Create(prvDHT11_Test, NULL, 1024, SERVICE_TASK_PRO, "dht11 task");
+}
+
+//INIT_TASK_EXPORT(DHT11_TestInit, "3");

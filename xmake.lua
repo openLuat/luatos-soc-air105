@@ -66,9 +66,9 @@ set_languages("c11", "cxx11")
 
 add_asflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c",{force = true})
 -- add_arflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c","--specs=nano.specs","-ffunction-sections","-fdata-sections","-fstack-usage","-Og","-DTRACE_LEVEL=4",{force = true})
-add_cxflags("-mcpu=cortex-m4","-Og","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c","--specs=nano.specs","-ffunction-sections","-fdata-sections","-fstack-usage","-DTRACE_LEVEL=4",{force = true})
+add_cxflags("-mcpu=cortex-m4","-Os","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c","--specs=nano.specs","-ffunction-sections","-fdata-sections","-fstack-usage","-DTRACE_LEVEL=4",{force = true})
 
-add_ldflags("-mcpu=cortex-m4","-Og","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","--specs=nano.specs","--specs=nosys.specs","-Wl,--gc-sections","-Wl,--check-sections","-Wl,--cref","-Wl,--no-whole-archive","-lc_nano","-Wl,--no-whole-archive",{force = true})
+add_ldflags("-mcpu=cortex-m4","-Os","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","--specs=nano.specs","--specs=nosys.specs","-Wl,--gc-sections","-Wl,--check-sections","-Wl,--cref","-Wl,--no-whole-archive","-lc_nano","-Wl,--no-whole-archive",{force = true})
 
 set_dependir("$(buildir)/.deps")
 set_objectdir("$(buildir)/.objs")

@@ -365,22 +365,23 @@ void DBG_Printf(const char* format, ...)
 {
 	char *buf = NULL;
 	char isr_buf[256];
+	int len;
 	va_list ap;
 	if (!prvDBGCtrl.AppMode) return;
 	va_start(ap, format);
 	if (OS_CheckInIrq())
 	{
 		buf = isr_buf;
-		vsnprintf_(buf, 255, format, ap);
+		len = vsnprintf_(buf, 255, format, ap);
 	}
 	else
 	{
 		buf = OS_Zalloc(1024);
-		vsnprintf_(buf, 1023, format, ap);
+		len = vsnprintf_(buf, 1023, format, ap);
 	}
 	va_end(ap);
 
-    prvDBGCtrl.TxFun( buf, strlen(buf));
+    prvDBGCtrl.TxFun( buf, len);
 	if (!OS_CheckInIrq())
 	{
 		OS_Free(buf);
