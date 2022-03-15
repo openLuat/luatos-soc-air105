@@ -201,7 +201,7 @@ static const luaL_Reg loadedlibs[] = {
 #endif
   {"usbapp", luaopen_usbapp},
   {"audio", luaopen_multimedia_audio},
-  {"decode", luaopen_multimedia_decode},
+  {"codec", luaopen_multimedia_codec},
   {"ioqueue", luaopen_io_queue},
   {NULL, NULL}
 };
