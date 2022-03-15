@@ -323,6 +323,9 @@ if with_luatos then
 
     add_files(luatos.."components/multimedia/*.c")
     add_includedirs(luatos.."components/multimedia")
+
+    add_files(luatos.."components/io_queue/*.c")
+    add_includedirs(luatos.."components/io_queue")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})
