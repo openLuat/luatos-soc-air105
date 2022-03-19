@@ -326,6 +326,12 @@ if with_luatos then
 
     add_files(luatos.."components/io_queue/*.c")
     add_includedirs(luatos.."components/io_queue")
+
+    -- shell & cmux
+    add_includedirs(luatos.."components/shell",{public = true})
+    add_includedirs(luatos.."components/cmux",{public = true})
+    add_files(luatos.."components/shell/*.c")
+    add_files(luatos.."components/cmux/*.c")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})

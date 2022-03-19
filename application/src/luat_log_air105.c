@@ -25,14 +25,13 @@
 #include "luat_conf_bsp.h"
 #include "app_interface.h"
 
-extern uint8_t cmux_state;
-extern uint8_t cmux_log_state;
+extern luat_cmux_t cmux_ctx;
 
 void DBG_DirectOut(void *Data, uint32_t Len);
 
 void luat_nprint(char *s, size_t l) {
 #ifdef LUAT_USE_SHELL
-    if (cmux_state == 1 && cmux_log_state ==1){
+    if (cmux_ctx.state == 1 && cmux_ctx.log_state ==1){
         luat_cmux_write(LUAT_CMUX_CH_LOG,  CMUX_FRAME_UIH & ~ CMUX_CONTROL_PF,s, l);
     }else
 #endif
@@ -41,7 +40,7 @@ void luat_nprint(char *s, size_t l) {
 
 void luat_log_write(char *s, size_t l) {
 #ifdef LUAT_USE_SHELL
-    if (cmux_state == 1 && cmux_log_state ==1){
+    if (cmux_ctx.state == 1 && cmux_ctx.log_state ==1){
         luat_cmux_write(LUAT_CMUX_CH_LOG,  CMUX_FRAME_UIH & ~ CMUX_CONTROL_PF,s, l);
     }else
 #endif
