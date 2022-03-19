@@ -162,11 +162,16 @@
 #define USB_HID_REQ_SET_REPORT                         0x09U
 #define USB_HID_REQ_GET_REPORT                         0x01U
 
+#define USB_HID_KEY_CACHE		(6)
+#define USB_HID_KB_DATA_CACHE		(8)
+#define USB_HID_CUST_DATA_CACHE		(64)
+
 enum
 {
 	USB_HID_NOT_READY,
 	USB_HID_READY,
 	USB_HID_SEND_DONE,
+	USB_HID_NEW_DATA,
 };
 
 typedef struct
@@ -204,7 +209,7 @@ typedef struct
 
 	};
 	uint8_t bZero;
-	uint8_t PressKey[6];
+	uint8_t PressKey[USB_HID_KEY_CACHE];
 }USB_HIDKeyBoradKeyStruct;
 
 typedef struct

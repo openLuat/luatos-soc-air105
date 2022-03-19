@@ -48,6 +48,9 @@ void Core_LCDDrawBlock(LCD_DrawStruct *Draw);
 void Core_CameraDraw(LCD_DrawStruct *Draw);
 void Core_DecodeQR(uint8_t *ImageData, uint16_t ImageW, uint16_t ImageH,  CBDataFun_t CB);
 uint32_t Core_LCDDrawCacheLen(void);
+
+void Core_USBSetID(uint8_t USB_ID, uint16_t VID, uint16_t PID);
+void Core_USBSetHIDMode(uint8_t USB_ID, uint8_t HIDMode, uint8_t BuffSize);
 void Core_USBDefaultDeviceStart(uint8_t USB_ID);
 void Core_USBAction(uint8_t USB_ID, uint8_t Action, void *pParam);
 void Core_ScanKeyBoard(void);
@@ -72,9 +75,10 @@ int32_t Core_VUartBufferTx(uint8_t UartID, const uint8_t *Data, uint32_t Len);
 void Core_VUartBufferTxStop(uint8_t UartID);
 
 void Core_VHIDInit(uint8_t USB_ID, CBFuncEx_t CB);
-void Core_VHIDUploadData(uint8_t USB_ID, uint8_t *Data, uint16_t Len);
-void Core_VHIDSendRawData(uint8_t USB_ID, uint8_t *Data, uint16_t Len);
+void Core_VHIDUploadData(uint8_t USB_ID, uint8_t *Data, uint32_t Len);
+void Core_VHIDSendRawData(uint8_t USB_ID, uint8_t *Data, uint32_t Len);
 void Core_VHIDUploadStop(uint8_t USB_ID);
+uint32_t Core_VHIDRxBufferRead(uint8_t USB_ID, uint8_t *Data, uint32_t Len);
 
 void Core_UDiskAttachSDHC(uint8_t USB_ID, void *pCtrl);
 #endif

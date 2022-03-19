@@ -330,7 +330,7 @@ int Uart_DMATxInit(uint8_t UartID, uint8_t Stream, uint32_t Channel)
 	DMA_InitStruct.DMA_Peripheral = prvUart[UartID].DMATxChannel;
 	DMA_InitStruct.DMA_PeripheralBurstSize = DMA_BurstSize_8;
 	DMA_InitStruct.DMA_PeripheralBaseAddr = (uint32_t)&Uart->OFFSET_0.THR;
-	DMA_InitStruct.DMA_Priority = DMA_Priority_3;
+	DMA_InitStruct.DMA_Priority = DMA_Priority_1;
 	DMA_InitStruct.DMA_MemoryBurstSize = DMA_BurstSize_8;
 	prvUart[UartID].DMATxStream = Stream;
 	return DMA_ConfigStream(Stream, &DMA_InitStruct);
@@ -530,7 +530,7 @@ uint32_t Uart_RxBufferRead(uint8_t UartID, uint8_t *Data, uint32_t Len)
 		return 0;
 	}
 	ISR_OnOff(prvUart[UartID].IrqLine, 0);
-	if (!Len)
+	if (!Data || !Len)
 	{
 		ReadLen = prvUart[UartID].RxBuf.Pos;
 		ISR_OnOff(prvUart[UartID].IrqLine, 1);

@@ -380,8 +380,11 @@ void DBG_Printf(const char* format, ...)
 		len = vsnprintf_(buf, 1023, format, ap);
 	}
 	va_end(ap);
-
+#ifndef __DEBUG__
     prvDBGCtrl.TxFun( buf, len);
+#else
+    add_printf_data(buf, len);
+#endif
 	if (!OS_CheckInIrq())
 	{
 		OS_Free(buf);

@@ -52,9 +52,9 @@ typedef struct
 	volatile Buffer_Struct TxBuf;
 	CBFuncEx_t CB;
 	void *pData;
+	uint32_t XferMaxLen;
 	uint16_t MaxPacketLen;
 	uint16_t TimeoutMS;
-	uint16_t XferMaxLen;
 	union
 	{
 		uint16_t ToHostStatus;
@@ -121,7 +121,7 @@ int32_t USB_StackStop(uint8_t USB_ID);
 void USB_StackPutRxData(uint8_t USB_ID, uint8_t EpIndex, const uint8_t *Data, uint32_t Len);
 void USB_StackResetEpBuffer(uint8_t USB_ID, uint8_t Index);
 void USB_StackSetEpStatus(uint8_t USB_ID, uint8_t EpIndex, uint8_t IsToDevice, uint8_t Status);
-int32_t USB_StackTxEpData(uint8_t USB_ID, uint8_t EpIndex, void *pData, uint16_t Len, uint16_t MaxLen, uint8_t ForceZeroPacket);
+int32_t USB_StackTxEpData(uint8_t USB_ID, uint8_t EpIndex, void *pData, uint32_t Len, uint32_t MaxLen, uint8_t ForceZeroPacket);
 void USB_StackSetRxEpDataLen(uint8_t USB_ID, uint8_t EpIndex, uint32_t Len);
 void USB_StackEpIntOnOff(uint8_t USB_ID, uint8_t EpIndex, uint8_t IsToDevice, uint8_t OnOff);
 /*************usb class api*******************/

@@ -67,7 +67,7 @@ void DAC_DMAInit(uint8_t DAC_ID, uint8_t Stream)
 	DMA_InitStruct.DMA_Peripheral = SYSCTRL_PHER_CTRL_DMA_CHx_IF_DAC;
 	DMA_InitStruct.DMA_PeripheralBurstSize = DMA_BurstSize_4;
 	DMA_InitStruct.DMA_PeripheralBaseAddr = (uint32_t)&DAC->DAC_DATA;
-	DMA_InitStruct.DMA_Priority = DMA_Priority_1;
+	DMA_InitStruct.DMA_Priority = DMA_Priority_3;
 	DMA_InitStruct.DMA_MemoryBurstSize = DMA_BurstSize_4;
 	DMA_InitStruct.DMA_MemoryDataSize = DMA_DataSize_HalfWord;
 	DMA_InitStruct.DMA_PeripheralDataSize = DMA_DataSize_HalfWord;
@@ -80,7 +80,15 @@ void DAC_Setup(uint8_t DAC_ID, uint32_t Freq, uint32_t OutRMode)
 	uint32_t Ctrl;
 	DAC->DAC_CR1 |= (1 << 4);
 	while (DAC->DAC_CR1 & (1 << 29));
-	DAC->DAC_TIMER = ((SystemCoreClock >> 3) / Freq) - 1;
+	switch(Freq)
+	{
+	case 44100:
+		DAC->DAC_TIMER = 543;
+		break;
+	default:
+		DAC->DAC_TIMER = ((SystemCoreClock >> 3) / Freq) - 1;
+		break;
+	}
 	DAC->DAC_FIFO_THR = 10;
 	DAC->DAC_CR1 = (OutRMode << 5) | 0x18;
 }

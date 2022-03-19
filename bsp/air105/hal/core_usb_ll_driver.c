@@ -1467,6 +1467,7 @@ static int prvUSB_SetupEPFifo(HANDLE hUSB)
 		}
 		if (UseFifo > 512)
 		{
+			DBG("to much fifo!");
 			return -1;
 		}
 		if (hwUSB->EpCtrl[i].ToHostEnable)
@@ -1481,6 +1482,7 @@ static int prvUSB_SetupEPFifo(HANDLE hUSB)
 		}
 		if (UseFifo > 512)
 		{
+			DBG("to much fifo!");
 			return -1;
 		}
 	}

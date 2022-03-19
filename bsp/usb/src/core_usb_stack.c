@@ -461,7 +461,7 @@ int32_t USB_StackStartOTG(uint8_t USB_ID)
 	return -1;
 }
 
-int32_t USB_StackTxEpData(uint8_t USB_ID, uint8_t EpIndex, void *pData, uint16_t Len, uint16_t MaxLen, uint8_t ForceZeroPacket)
+int32_t USB_StackTxEpData(uint8_t USB_ID, uint8_t EpIndex, void *pData, uint32_t Len, uint32_t MaxLen, uint8_t ForceZeroPacket)
 {
 	USB_StackCtrlStruct *USBCore = &prvUSBCore[USB_ID];
 	USB_SetDeviceEPStatus(USBCore->pHWCtrl, EpIndex, 0, USB_EP_STATE_ACK);
