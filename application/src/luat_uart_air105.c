@@ -187,10 +187,11 @@ int luat_uart_setup(luat_uart_t *uart){
     if (uart->parity == 1)parity = UART_PARITY_ODD;
     else if (uart->parity == 2)parity = UART_PARITY_EVEN;
     int stop_bits = (uart->stop_bits)==1?UART_STOP_BIT1:UART_STOP_BIT2;
-    if (uart->id == 4)
-        Core_VUartInit(VIRTUAL_UART0, uart->baud_rate, 1, (uart->data_bits), parity, stop_bits, NULL);
-    else
+    if (uart->id >= UART_MAX) {
+    	Core_VUartInit(VIRTUAL_UART0, uart->baud_rate, 1, (uart->data_bits), parity, stop_bits, NULL);
+    } else {
         Uart_BaseInit(uart->id, uart->baud_rate, 1, (uart->data_bits), parity, stop_bits, NULL);
+    }
     return 0;
 }
 

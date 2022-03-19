@@ -56,10 +56,12 @@ typedef struct
 {
 	Buffer_Struct TxBuf;
 	Buffer_Struct TxCacheBuf;	// 缓存下次发送的数据
+	Buffer_Struct RxBuf;
 	CBFuncEx_t CB;
 	uint8_t USB_ID;
 	uint8_t IsReady;
 	uint8_t ToHostEpIndex;
+	uint8_t ToDeviceEpIndex;
 }Virtual_HIDCtrlStruct;
 
 
@@ -206,7 +208,7 @@ static const char *prvCore_StringInterface[3] = {
 
 
 
-static const usb_device_descriptor_t prvCore_DeviceDesc =
+static usb_device_descriptor_t prvCore_DeviceDesc =
 {
 		.bLength = USB_LEN_DEV_DESC,
 		.bDescriptorType = UDESC_DEVICE,
@@ -315,14 +317,14 @@ static const usb_interface_descriptor_t prvCore_HIDInterfaceDesc =
 		.iInterface = USBD_IDX_INTERFACE0_STR + 1,
 };
 
-static const usb_endpoint_descriptor_t prvCore_HIDEndpointDesc[2] =
+static usb_endpoint_descriptor_t prvCore_HIDEndpointDesc[2] =
 {
 		{
 				.bLength = USB_LEN_EP_DESC,
 				.bDescriptorType = UDESC_ENDPOINT,
 				.bEndpointAddress = UE_DIR_IN|DEVICE_HID_KEYBOARD_EP_IN,
 				.bmAttributes = UE_INTERRUPT,
-				.wMaxPacketSize = {0x08,0x00},
+				.wMaxPacketSize = {0x40,0x00},
 				.bInterval = 10,
 		},
 		{
@@ -330,7 +332,7 @@ static const usb_endpoint_descriptor_t prvCore_HIDEndpointDesc[2] =
 				.bDescriptorType = UDESC_ENDPOINT,
 				.bEndpointAddress = UE_DIR_OUT|DEVICE_HID_KEYBOARD_EP_OUT,
 				.bmAttributes = UE_INTERRUPT,
-				.wMaxPacketSize = {0x08,0x00},
+				.wMaxPacketSize = {0x40,0x00},
 				.bInterval = 10,
 		},
 };
@@ -379,20 +381,20 @@ static const usb_hid_descriptor_t  prvCore_HIDDesc =
 		.wDescriptorLength = {63,0},
 };
 
-static const char prvCore_HIDCustomReportDescriptor[34] = {
+static char prvCore_HIDCustomReportDescriptor[34] = {
 	    0x06, 0x00, 0xff,              // USAGE_PAGE (Vendor Defined Page 1)
 	    0x09, 0x00,                    // USAGE (Undefined)
 	    0xa1, 0x01,                    // COLLECTION (Application)
 	    0x09, 0x00,                    //   USAGE (Undefined)
-	    0x75, 0x08,                    //   REPORT_SIZE (8)
-	    0x95, 0x08,                    //   REPORT_COUNT (8)
+	    0x95, USB_HID_KB_DATA_CACHE,      //   REPORT_COUNT (32)
+	    0x75, 0x08,      			   //   REPORT_SIZE (8)
 	    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
 	    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
 	    0x81, 0x02,                    // INPUT (Data,Var,Abs)
 	    0x09, 0x00,                    //   USAGE (Undefined)
 	    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
 	    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-	    0x95, 0x08,                    //   REPORT_COUNT (8)
+	    0x95, USB_HID_KB_DATA_CACHE,      //   REPORT_COUNT (32)
 	    0x75, 0x08,                    //   REPORT_SIZE (8)
 	    0x91, 0x02,                    //   OUTPUT (Data,Var,Abs)
 	    0xc0                           // END_COLLECTION
@@ -422,7 +424,7 @@ static const char prvCore_HIDKeyboardReportDesc[64] = {
 	    0x95, 0x01,                    //   REPORT_COUNT (1)
 	    0x75, 0x03,                    //   REPORT_SIZE (3)
 	    0x91, 0x03,                    //   OUTPUT (Cnst,Var,Abs)
-	    0x95, 0x06,                    //   REPORT_COUNT (6)
+	    0x95, USB_HID_KEY_CACHE,       //   REPORT_COUNT (30)
 	    0x75, 0x08,                    //   REPORT_SIZE (8)
 	    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
 	    0x26, 0xff, 0x00,             	  //   LOGICAL_MAXIMUM (255)
@@ -728,9 +730,8 @@ static int32_t prvCore_HIDCB(void *pData, void *pParam)
 	if (pEpData->IsToDevice)
 	{
 		prvCore_VHIDSetReady(1);
-		Buf.Data = pEpData->Data;
-		Buf.Pos = pEpData->Len;
-		pVHID->CB(prvLuatOS_VirtualHID.USB_ID, &Buf);
+		OS_BufferWrite(&pVHID->RxBuf, pEpData->Data, pEpData->Len);
+		pVHID->CB(USB_ID, USB_HID_NEW_DATA);
 	}
 	else
 	{
@@ -818,6 +819,43 @@ static int32_t prvCore_USBStateCB(void *pData, void *pParam)
 	}
 }
 
+void Core_USBSetID(uint8_t USB_ID, uint16_t VID, uint16_t PID)
+{
+	BytesPutLe16(prvCore_DeviceDesc.idVendor, VID);
+	BytesPutLe16(prvCore_DeviceDesc.idProduct, PID);
+}
+
+void Core_USBSetHIDMode(uint8_t USB_ID, uint8_t HIDMode, uint8_t BuffSize)
+{
+	switch(BuffSize)
+	{
+	case 8:
+	case 16:
+	case 32:
+	case 64:
+		break;
+	default:
+		BuffSize = 8;
+		break;
+	}
+	if (HIDMode)
+	{
+		prvUSBApp.pHIDReport = &prvCore_HIDCustomReportDescriptor;
+		prvUSBApp.HIDReportLen = sizeof(prvCore_HIDCustomReportDescriptor);
+		prvCore_HIDCustomReportDescriptor[10] = BuffSize;
+		prvCore_HIDCustomReportDescriptor[28] = BuffSize;
+		prvCore_HIDEndpointDesc[0].wMaxPacketSize[0] = BuffSize;
+		prvCore_HIDEndpointDesc[1].wMaxPacketSize[0] = BuffSize;
+	}
+	else
+	{
+		prvUSBApp.pHIDReport = &prvCore_HIDKeyboardReportDesc;
+		prvUSBApp.HIDReportLen = sizeof(prvCore_HIDKeyboardReportDesc);
+		prvCore_HIDEndpointDesc[0].wMaxPacketSize[0] = 8;
+		prvCore_HIDEndpointDesc[1].wMaxPacketSize[0] = 8;
+	}
+}
+
 void Core_USBDefaultDeviceStart(uint8_t USB_ID)
 {
 	uint8_t langid[2] = {0x09, 0x04};
@@ -825,6 +863,7 @@ void Core_USBDefaultDeviceStart(uint8_t USB_ID)
 	prvLuatOS_VirtualHID.USB_ID = USB_ID;
 	prvLuatOS_VirtualHID.IsReady = 0;
 	prvLuatOS_VirtualHID.ToHostEpIndex = DEVICE_HID_KEYBOARD_EP_IN;
+	prvLuatOS_VirtualHID.ToDeviceEpIndex = DEVICE_HID_KEYBOARD_EP_OUT;
 	prvUSBApp.tUDisk.BlockTotalNums = VIRTUAL_UDISK_BLOCKS_NUMS;
 	prvUSBApp.tUDisk.BlockSize = VIRTUAL_UDISK_BLOCKS_LEN;
 	prvUSBApp.tSCSI.LogicalUnitNum = 0;
@@ -962,7 +1001,7 @@ uint32_t Core_VUartRxBufferRead(uint8_t UartID, uint8_t *Data, uint32_t Len)
 		USB_StackEpIntOnOff(pVUart->USB_ID, pVUart->ToDeviceEpIndex, 1, 0);
 		break;
 	}
-	if (!Len)
+	if (!Data || !Len)
 	{
 		ReadLen = pVUart->RxBuf.Pos;
 		goto READ_END;
@@ -1022,7 +1061,6 @@ TX_END:
 		break;
 	}
 	return 0;
-
 }
 void Core_VUartBufferTxStop(uint8_t UartID)
 {
@@ -1044,7 +1082,30 @@ void Core_VUartBufferTxStop(uint8_t UartID)
 	}
 }
 
-void Core_VHIDUploadData(uint8_t USB_ID, uint8_t *Data, uint16_t Len)
+uint32_t Core_VHIDRxBufferRead(uint8_t USB_ID, uint8_t *Data, uint32_t Len)
+{
+	uint32_t ReadLen;
+	Virtual_HIDCtrlStruct *pVHID = &prvLuatOS_VirtualHID;
+	USB_StackEpIntOnOff(pVHID->USB_ID, pVHID->ToDeviceEpIndex, 1, 0);
+	if (!Data || !Len)
+	{
+		ReadLen = pVHID->RxBuf.Pos;
+		goto READ_END;
+
+	}
+	ReadLen = (pVHID->RxBuf.Pos < Len)?pVHID->RxBuf.Pos:Len;
+	memcpy(Data, pVHID->RxBuf.Data, ReadLen);
+	OS_BufferRemove(&pVHID->RxBuf, ReadLen);
+	if (!pVHID->RxBuf.Pos && pVHID->RxBuf.MaxLen > VIRTUAL_VHID_BUFFER_LEN)
+	{
+		OS_ReInitBuffer(&pVHID->RxBuf, VIRTUAL_VHID_BUFFER_LEN);
+	}
+READ_END:
+	USB_StackEpIntOnOff(pVHID->USB_ID, pVHID->ToDeviceEpIndex, 1, 1);
+	return ReadLen;
+}
+
+void Core_VHIDUploadData(uint8_t USB_ID, uint8_t *Data, uint32_t Len)
 {
 	if (!prvLuatOS_VirtualHID.IsReady) return;
 	USB_HIDKeyValue HIDKey;
@@ -1071,8 +1132,13 @@ void Core_VHIDUploadData(uint8_t USB_ID, uint8_t *Data, uint16_t Len)
 			HIDKeyBoard.SPECIALHID_KEY_b.RightShift = IsShift;
 			HIDKeyBoard.PressKey[0] = HIDKey.Value;
 //			DBG("%u,%c,%d,%x,%d", Pos - 1, Data[Pos - 1], 0, HIDKey.Value, HIDKey.Shift);
+			if (Pos >= Len)
+			{
+				OS_BufferWrite(&pVHID->TxCacheBuf, &HIDKeyBoard, sizeof(HIDKeyBoard));
+				break;
+			}
 ADD_REST:
-			for(i = 1; i < 6; i++)
+			for(i = 1; i < USB_HID_KEY_CACHE; i++)
 			{
 				HIDKey = USB_HIDGetValueFromAscii(Data[Pos]);
 				Pos++;
@@ -1097,26 +1163,6 @@ ADD_REST:
 					}
 
 				}
-//				else if
-//				{
-//					OS_BufferWrite(&pVHID->TxCacheBuf, &HIDKeyBoard, sizeof(HIDKeyBoard));
-//					memset(&HIDKeyBoard, 0, sizeof(USB_HIDKeyBoradKeyStruct));
-//					//加入一个抬起的data
-//					OS_BufferWrite(&pVHID->TxCacheBuf, &HIDKeyBoard, sizeof(HIDKeyBoard));
-//					IsShift = HIDKey.Shift;
-//					LastValue = HIDKey.Value;
-//					HIDKeyBoard.SPECIALHID_KEY_b.RightShift = IsShift;
-//					HIDKeyBoard.PressKey[0] = HIDKey.Value;
-////					DBG("%u,%c,%d,%x,%d", Pos - 1, Data[Pos - 1], 0, HIDKey.Value, HIDKey.Shift);
-//					if (Pos < Len)
-//					{
-//						goto ADD_REST;
-//					}
-//					else
-//					{
-//						break;
-//					}
-//				}
 				else
 				{
 					LastValue = HIDKey.Value;
@@ -1143,7 +1189,6 @@ ADD_REST:
 	{
 		goto UPLOAD_END;
 	}
-
 	// 把缓存的Tx指针交给发送的Tx指针，缓存的Tx指针重新建立一个
 	Buffer_StaticInit(&pVHID->TxBuf, pVHID->TxCacheBuf.Data, pVHID->TxCacheBuf.Pos);
 	OS_InitBuffer(&pVHID->TxCacheBuf, VIRTUAL_VHID_BUFFER_LEN);
@@ -1152,13 +1197,18 @@ UPLOAD_END:
 	USB_StackEpIntOnOff(pVHID->USB_ID, pVHID->ToHostEpIndex, 0, 1);
 }
 
-void Core_VHIDSendRawData(uint8_t USB_ID, uint8_t *Data, uint16_t Len)
+void Core_VHIDSendRawData(uint8_t USB_ID, uint8_t *Data, uint32_t Len)
 {
+	uint8_t zero[USB_HID_CUST_DATA_CACHE] = {0};
 	if (!prvLuatOS_VirtualHID.IsReady) return;
 	USB_HIDKeyValue HIDKey;
 	Virtual_HIDCtrlStruct *pVHID = &prvLuatOS_VirtualHID;
 	USB_StackEpIntOnOff(pVHID->USB_ID, pVHID->ToHostEpIndex, 0, 0);
 	OS_BufferWrite(&pVHID->TxCacheBuf, Data, Len);
+	if (Len % prvCore_HIDCustomReportDescriptor[28])
+	{
+		OS_BufferWrite(&pVHID->TxCacheBuf, zero, prvCore_HIDCustomReportDescriptor[28] - (Len % prvCore_HIDCustomReportDescriptor[28]));
+	}
 	Buffer_StaticInit(&pVHID->TxBuf, pVHID->TxCacheBuf.Data, pVHID->TxCacheBuf.Pos);
 	OS_InitBuffer(&pVHID->TxCacheBuf, VIRTUAL_VHID_BUFFER_LEN);
 	USB_StackTxEpData(pVHID->USB_ID, pVHID->ToHostEpIndex, pVHID->TxBuf.Data, pVHID->TxBuf.MaxLen, pVHID->TxBuf.MaxLen, 1);

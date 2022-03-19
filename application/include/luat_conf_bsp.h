@@ -28,6 +28,8 @@
 
 #define LUAT_USE_FS_VFS 1
 #define LUAT_USE_VFS_INLINE_LIB 1
+// 内存优化: 减少内存消耗, 会稍微减低性能
+#define LUAT_USE_MEMORY_OPTIMIZATION_CODE_MMAP 1
 
 
 #define LUAT_USE_UART 1
@@ -71,9 +73,10 @@
 
 //----------------------------
 // 高级功能, 其中shell是推荐启用, 除非你打算uart0也读数据
+#ifndef __DEBUG__
 #define LUAT_USE_SHELL 
 #define LUAT_USE_DBG
-
+#endif
 #define LUAT_USE_OTA
 
 // 多虚拟机支持,实验性,一般不启用
@@ -166,7 +169,7 @@ extern unsigned int gLVFlashTime;
 #define __LUATOS_TICK_64BIT__
 #define LUAT_USE_MEMORY_OPTIMIZATION_CODE_MMAP
 
-#ifndef __DEBUG__
+#ifndef __LV_DEBUG__
 #undef LV_USE_PERF_MONITOR
 #endif
 

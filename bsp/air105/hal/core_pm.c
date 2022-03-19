@@ -58,11 +58,13 @@ void PM_Print(void)
 int32_t PM_Sleep(void)
 {
 	uint64_t StartTick;
-	uint32_t Temp;
+	volatile uint32_t Temp, Temp2, Temp3;
 	if (prvPM.HWFlagBit || prvPM.DrvFlagBit) return -ERROR_DEVICE_BUSY;
 	__disable_irq();
 	SYSCTRL->ANA_CTRL |= BIT(7)|BIT(5)|BIT(4);
 	SYSCTRL->LDO25_CR |= BIT(4);
+	Temp2 = ADC0->ADC_CR1;
+	Temp3 = DAC->DAC_CR1;
 	ADC0->ADC_CR1 |= BIT(8);
 	ADC0->ADC_CR1 &= ~BIT(6);
 	DAC->DAC_CR1 |= BIT(4);
@@ -75,9 +77,8 @@ int32_t PM_Sleep(void)
 //	SYSCTRL->LDO25_CR &= ~BIT(5);
 //	SYSCTRL->PHER_CTRL &= ~BIT(20);
 	TRNG->RNG_ANA = Temp;
-	ADC0->ADC_CR1 &= ~BIT(8);
-	ADC0->ADC_CR1 |= BIT(6);
-	DAC->DAC_CR1 &= ~BIT(4);
+	ADC0->ADC_CR1 = Temp2;
+	DAC->DAC_CR1 = Temp3;
 	SYSCTRL->LDO25_CR &= ~BIT(4);
     SYSCTRL->ANA_CTRL &= ~(BIT(7)|BIT(5)|BIT(4));
 	WDT_Feed();
