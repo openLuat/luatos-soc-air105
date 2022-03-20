@@ -61,3 +61,25 @@ void luat_mcu_delay_us(int delay)
 {
 	Task_DelayUS(delay);
 }
+
+void luat_mcu_set_clk_source(uint8_t source_main, uint8_t source_32k, uint32_t delay)
+{
+	switch(source_main)
+	{
+	case 0:
+		PM_Set12MSource(0, delay);
+		break;
+	case 1:
+		PM_Set12MSource(1, delay);
+		break;
+	}
+	switch(source_32k)
+	{
+	case 0:
+		PM_Set32KSource(0);
+		break;
+	case 1:
+		PM_Set32KSource(1);
+		break;
+	}
+}

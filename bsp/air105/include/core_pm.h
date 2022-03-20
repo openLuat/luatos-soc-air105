@@ -45,4 +45,6 @@ void PM_Init(void);
 void PM_SetHardwareRunFlag(uint32_t PmHWSn, uint32_t OnOff);
 void PM_SetDriverRunFlag(uint32_t PmDrvSn, uint32_t OnOff);
 int32_t PM_Sleep(void);
+void PM_Set12MSource(uint8_t XTAL, uint32_t DelayCnt);
+void PM_Set32KSource(uint8_t XTAL);
 #endif

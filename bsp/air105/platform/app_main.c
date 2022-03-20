@@ -58,11 +58,11 @@ void SystemInit(void)
 {
 	memcpy(__SRAM_BASE_ADDR__, (uint32_t)(&__isr_start_address), 1024);
 	SCB->VTOR = __SRAM_BASE_ADDR__;
-#ifdef __USE_XTL__
-	SYSCTRL->FREQ_SEL = 0x20000000 | SYSCTRL_FREQ_SEL_HCLK_DIV_1_2 | (1 << 13) | SYSCTRL_FREQ_SEL_CLOCK_SOURCE_EXT | SYSCTRL_FREQ_SEL_XTAL_192Mhz | SYSCTRL_FREQ_SEL_POWERMODE_CLOSE_CPU_MEM;
-#else
-	SYSCTRL->FREQ_SEL = 0x20000000 | SYSCTRL_FREQ_SEL_HCLK_DIV_1_2 | (1 << 13) | SYSCTRL_FREQ_SEL_CLOCK_SOURCE_INC | SYSCTRL_FREQ_SEL_XTAL_192Mhz | SYSCTRL_FREQ_SEL_POWERMODE_CLOSE_CPU_MEM;;
-#endif
+//#ifdef __USE_XTL__
+//	SYSCTRL->FREQ_SEL = 0x20000000 | SYSCTRL_FREQ_SEL_HCLK_DIV_1_2 | (1 << 13) | SYSCTRL_FREQ_SEL_CLOCK_SOURCE_EXT | SYSCTRL_FREQ_SEL_XTAL_192Mhz | SYSCTRL_FREQ_SEL_POWERMODE_CLOSE_CPU_MEM;
+//#else
+//	SYSCTRL->FREQ_SEL = 0x20000000 | SYSCTRL_FREQ_SEL_HCLK_DIV_1_2 | (1 << 13) | SYSCTRL_FREQ_SEL_CLOCK_SOURCE_INC | SYSCTRL_FREQ_SEL_XTAL_192Mhz | SYSCTRL_FREQ_SEL_POWERMODE_CLOSE_CPU_MEM;;
+//#endif
 //	SCB->VTOR = (uint32_t)(&__isr_start_address);
 	SYSCTRL->CG_CTRL1 = SYSCTRL_APBPeriph_ALL;
 	SYSCTRL->SOFT_RST1 = SYSCTRL_APBPeriph_ALL;
@@ -71,12 +71,13 @@ void SystemInit(void)
     SYSCTRL->LOCK_R |= SYSCTRL_USB_RESET;
     SYSCTRL->LDO25_CR &= ~(BIT(4)|BIT(5));
 //    BPU->SEN_ANA0 &= ~(1 << 10);
-#ifdef __USE_32K_XTL__
-	BPU->SEN_ANA0 |= (1 << 10)|(7 << 25) | (2 << 29);	//外部32768+最大充电电流+最大晶振供电
-#else
-	BPU->SEN_ANA0 &= ~(1 << 10);
-	BPU->SEN_ANA0 |= (7 << 25) | (2 << 29);	//内部32K+最大充电电流+最大晶振供电
-#endif
+//#ifdef __USE_32K_XTL__
+//	BPU->SEN_ANA0 |= (1 << 10)|(7 << 25) | (2 << 29);	//外部32768+最大充电电流+最大晶振供电
+//#else
+//	BPU->SEN_ANA0 &= ~(1 << 10);
+//	BPU->SEN_ANA0 |= (7 << 25) | (2 << 29);	//内部32K+最大充电电流+最大晶振供电
+//#endif
+	BPU->SEN_ANA0 |= (7 << 25) | (2 << 29);//最大充电电流+中等晶振供电
 	__enable_irq();
 }
 

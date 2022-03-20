@@ -88,3 +88,35 @@ int32_t PM_Sleep(void)
 	return ERROR_NONE;
 
 }
+
+void PM_Set12MSource(uint8_t XTAL, uint32_t DelayCnt)
+{
+	volatile uint32_t delay = DelayCnt;
+	if (XTAL == ((SYSCTRL->FREQ_SEL & BIT(12)) >> 12))
+	{
+		__disable_irq();
+		if (XTAL)
+		{
+			SYSCTRL->FREQ_SEL &= ~BIT(12);
+		}
+		else
+		{
+			SYSCTRL->FREQ_SEL |= BIT(12);
+		}
+		while(--delay) {;}
+		__enable_irq();
+	}
+}
+
+void PM_Set32KSource(uint8_t XTAL)
+{
+	if (XTAL == ((BPU->SEN_ANA0 & BIT(10)) >> 10)) return ;
+	if (XTAL)
+	{
+		BPU->SEN_ANA0 |= BIT(10);
+	}
+	else
+	{
+		BPU->SEN_ANA0 &= ~BIT(10);
+	}
+}
