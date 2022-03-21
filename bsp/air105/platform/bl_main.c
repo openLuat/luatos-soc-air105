@@ -606,7 +606,7 @@ void SystemInit(void)
 	WDT_SetTimeout(__WDT_TO_MS__);
 	WDT_ModeConfig(WDT_Mode_Interrupt);
 	WDT_Enable();
-
+	SYSCTRL->PHER_CTRL &= ~BIT(20);	//打开PA8-9-10电源
 //	QSPI->DEVICE_PARA = (QSPI->DEVICE_PARA & 0xFFFF) | (68 << 16);
 #if (__FPU_PRESENT) && (__FPU_USED == 1)
     SCB->CPACR |= ((3UL << 10 * 2) | (3UL << 11*2));

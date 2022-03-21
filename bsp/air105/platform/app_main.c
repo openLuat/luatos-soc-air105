@@ -66,7 +66,6 @@ void SystemInit(void)
 //	SCB->VTOR = (uint32_t)(&__isr_start_address);
 	SYSCTRL->CG_CTRL1 = SYSCTRL_APBPeriph_ALL;
 	SYSCTRL->SOFT_RST1 = SYSCTRL_APBPeriph_ALL;
-	SYSCTRL->PHER_CTRL &= ~BIT(20);
     SYSCTRL->SOFT_RST2 &= ~SYSCTRL_USB_RESET;
     SYSCTRL->LOCK_R |= SYSCTRL_USB_RESET;
     SYSCTRL->LDO25_CR &= ~(BIT(4)|BIT(5));
