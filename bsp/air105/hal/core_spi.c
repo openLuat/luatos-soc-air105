@@ -434,6 +434,7 @@ void SPI_MasterInit(uint8_t SpiID, uint8_t DataBit, uint8_t Mode, uint32_t Speed
 			break;
 		}
 		div = (SystemCoreClock >> 2) / Speed;
+		if (!div) div = 2;
 		if (div % 2) div++;
 		prvSPI[SpiID].Speed = (SystemCoreClock >> 2) / div;
 		SPI->CTRLR0 = ctrl;
@@ -1163,6 +1164,7 @@ void SPI_SetNewConfig(uint8_t SpiID, uint32_t Speed, uint8_t NewMode)
 		SPI = (SPI_TypeDef *)prvSPI[SpiID].RegBase;
 		SPI->SSIENR = 0;
 		div = (SystemCoreClock >> 2) / Speed;
+		if (!div) div = 2;
 		if (div % 2) div++;
 		prvSPI[SpiID].Speed = (SystemCoreClock >> 2) / div;
 		SPI->BAUDR = div;

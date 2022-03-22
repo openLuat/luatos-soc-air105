@@ -173,4 +173,6 @@ extern unsigned int gLVFlashTime;
 #undef LV_USE_PERF_MONITOR
 #endif
 
+#define LUAT_GPIO_NUMS	32
+
 #endif

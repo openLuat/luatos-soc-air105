@@ -23,7 +23,7 @@
 #include "luat_lib_io_queue.h"
 #include "app_interface.h"
 
-#define LUAT_LOG_TAG "hwtimer"
+#define LUAT_LOG_TAG "ioqueue"
 #include "luat_log.h"
 
 static int32_t luat_io_queue_done_cb(void *pData, void *pParam)
@@ -46,8 +46,8 @@ static int32_t __FUNC_IN_RAM__ luat_io_queue_capture_cb(void *pData, void *pPara
 	uint64_t tick = GetSysTick();
 	msg.handler = l_io_queue_capture_handler;
 	msg.ptr = ((uint32_t)pData << 8) | GPIO_Input(pData);
-	msg.arg1 = (tick >> 32);
-	msg.arg2 = tick & 0x0ffffffff;
+	msg.arg1 = (tick >> 32) & 0xffffffff;
+	msg.arg2 = tick & 0xffffffff;
 	luat_msgbus_put(&msg, 1);
 	return 0;
 }
