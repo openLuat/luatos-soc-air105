@@ -587,13 +587,16 @@ READ_REST_DATA:
 		SDHC_SpiXfer(Ctrl, pBuf, RemainingLen);
 		memset(Ctrl->TempData, 0xff, 2);
 		SPI_BlockTransfer(Ctrl->SpiID, Ctrl->TempData, Ctrl->TempData, 2);
-		crc16 = CRC16Cal(Ctrl->DataBuf.Data + Ctrl->DataBuf.Pos * __SDHC_BLOCK_LEN__, __SDHC_BLOCK_LEN__, 0, CRC16_CCITT_GEN, 0);
-		crc16_check = BytesGetBe16(Ctrl->TempData);
-		if (crc16 != crc16_check)
+		if (Ctrl->IsCRCCheck)
 		{
-			DBG("crc16 error %04x %04x", crc16, crc16_check);
-			Result = ERROR_NONE;
-			goto SDHC_SPIREADBLOCKDATA_DONE;
+			crc16 = CRC16Cal(Ctrl->DataBuf.Data + Ctrl->DataBuf.Pos * __SDHC_BLOCK_LEN__, __SDHC_BLOCK_LEN__, 0, CRC16_CCITT_GEN, 0);
+			crc16_check = BytesGetBe16(Ctrl->TempData);
+			if (crc16 != crc16_check)
+			{
+				DBG("crc16 error %04x %04x", crc16, crc16_check);
+				Result = ERROR_NONE;
+				goto SDHC_SPIREADBLOCKDATA_DONE;
+			}
 		}
 		Ctrl->DataBuf.Pos++;
 		OpEndTick = GetSysTick() + Ctrl->SDHCReadBlockTo;

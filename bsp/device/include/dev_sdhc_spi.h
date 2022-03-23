@@ -117,6 +117,7 @@ typedef struct
 	uint8_t IsSpiDMAMode;
 	uint8_t SDHCState;
 	uint8_t IsInitDone;
+	uint8_t IsCRCCheck;
 	uint8_t SDHCError;
 	uint8_t SPIError;
 	uint8_t ExternResult[8];
