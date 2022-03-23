@@ -302,12 +302,14 @@ int luat_setup_cb(int uartid, int received, int sent){
     return 0;
 }
 
-void luat_uart_wait_485_tx_done(int uartid)
+int luat_uart_wait_485_tx_done(int uartid)
 {
+	int cnt = 0;
     if (luat_uart_exist(uartid)){
         if (serials[uartid].rs485_param_bit.is_485used){
-        	while(!Uart_IsTSREmpty(uartid)) {;}
+        	while(!Uart_IsTSREmpty(uartid)) {cnt++;}
         	GPIO_Output(serials[uartid].rs485_pin, serials[uartid].rs485_param_bit.rx_level);
         }
     }
+    return cnt;
 }
