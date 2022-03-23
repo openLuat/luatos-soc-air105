@@ -587,7 +587,7 @@ READ_REST_DATA:
 		SDHC_SpiXfer(Ctrl, pBuf, RemainingLen);
 		memset(Ctrl->TempData, 0xff, 2);
 		SPI_BlockTransfer(Ctrl->SpiID, Ctrl->TempData, Ctrl->TempData, 2);
-		if (Ctrl->IsCRCCheck)
+//		if (Ctrl->IsCRCCheck)
 		{
 			crc16 = CRC16Cal(Ctrl->DataBuf.Data + Ctrl->DataBuf.Pos * __SDHC_BLOCK_LEN__, __SDHC_BLOCK_LEN__, 0, CRC16_CCITT_GEN, 0);
 			crc16_check = BytesGetBe16(Ctrl->TempData);
