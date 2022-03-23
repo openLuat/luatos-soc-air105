@@ -35,7 +35,14 @@
 //串口数量，编号从0开始
 #define MAX_DEVICE_COUNT UART_MAX
 //存放串口设备句柄
-static uint8_t serials_marks[MAX_DEVICE_COUNT+1] ={0};
+typedef struct
+{
+	uint8_t rx_mark;
+	uint8_t rs485_pin;
+	uint8_t rx_level;
+	uint8_t is_used485;
+}serials_info;
+static serials_info serials[MAX_DEVICE_COUNT+1] ={0};
 
 
 int luat_uart_exist(int uartid){
@@ -55,6 +62,7 @@ static int32_t luat_uart_cb(void *pData, void *pParam){
         case UART_CB_TX_BUFFER_DONE:
             break;
         case UART_CB_TX_ALL_DONE:
+        	if (serials[uartid].is_used485) GPIO_Output(serials[uartid].rs485_pin, serials[uartid].rx_level);
             msg.handler = l_uart_handler;
             msg.arg1 = uartid;
             msg.arg2 = 0;
@@ -64,8 +72,8 @@ static int32_t luat_uart_cb(void *pData, void *pParam){
         case UART_CB_RX_BUFFER_FULL:
             break;
         case UART_CB_RX_TIMEOUT:
-            if (serials_marks[uartid]) return 0;
-            serials_marks[uartid] = 1;
+            if (serials[uartid].rx_mark) return 0;
+            serials[uartid].rx_mark = 1;
             len = Uart_RxBufferRead(uartid, NULL, 0);
             msg.handler = l_uart_handler;
             msg.ptr = NULL;
@@ -120,7 +128,7 @@ static int32_t luat_uart_usb_cb(void *pData, void *pParam){
             break;
         case UART_CB_TX_ALL_DONE:
             msg.handler = l_uart_handler;
-            msg.arg1 = 4;
+            msg.arg1 = MAX_DEVICE_COUNT;
             msg.arg2 = 0;
             msg.ptr = NULL;
             luat_msgbus_put(&msg, 1);
@@ -130,12 +138,12 @@ static int32_t luat_uart_usb_cb(void *pData, void *pParam){
         case UART_CB_RX_TIMEOUT:
             break;
         case UART_CB_RX_NEW:
-            if (serials_marks[4]) return 0;
-            serials_marks[4] = 1;
+            if (serials[MAX_DEVICE_COUNT].rx_mark) return 0;
+            serials[MAX_DEVICE_COUNT].rx_mark = 1;
             len = Core_VUartRxBufferRead(VIRTUAL_UART0,NULL,0);
             msg.handler = l_uart_handler;
             msg.ptr = NULL;
-            msg.arg1 = 4;
+            msg.arg1 = MAX_DEVICE_COUNT;
             msg.arg2 = len;
             luat_msgbus_put(&msg, 1);
             break;
@@ -146,7 +154,7 @@ static int32_t luat_uart_usb_cb(void *pData, void *pParam){
             Core_VUartBufferTxStop(VIRTUAL_UART0);
             msg.handler = usb_uart_handler;
             msg.ptr = NULL;
-            msg.arg1 = 4;
+            msg.arg1 = MAX_DEVICE_COUNT;
             msg.arg2 = 2;
             luat_msgbus_put(&msg, 1);
             break;
@@ -154,7 +162,7 @@ static int32_t luat_uart_usb_cb(void *pData, void *pParam){
             //对方打开串口工具
             msg.handler = usb_uart_handler;
             msg.ptr = NULL;
-            msg.arg1 = 4;
+            msg.arg1 = MAX_DEVICE_COUNT;
             msg.arg2 = 1;
             luat_msgbus_put(&msg, 1);
 		    break;
@@ -187,11 +195,18 @@ int luat_uart_setup(luat_uart_t *uart){
     if (uart->parity == 1)parity = UART_PARITY_ODD;
     else if (uart->parity == 2)parity = UART_PARITY_EVEN;
     int stop_bits = (uart->stop_bits)==1?UART_STOP_BIT1:UART_STOP_BIT2;
-    if (uart->id >= UART_MAX) {
+    if (uart->id >= MAX_DEVICE_COUNT) {
+    	serials[MAX_DEVICE_COUNT].rx_mark = 0;
     	Core_VUartInit(VIRTUAL_UART0, uart->baud_rate, 1, (uart->data_bits), parity, stop_bits, NULL);
     } else {
+    	serials[uart->id].rx_mark = 0;
         Uart_BaseInit(uart->id, uart->baud_rate, 1, (uart->data_bits), parity, stop_bits, NULL);
+        serials[uart->id].is_used485 = (uart->pin485 < GPIO_NONE)?1:0;
+        serials[uart->id].rs485_pin = uart->pin485;
+        serials[uart->id].rx_level = uart->rx_level;
+        GPIO_Config(serials[uart->id].rs485_pin, 0, serials[uart->id].rx_level);
     }
+
     return 0;
 }
 
@@ -201,10 +216,13 @@ int luat_uart_write(int uartid, void *data, size_t length){
     if (!luat_uart_exist(uartid)){
         return 0;
     }
-    if (uartid == 4)
+    if (uartid >= MAX_DEVICE_COUNT) {
         Core_VUartBufferTx(VIRTUAL_UART0, (const uint8_t *)data, length);
-    else
+    }
+    else {
+    	if (serials[uartid].is_used485) GPIO_Output(serials[uartid].rs485_pin, !serials[uartid].rx_level);
         Uart_BufferTx(uartid, (const uint8_t *)data, length);
+    }
     return length;
 }
 
@@ -213,8 +231,8 @@ int luat_uart_read(int uartid, void *buffer, size_t length){
     if (!luat_uart_exist(uartid)){
         return 0;
     }
-    serials_marks[uartid] = 0;
-    if (uartid == 4)
+    serials[uartid].rx_mark = 0;
+    if (uartid >= MAX_DEVICE_COUNT)
         ret = Core_VUartRxBufferRead(VIRTUAL_UART0, (uint8_t *)buffer,length);
     else
         ret = Uart_RxBufferRead(uartid, (uint8_t *)buffer,length);
@@ -226,10 +244,12 @@ int luat_uart_close(int uartid){
     if (!luat_uart_exist(uartid)){
         return 0;
     }
-    if (uartid == 4)
+    serials[uartid].is_used485 = 0;
+    if (uartid >= MAX_DEVICE_COUNT)
         Core_VUartDeInit(VIRTUAL_UART0);
     else
         Uart_DeInit(uartid);
+
     return 0;
 }
 
@@ -237,12 +257,13 @@ int luat_setup_cb(int uartid, int received, int sent){
     if (!luat_uart_exist(uartid)){
         return -1;
     }
-    if (uartid == 4)
+    if (uartid >= MAX_DEVICE_COUNT)
         Core_VUartSetCb(VIRTUAL_UART0, luat_uart_usb_cb);
-    else
+    else {
         Uart_SetCb(uartid, luat_uart_cb);
 #ifndef UART_RX_USE_DMA
-    Uart_EnableRxIrq(uartid);
+        Uart_EnableRxIrq(uartid);
 #endif
+    }
     return 0;
 }
