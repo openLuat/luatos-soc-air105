@@ -37,15 +37,34 @@
 //存放串口设备句柄
 typedef struct
 {
+	timer_t *rs485_timer;
+	union
+	{
+		uint16_t rs485_param;
+		struct
+		{
+			uint16_t wait_time:14;
+			uint16_t rx_level:1;
+			uint16_t is_485used:1;
+		}rs485_param_bit;
+	};
 	uint8_t rx_mark;
 	uint8_t rs485_pin;
-	uint8_t rx_level;
-	uint8_t is_used485;
 }serials_info;
 static serials_info serials[MAX_DEVICE_COUNT+1] ={0};
 
+static int32_t luat_uart_wait_timer_cb(void *pData, void *pParam)
+{
+	rtos_msg_t msg;
+    msg.handler = l_uart_handler;
+    msg.arg1 = pParam;
+    msg.arg2 = 0;
+    msg.ptr = NULL;
+    luat_msgbus_put(&msg, 1);
+}
 
 int luat_uart_exist(int uartid){
+	if (uartid >= LUAT_VUART_ID_0) uartid = MAX_DEVICE_COUNT;
     if (uartid < 1 || uartid > MAX_DEVICE_COUNT){
         return 0;
     }
@@ -57,17 +76,26 @@ static int32_t luat_uart_cb(void *pData, void *pParam){
     uint32_t uartid = (uint32_t)pData;
     uint32_t State = (uint32_t)pParam;
     uint32_t len;
-    // LLOGD("luat_uart_cb pData:%d pParam:%d ",uartid,State);
+//    LLOGD("luat_uart_cb pData:%d pParam:%d ",uartid,State);
     switch (State){
         case UART_CB_TX_BUFFER_DONE:
             break;
         case UART_CB_TX_ALL_DONE:
-        	if (serials[uartid].is_used485) GPIO_Output(serials[uartid].rs485_pin, serials[uartid].rx_level);
-            msg.handler = l_uart_handler;
-            msg.arg1 = uartid;
-            msg.arg2 = 0;
-            msg.ptr = NULL;
-            luat_msgbus_put(&msg, 1);
+        	if (serials[uartid].rs485_param_bit.is_485used && serials[uartid].rs485_param_bit.wait_time)
+        	{
+        		Timer_StartUS(serials[uartid].rs485_timer, serials[uartid].rs485_param_bit.wait_time, 0);
+        	}
+        	else
+        	{
+                msg.handler = l_uart_handler;
+                msg.arg1 = uartid;
+                msg.arg2 = 0;
+                msg.ptr = NULL;
+                luat_msgbus_put(&msg, 1);
+                if (serials[uartid].rs485_param_bit.is_485used && Uart_IsTSREmpty(uartid)) {
+                	GPIO_Output(serials[uartid].rs485_pin, serials[uartid].rs485_param_bit.rx_level);
+                }
+        	}
             break;
         case UART_CB_RX_BUFFER_FULL:
             break;
@@ -128,7 +156,7 @@ static int32_t luat_uart_usb_cb(void *pData, void *pParam){
             break;
         case UART_CB_TX_ALL_DONE:
             msg.handler = l_uart_handler;
-            msg.arg1 = MAX_DEVICE_COUNT;
+            msg.arg1 = LUAT_VUART_ID_0;
             msg.arg2 = 0;
             msg.ptr = NULL;
             luat_msgbus_put(&msg, 1);
@@ -143,7 +171,7 @@ static int32_t luat_uart_usb_cb(void *pData, void *pParam){
             len = Core_VUartRxBufferRead(VIRTUAL_UART0,NULL,0);
             msg.handler = l_uart_handler;
             msg.ptr = NULL;
-            msg.arg1 = MAX_DEVICE_COUNT;
+            msg.arg1 = LUAT_VUART_ID_0;
             msg.arg2 = len;
             luat_msgbus_put(&msg, 1);
             break;
@@ -154,7 +182,7 @@ static int32_t luat_uart_usb_cb(void *pData, void *pParam){
             Core_VUartBufferTxStop(VIRTUAL_UART0);
             msg.handler = usb_uart_handler;
             msg.ptr = NULL;
-            msg.arg1 = MAX_DEVICE_COUNT;
+            msg.arg1 = LUAT_VUART_ID_0;
             msg.arg2 = 2;
             luat_msgbus_put(&msg, 1);
             break;
@@ -162,7 +190,7 @@ static int32_t luat_uart_usb_cb(void *pData, void *pParam){
             //对方打开串口工具
             msg.handler = usb_uart_handler;
             msg.ptr = NULL;
-            msg.arg1 = MAX_DEVICE_COUNT;
+            msg.arg1 = LUAT_VUART_ID_0;
             msg.arg2 = 1;
             luat_msgbus_put(&msg, 1);
 		    break;
@@ -201,10 +229,14 @@ int luat_uart_setup(luat_uart_t *uart){
     } else {
     	serials[uart->id].rx_mark = 0;
         Uart_BaseInit(uart->id, uart->baud_rate, 1, (uart->data_bits), parity, stop_bits, NULL);
-        serials[uart->id].is_used485 = (uart->pin485 < GPIO_NONE)?1:0;
+        serials[uart->id].rs485_param_bit.is_485used = (uart->pin485 < GPIO_NONE)?1:0;
         serials[uart->id].rs485_pin = uart->pin485;
-        serials[uart->id].rx_level = uart->rx_level;
-        GPIO_Config(serials[uart->id].rs485_pin, 0, serials[uart->id].rx_level);
+        serials[uart->id].rs485_param_bit.rx_level = uart->rx_level;
+        serials[uart->id].rs485_param_bit.wait_time = uart->delay;
+        if (!serials[uart->id].rs485_timer) {
+        	serials[uart->id].rs485_timer = Timer_Create(luat_uart_wait_timer_cb, uart->id, NULL);
+        }
+        GPIO_Config(serials[uart->id].rs485_pin, 0, serials[uart->id].rs485_param_bit.rx_level);
     }
 
     return 0;
@@ -220,7 +252,7 @@ int luat_uart_write(int uartid, void *data, size_t length){
         Core_VUartBufferTx(VIRTUAL_UART0, (const uint8_t *)data, length);
     }
     else {
-    	if (serials[uartid].is_used485) GPIO_Output(serials[uartid].rs485_pin, !serials[uartid].rx_level);
+    	if (serials[uartid].rs485_param_bit.is_485used) GPIO_Output(serials[uartid].rs485_pin, !serials[uartid].rs485_param_bit.rx_level);
         Uart_BufferTx(uartid, (const uint8_t *)data, length);
     }
     return length;
@@ -231,6 +263,7 @@ int luat_uart_read(int uartid, void *buffer, size_t length){
     if (!luat_uart_exist(uartid)){
         return 0;
     }
+    if (uartid >= LUAT_VUART_ID_0) uartid = MAX_DEVICE_COUNT;
     serials[uartid].rx_mark = 0;
     if (uartid >= MAX_DEVICE_COUNT)
         ret = Core_VUartRxBufferRead(VIRTUAL_UART0, (uint8_t *)buffer,length);
@@ -244,7 +277,8 @@ int luat_uart_close(int uartid){
     if (!luat_uart_exist(uartid)){
         return 0;
     }
-    serials[uartid].is_used485 = 0;
+    if (uartid >= LUAT_VUART_ID_0) uartid = MAX_DEVICE_COUNT;
+    serials[uartid].rs485_param_bit.is_485used = 0;
     if (uartid >= MAX_DEVICE_COUNT)
         Core_VUartDeInit(VIRTUAL_UART0);
     else
@@ -266,4 +300,14 @@ int luat_setup_cb(int uartid, int received, int sent){
 #endif
     }
     return 0;
+}
+
+void luat_uart_wait_485_tx_done(int uartid)
+{
+    if (luat_uart_exist(uartid)){
+        if (serials[uartid].rs485_param_bit.is_485used){
+        	while(!Uart_IsTSREmpty(uartid)) {;}
+        	GPIO_Output(serials[uartid].rs485_pin, serials[uartid].rs485_param_bit.rx_level);
+        }
+    }
 }

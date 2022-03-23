@@ -174,5 +174,5 @@ extern unsigned int gLVFlashTime;
 #endif
 
 #define LUAT_GPIO_NUMS	32
-
+#define LUAT__UART_TX_NEED_WAIT_DONE
 #endif

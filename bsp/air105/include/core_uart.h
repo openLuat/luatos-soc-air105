@@ -83,6 +83,8 @@ void Uart_DMATx(uint8_t UartID, uint8_t Stream, const uint8_t *Data, uint32_t Le
 
 void Uart_DMARx(uint8_t UartID, uint8_t Stream, uint8_t *Data, uint32_t Len);
 
+uint8_t Uart_IsTSREmpty(uint8_t UartID);
+
 uint32_t Uart_RxBufferRead(uint8_t UartID, uint8_t *Data, uint32_t Len);
 
 void Uart_RxBufferCB(uint8_t UartID, CBFuncEx_t CB);

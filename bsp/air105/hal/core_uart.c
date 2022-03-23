@@ -408,11 +408,15 @@ void Uart_DMARx(uint8_t UartID, uint8_t Stream, uint8_t *Data, uint32_t Len)
 	DMA_ForceStartStream(Stream, Data, Len, prvUart_DMAIrqCB, (uint32_t)UartID, 1);
 }
 
+uint8_t Uart_IsTSREmpty(uint8_t UartID)
+{
+	UART_TypeDef* Uart = (UART_TypeDef*)prvUart[UartID].RegBase;
+	return (Uart->LSR & UART_LSR_TEMT);
+}
 
 int32_t Uart_BufferTx(uint8_t UartID, const uint8_t *Data, uint32_t Len)
 {
 	UART_TypeDef* Uart = (UART_TypeDef*)prvUart[UartID].RegBase;
-
 	ISR_OnOff(prvUart[UartID].IrqLine, 0);
 #ifdef __BUILD_OS__
 	if (Data && Len)
@@ -586,7 +590,6 @@ static void prvUart_Tx(uint8_t UartID, UART_TypeDef* Uart)
 	{
 		Uart_BufferTx(UartID, NULL, 0);
 	}
-
 	if (!prvUart[UartID].TxBuf.Data && !prvUart[UartID].TxCacheBuf.Pos)
 #else
 	if (!prvUart[UartID].TxBuf.Data)
