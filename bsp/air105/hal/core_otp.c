@@ -63,5 +63,7 @@ void OTP_Lock(void)
 
 void OTP_GetSn(uint8_t *ChipSN)
 {
+	SYSCTRL->CG_CTRL2 |= SYSCTRL_AHBPeriph_OTP;
 	memcpy(ChipSN, (uint32_t *)(SYSCTRL_CHIP_SN_ADDR), SYSCTRL_CHIP_SN_LEN);
+	SYSCTRL->CG_CTRL2 &= ~SYSCTRL_AHBPeriph_OTP;
 }
