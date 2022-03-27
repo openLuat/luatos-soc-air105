@@ -172,9 +172,12 @@ enum
 #define CRC16_IBM_SEED	(0xffff)
 #define CRC16_CCITT_SEED		(0x1D0F)
 #define HANDLE			void *
+#ifndef BIT
 #define BIT(n)      (1UL << (n))
+#endif
+#ifndef MIN
 #define MIN(X,Y)	(((X) < (Y))?(X):(Y))
-
+#endif
 typedef void (* TaskFun_t)( void * );
 typedef void (* CommonFun_t)(void);
 typedef void(* CBDataFun_t)(uint8_t *Data, uint32_t Len);
@@ -232,7 +235,7 @@ HANDLE OS_MutexCreate(void);
 HANDLE OS_MutexCreateUnlock(void);
 void OS_MutexLock(HANDLE Sem);
 int32_t OS_MutexLockWtihTime(HANDLE Sem, uint32_t TimeoutMs);
-HANDLE OS_MutexRelease(HANDLE Sem);
+void OS_MutexRelease(HANDLE Sem);
 void OS_MutexDelete(HANDLE Sem);
 #endif
 uint32_t OS_EnterCritical(void);
@@ -463,9 +466,11 @@ void BytesPutDoubleToBuf(Buffer_Struct *Buf, double v);
 #define zalloc OS_Zalloc
 #define calloc OS_Calloc
 
+#ifndef ASSERT
 #if(defined(__DEBUG__) || defined(DEBUG))
 #define ASSERT( x ) if( ( x ) == 0 ) { __disable_irq(); DBG_Trace("\r\nassert %s,%d", __FUNCTION__, __LINE__); for( ;; ); }
 #else
 #define ASSERT( x )
+#endif
 #endif
 #endif

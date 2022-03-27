@@ -338,7 +338,7 @@ int32_t OS_MutexLockWtihTime(HANDLE Sem, uint32_t TimeoutMs)
 	}
 }
 
-HANDLE OS_MutexRelease(HANDLE Sem)
+void OS_MutexRelease(HANDLE Sem)
 {
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 //	xSemaphoreGiveFromISR(Sem, &xHigherPriorityTaskWoken);

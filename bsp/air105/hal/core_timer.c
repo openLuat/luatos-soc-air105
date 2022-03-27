@@ -33,7 +33,7 @@ struct Timer_InfoStruct
 	void *Param;
 	void *Handle;
 };
-
+#define Timer_t struct Timer_InfoStruct
 typedef struct
 {
 	llist_head Head;
@@ -80,7 +80,7 @@ static void Timer_SetNextIsr(void)
 		}
 		else
 		{
-			PassTick = 5;
+			PassTick = SYS_TIMER_1US/4;
 		}
 		prvTimerCtrl.NextTick = Timer->TargetTick;
 		ISR_Clear(SYS_TIMER_IRQ);
@@ -120,7 +120,14 @@ static void SystemTimerIrqHandler( int32_t Line, void *pData)
 	volatile uint32_t clr;
 	clr = TIMM0->TIM[SYS_TIMER_TIM].EOI;
 	TIMM0->TIM[SYS_TIMER_TIM].ControlReg = 0;
-	do {
+
+	if (prvTimerCtrl.NextTick > GetSysTick())
+	{
+		DBG("%x, %llu, %llu", clr, prvTimerCtrl.NextTick, GetSysTick());
+		prvTimerCtrl.NextTick = GetSysTick();
+	}
+	do
+	{
 		Critical = OS_EnterCritical();
 		Timer = llist_traversal(&prvTimerCtrl.Head, Timer_CheckTo, NULL);
 		if (!Timer)
