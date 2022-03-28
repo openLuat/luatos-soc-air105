@@ -50,10 +50,12 @@ static void luat_timer_callback(TimerHandle_t xTimer) {
 static int32_t luat_timer_callback(void *pData, void *pParam)
 {
     rtos_msg_t msg;
-    luat_timer_t *timer = (luat_timer_t*)pParam;
-    msg.handler = timer->func;
+    size_t timer_id = (size_t)parg;
+    luat_timer_t *timer = luat_timer_get(timer_id);
+    if (timer == NULL)
+        return;
     msg.ptr = timer;
-    msg.arg1 = 0;
+    msg.arg1 = timer_id;
     msg.arg2 = 0;
     luat_msgbus_put(&msg, 0);
 }
@@ -77,7 +79,7 @@ int luat_timer_start(luat_timer_t* timer) {
     if (timerIndex < 0) {
         return 1; // too many timer!!
     }
-    os_timer = Timer_Create(luat_timer_callback, timer, NULL);
+    os_timer = Timer_Create(luat_timer_callback, (void*)timer->id, NULL);
     //LLOGD("timer id=%ld, osTimerNew=%p", timerIndex, os_timer);
     if (!os_timer) {
         return -1;
