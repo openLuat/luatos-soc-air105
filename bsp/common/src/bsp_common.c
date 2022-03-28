@@ -362,6 +362,8 @@ void OS_MutexDelete(HANDLE Sem)
 }
 #endif
 static uint8_t prvOSRunFlag;
+extern const uint32_t __os_heap_start;
+extern const uint32_t __ram_end;
 __attribute__((weak)) void OS_SetStartFlag(void)
 {
 	prvOSRunFlag = 1;
@@ -437,9 +439,13 @@ __attribute__((weak)) void *OS_Calloc(uint32_t count, uint32_t eltsize)
 
 __attribute__((weak)) void OS_Free(void *p)
 {
-	uint32_t Critical = OS_EnterCritical();
-	brel(p);
-	OS_ExitCritical(Critical);
+	if (((uint32_t)p >= (uint32_t)(&__os_heap_start)) && ((uint32_t)p <= (uint32_t)(&__ram_end)))
+	{
+		uint32_t Critical = OS_EnterCritical();
+		brel(p);
+		OS_ExitCritical(Critical);
+	}
+
 }
 
 __attribute__((weak)) void *OS_Realloc(void *buf, uint32_t size)

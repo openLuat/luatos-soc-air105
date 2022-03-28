@@ -252,15 +252,22 @@ void luat_ota_reboot(int timeout_ms) {
 #define LVGL_TICK_PERIOD	10
 unsigned int gLVFlashTime;
 static timer_t *lv_timer;
+static uint32_t lvgl_tick_cnt;
 static int luat_lvg_handler(lua_State* L, void* ptr) {
 //	DBG("%u", lv_tick_get());
+	if (lvgl_tick_cnt) lvgl_tick_cnt--;
     lv_task_handler();
     return 0;
 }
 static int32_t _lvgl_handler(void *pData, void *pParam) {
-    rtos_msg_t msg = {0};
-    msg.handler = luat_lvg_handler;
-    luat_msgbus_put(&msg, 0);
+	if (lvgl_tick_cnt < 10)
+	{
+		lvgl_tick_cnt++;
+	    rtos_msg_t msg = {0};
+	    msg.handler = luat_lvg_handler;
+	    luat_msgbus_put(&msg, 0);
+	}
+	return 0;
 }
 void luat_lvgl_tick_sleep(uint8_t OnOff)
 {

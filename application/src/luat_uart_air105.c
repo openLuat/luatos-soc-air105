@@ -55,12 +55,16 @@ static serials_info serials[MAX_DEVICE_COUNT+1] ={0};
 
 static int32_t luat_uart_wait_timer_cb(void *pData, void *pParam)
 {
-	rtos_msg_t msg;
+    uint32_t uartid = (uint32_t)pParam;
+    rtos_msg_t msg;
     msg.handler = l_uart_handler;
-    msg.arg1 = pParam;
+    msg.arg1 = uartid;
     msg.arg2 = 0;
     msg.ptr = NULL;
     luat_msgbus_put(&msg, 1);
+    if (serials[uartid].rs485_param_bit.is_485used) {
+    	GPIO_Output(serials[uartid].rs485_pin, serials[uartid].rs485_param_bit.rx_level);
+    }
 }
 
 int luat_uart_exist(int uartid){
