@@ -199,6 +199,9 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_SOFTKB
   {"softkb", luaopen_softkb}, 
 #endif
+#ifdef LUAT_USE_YMODEM
+  {"ymodem", luaopen_ymodem},
+#endif
   {"usbapp", luaopen_usbapp},
   {"audio", luaopen_multimedia_audio},
   {"codec", luaopen_multimedia_codec},

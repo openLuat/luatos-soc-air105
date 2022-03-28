@@ -332,6 +332,10 @@ if with_luatos then
     add_includedirs(luatos.."components/cmux",{public = true})
     add_files(luatos.."components/shell/*.c")
     add_files(luatos.."components/cmux/*.c")
+
+    -- ymodem
+    add_includedirs(luatos.."components/ymodem",{public = true})
+    add_files(luatos.."components/ymodem/*.c")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})
