@@ -50,10 +50,11 @@ static void luat_timer_callback(TimerHandle_t xTimer) {
 static int32_t luat_timer_callback(void *pData, void *pParam)
 {
     rtos_msg_t msg;
-    size_t timer_id = (size_t)parg;
+    size_t timer_id = (size_t)pParam;
     luat_timer_t *timer = luat_timer_get(timer_id);
     if (timer == NULL)
         return;
+    msg.handler = timer->func;
     msg.ptr = timer;
     msg.arg1 = timer_id;
     msg.arg2 = 0;
