@@ -5,33 +5,33 @@
 #define ENABLE_CODE128 1
 
 /* whether to build support for Code 93 symbology */
-#undef ENABLE_CODE93
-//#define ENABLE_CODE93 1
+//#undef ENABLE_CODE93
+#define ENABLE_CODE93 1
 
 /* whether to build support for Code 39 symbology */
-#undef ENABLE_CODE39
-//#define ENABLE_CODE39 1
+//#undef ENABLE_CODE39
+#define ENABLE_CODE39 1
 
 /* whether to build support for Codabar symbology */
 //#undef ENABLE_CODABAR
-#define ENABLE_DATABAR 1
+#define ENABLE_CODABAR 1
 
 
 /* whether to build support for DataBar symbology */
-#undef ENABLE_DATABAR
-//#define ENABLE_DATABAR 1
+//#undef ENABLE_DATABAR
+#define ENABLE_DATABAR 1
 
 /* whether to build support for EAN symbologies */
-#undef ENABLE_EAN
-//#define ENABLE_EAN 1
+//#undef ENABLE_EAN
+#define ENABLE_EAN 1
 
 /* whether to build support for Interleaved 2 of 5 symbology */
-#undef ENABLE_I25
-//#define ENABLE_I25 1
+//#undef ENABLE_I25
+#define ENABLE_I25 1
 
 /* whether to build support for PDF417 symbology */
-#undef ENABLE_PDF417
-//#define ENABLE_PDF417 1
+//#undef ENABLE_PDF417
+#define ENABLE_PDF417 1
 
 /* whether to build support for QR Code */
 #define ENABLE_QRCODE 1
