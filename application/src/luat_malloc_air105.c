@@ -49,11 +49,7 @@ void luat_heap_free(void* ptr) {
 }
 
 void* luat_heap_realloc(void* ptr, size_t len) {
-    void* tmp = luat_heap_malloc(len);
-    if (tmp && ptr) {
-        memcpy(tmp, ptr, len);
-    }
-    return tmp;
+    return OS_Realloc(ptr,len);
 }
 
 void* luat_heap_calloc(size_t count, size_t _size) {
