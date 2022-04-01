@@ -159,7 +159,10 @@ static void prvHW_Task(void* params)
 //			SPI_Transfer(Draw->SpiID, Draw->Data, Draw->Data, Draw->Size, 2);
 
 			SPI_BlockTransfer(Draw->SpiID, Draw->Data, Draw->Data, Draw->Size);
-//			DBG("%u, %u", Draw->Size, (uint32_t)(GetSysTickUS() - StartUS));
+//			if (Draw->Size > 38000)
+//			{
+//				DBG("%u, %u", Draw->Size, (uint32_t)(GetSysTickUS() - StartUS));
+//			}
 			prvService.LCDDrawDoneByte += Draw->Size;
 			free(Draw->Data);
 			GPIO_Output(Draw->CSPin, 1);

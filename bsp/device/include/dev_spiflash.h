@@ -86,6 +86,7 @@ typedef struct
 void SPIFlash_Init(SPIFlash_CtrlStruct *Ctrl, void *Config);
 int32_t SPIFlash_ID(SPIFlash_CtrlStruct *Ctrl);
 int32_t SPIFlash_ReadSR(SPIFlash_CtrlStruct *Ctrl);
+int32_t SPIFlash_WriteSR(SPIFlash_CtrlStruct *Ctrl, uint8_t SR);
 int32_t SPIFlash_CheckBusy(SPIFlash_CtrlStruct *Ctrl);
 uint8_t SPIFlash_WaitOpDone(SPIFlash_CtrlStruct *Ctrl);
 int32_t SPIFlash_WriteEnable(SPIFlash_CtrlStruct *Ctrl);

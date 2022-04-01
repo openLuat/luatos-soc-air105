@@ -20,14 +20,19 @@
  */
 
 #include "user.h"
+//#define __MUTLI_BLOCKS__
 typedef struct
 {
 	const DMA_TypeDef *RegBase;
 	const uint32_t Index;
 	CBFuncEx_t CB;
 	void *pData;
+#ifdef __MUTLI_BLOCKS__
+	LLI *Linklist;
+#endif
 	uint8_t TxDir;
 }DMAChannal_struct;
+
 
 /************ operation definition for DMA  DMA_CTL_H REGISTER ************/
 #define DMA_CTL_BLOCK_TS_Pos								(0)
@@ -258,11 +263,18 @@ int DMA_StartStream(uint8_t Stream, const void *Data, uint32_t Len, CBFuncEx_t C
 
 void DMA_ForceStartStream(uint8_t Stream, const void *Data, uint32_t Len, CBFuncEx_t CB, void *pUserData, uint8_t NeedIrq)
 {
+	uint32_t Blocks = 0, i;
 	DMA_TypeDef *hwDMA = hwDMAChannal[Stream].RegBase;
 	volatile uint32_t tmpChannelxBit = hwDMAChannal[Stream].Index;
 	DMA->ChEnReg_L = (tmpChannelxBit << 8);
 	while(DMA->ChEnReg_L & tmpChannelxBit) {;}
-
+#ifdef __MUTLI_BLOCKS__
+	if (hwDMAChannal[Stream].Linklist)
+	{
+		free(hwDMAChannal[Stream].Linklist);
+		hwDMAChannal[Stream].Linklist = NULL;
+	}
+#endif
 	if (hwDMAChannal[Stream].TxDir)
 	{
 		hwDMA->SAR_L = (uint32_t)Data;
@@ -271,8 +283,7 @@ void DMA_ForceStartStream(uint8_t Stream, const void *Data, uint32_t Len, CBFunc
 	{
 		hwDMA->DAR_L = (uint32_t)Data;
 	}
-	hwDMA->CTL_H &= ~DMA_CTL_BLOCK_TS_Mask;
-	hwDMA->CTL_H |= Len;
+
 
 	tmpChannelxBit = (tmpChannelxBit << 8) + tmpChannelxBit;
 	if (NeedIrq)
@@ -292,6 +303,44 @@ void DMA_ForceStartStream(uint8_t Stream, const void *Data, uint32_t Len, CBFunc
 	{
 		hwDMAChannal[Stream].CB = DMA_DummyCB;
 	}
+	hwDMA->CTL_L &= ~(BIT(28)|BIT(27));
+	hwDMA->CTL_H &= ~DMA_CTL_BLOCK_TS_Mask;
+	hwDMA->LLP_L = 0;
+#ifdef __MUTLI_BLOCKS__
+	if (Len > 4000)
+	{
+		Blocks = (Len / 4000) + 1;
+		hwDMAChannal[Stream].Linklist = zalloc(Blocks * sizeof(LLI));
+		hwDMA->CTL_L |= (BIT(28)|BIT(27));
+		for(i = 0; i < (Blocks - 1); i++)
+		{
+			hwDMAChannal[Stream].Linklist[i].CTL_L = hwDMA->CTL_L;
+			hwDMAChannal[Stream].Linklist[i].SAR = hwDMAChannal[Stream].TxDir?((uint32_t)Data + i * 4000):hwDMA->SAR_L;
+			hwDMAChannal[Stream].Linklist[i].DAR = hwDMAChannal[Stream].TxDir?hwDMA->DAR_L:((uint32_t)Data + i * 4000);
+			hwDMAChannal[Stream].Linklist[i].LLP = &hwDMAChannal[Stream].Linklist[i + 1];
+			hwDMAChannal[Stream].Linklist[i].CTL_H = 4000;
+		}
+		hwDMAChannal[Stream].Linklist[Blocks - 1].CTL_L = hwDMA->CTL_L;
+		hwDMAChannal[Stream].Linklist[Blocks - 1].SAR = hwDMAChannal[Stream].TxDir?((uint32_t)Data + (Blocks - 1) * 4000):hwDMA->SAR_L;
+		hwDMAChannal[Stream].Linklist[Blocks - 1].DAR = hwDMAChannal[Stream].TxDir?hwDMA->DAR_L:((uint32_t)Data + (Blocks - 1) * 4000);
+		hwDMAChannal[Stream].Linklist[Blocks - 1].LLP = 0;
+		hwDMAChannal[Stream].Linklist[Blocks - 1].CTL_H = Len - (Blocks - 1) * 4000;
+		hwDMA->LLP_L = &hwDMAChannal[Stream].Linklist[0];
+	}
+	else
+#endif
+	{
+		hwDMA->CTL_H |= Len;
+		DMA->ChEnReg_L = tmpChannelxBit;
+	}
+
+}
+
+void DMA_ForceStartStreamMultiBlocks(uint8_t Stream)
+{
+	DMA_TypeDef *hwDMA = hwDMAChannal[Stream].RegBase;
+	volatile uint32_t tmpChannelxBit = hwDMAChannal[Stream].Index;
+	tmpChannelxBit = (tmpChannelxBit << 8) + tmpChannelxBit;
 	DMA->ChEnReg_L = tmpChannelxBit;
 }
 
@@ -317,6 +366,13 @@ void DMA_StopStream(uint8_t Stream)
 	DMA->ClearSrcTran_L = tmpChannelxBit;
 	DMA->ClearDstTran_L = tmpChannelxBit;
 	DMA->ClearErr_L = tmpChannelxBit;
+#ifdef __MUTLI_BLOCKS__
+	if (hwDMAChannal[Stream].Linklist)
+	{
+		free(hwDMAChannal[Stream].Linklist);
+		hwDMAChannal[Stream].Linklist = NULL;
+	}
+#endif
 }
 
 uint32_t DMA_GetRemainingDataLength(uint8_t Stream)

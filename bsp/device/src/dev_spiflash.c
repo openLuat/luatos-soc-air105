@@ -175,6 +175,21 @@ void SPIFlash_Init(SPIFlash_CtrlStruct *Ctrl, void *LFSConfig)
 	Ctrl->ProgramTime = 3;
 	Ctrl->EraseSectorTime = 400;
 	Ctrl->EraseBlockTime = 2400;
+	SPIFlash_ReadSR(Ctrl);
+	if (Ctrl->FlashSR != 0xff && Ctrl->FlashSR != 0x0)
+	{
+		if (!Ctrl->SPIError)
+		{
+			SPIFlash_WriteEnable(Ctrl);
+			SPIFlash_WriteSR(Ctrl, 0);
+			SPIFlash_ReadSR(Ctrl);
+			while(Ctrl->FlashSR & SPIFLASH_SR_BUSY)
+			{
+				SPIFlash_ReadSR(Ctrl);
+			}
+		}
+	}
+
 
 }
 
@@ -214,6 +229,9 @@ int32_t SPIFlash_ID(SPIFlash_CtrlStruct *Ctrl)
 				}
 			}
 		}
+		return -ERROR_DEVICE_BUSY;
+
+
 	}
 	return ERROR_NONE;
 }
@@ -394,6 +412,14 @@ int32_t SPIFlash_WriteEnable(SPIFlash_CtrlStruct *Ctrl)
 {
 	Ctrl->Tx[0] = SPIFLASH_CMD_WREN;
 	SPIFlash_SpiBlockXfer(Ctrl, Ctrl->Tx, Ctrl->Rx, 1);
+	return 0;
+}
+
+int32_t SPIFlash_WriteSR(SPIFlash_CtrlStruct *Ctrl, uint8_t SR)
+{
+	Ctrl->Tx[0] = SPIFLASH_CMD_WRSR;
+	Ctrl->Tx[1] = SR;
+	SPIFlash_SpiBlockXfer(Ctrl, Ctrl->Tx, Ctrl->Rx, 2);
 	return 0;
 }
 
