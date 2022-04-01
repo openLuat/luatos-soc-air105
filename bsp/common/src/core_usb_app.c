@@ -324,7 +324,7 @@ static usb_endpoint_descriptor_t prvCore_HIDEndpointDesc[2] =
 				.bDescriptorType = UDESC_ENDPOINT,
 				.bEndpointAddress = UE_DIR_IN|DEVICE_HID_KEYBOARD_EP_IN,
 				.bmAttributes = UE_INTERRUPT,
-				.wMaxPacketSize = {0x40,0x00},
+				.wMaxPacketSize = {0x08,0x00},
 				.bInterval = 10,
 		},
 		{
@@ -332,7 +332,7 @@ static usb_endpoint_descriptor_t prvCore_HIDEndpointDesc[2] =
 				.bDescriptorType = UDESC_ENDPOINT,
 				.bEndpointAddress = UE_DIR_OUT|DEVICE_HID_KEYBOARD_EP_OUT,
 				.bmAttributes = UE_INTERRUPT,
-				.wMaxPacketSize = {0x40,0x00},
+				.wMaxPacketSize = {0x08,0x00},
 				.bInterval = 10,
 		},
 };
