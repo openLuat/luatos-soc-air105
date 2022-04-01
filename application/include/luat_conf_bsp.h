@@ -23,7 +23,7 @@
 #ifndef LUAT_CONF_BSP
 #define LUAT_CONF_BSP
 
-#define LUAT_BSP_VERSION "V0006"
+#define LUAT_BSP_VERSION "V0007"
 
 
 #define LUAT_USE_FS_VFS 1
@@ -52,7 +52,7 @@
 #define LUAT_USE_CJSON  1
 #define LUAT_USE_ZBUFF  1
 #define LUAT_USE_PACK  1
-//#define LUAT_USE_LIBGNSS  1
+#define LUAT_USE_LIBGNSS  1
 #define LUAT_USE_FS  1
 #define LUAT_USE_SENSOR  1
 #define LUAT_USE_SFUD  1
@@ -60,7 +60,7 @@
 // #define LUAT_USE_STATEM 1
 // #define LUAT_USE_COREMARK 1
 #define LUAT_USE_FDB 1
-// #define LUAT_USE_ZLIB 
+#define LUAT_USE_ZLIB 
 #define LUAT_USE_CAMERA  1
 #define LUAT_USE_FATFS 1
 
@@ -68,15 +68,13 @@
 
 //----------------------------
 // 高通字体, 需配合芯片使用
-// #define LUAT_USE_GTFONT 1
-// #define LUAT_USE_GTFONT_UTF8
+#define LUAT_USE_GTFONT 1
+#define LUAT_USE_GTFONT_UTF8
 
 //----------------------------
 // 高级功能, 其中shell是推荐启用, 除非你打算uart0也读数据
-#ifndef __DEBUG__
 #define LUAT_USE_SHELL 
 #define LUAT_USE_DBG
-#endif
 #define LUAT_USE_OTA
 
 // 多虚拟机支持,实验性,一般不启用
