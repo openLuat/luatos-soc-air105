@@ -63,7 +63,7 @@
 #define LUAT_USE_ZLIB 
 #define LUAT_USE_CAMERA  1
 #define LUAT_USE_FATFS 1
-
+#define LUAT_USE_I2CTOOLS 1
 #define LUAT_USE_SOFTKB 1
 
 //----------------------------

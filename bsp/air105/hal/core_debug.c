@@ -410,6 +410,11 @@ void DBG_Send(void)
 	OS_ExitCritical(Critical);
 }
 
+int _write(int file, char *ptr, int len)
+{
+    add_printf_data(ptr, len);
+    return len;
+}
 
 #endif
 

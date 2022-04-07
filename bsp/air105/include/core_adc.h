@@ -36,7 +36,7 @@ void ADC_ChannelOnOff(uint8_t Channel, uint8_t OnOff);
  * @param Channel 通道号
  * @return != ADC_VALUE_ERROR 为有效值
  */
-uint32_t ADC_GetChannelValue(uint8_t Channel);
+uint32_t ADC_GetChannelValue(uint8_t Channel, uint32_t *Vol);
 /**
  * @brief 开关内部分压，1~5都是1:1 6就不确定了，手册和demo不一致
  *

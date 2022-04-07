@@ -105,8 +105,12 @@ static int32_t Timer_AddNew(void *pData, void *pParam)
 static int32_t Timer_CheckTo(void *pData, void *pParam)
 {
 	Timer_t *OldTimer = (Timer_t *)pData;
-	if ((OldTimer->TargetTick - SYS_TIMER_1US/4) <= prvTimerCtrl.NextTick)
+	if (OldTimer->TargetTick <= prvTimerCtrl.NextTick)
 	{
+		if (OldTimer->TargetTick < prvTimerCtrl.NextTick)
+		{
+			DBG("%u", (uint32_t)(prvTimerCtrl.NextTick - OldTimer->TargetTick));
+		}
 		return 1;
 	}
 	return 0;
@@ -123,7 +127,7 @@ static void SystemTimerIrqHandler( int32_t Line, void *pData)
 
 	if (prvTimerCtrl.NextTick > GetSysTick())
 	{
-		DBG("%x, %llu, %llu", clr, prvTimerCtrl.NextTick, GetSysTick());
+//		DBG("%u",  (uint32_t)(prvTimerCtrl.NextTick - GetSysTick()));
 		prvTimerCtrl.NextTick = GetSysTick();
 	}
 	do
@@ -248,7 +252,6 @@ int Timer_Start(Timer_t *Timer, uint64_t Tick, uint8_t IsRepeat)
 {
 	uint32_t Critical = OS_EnterCritical();
 	llist_del(&Timer->Node);
-	OS_ExitCritical(Critical);
 	if (IsRepeat)
 	{
 		Timer->AddTick = Tick;
@@ -258,7 +261,6 @@ int Timer_Start(Timer_t *Timer, uint64_t Tick, uint8_t IsRepeat)
 		Timer->AddTick = 0;
 	}
 	Timer_Update(Timer, Tick, 1);
-	Critical = OS_EnterCritical();
 	if (llist_empty(&prvTimerCtrl.Head))
 	{
 		llist_add_tail(&Timer->Node, &prvTimerCtrl.Head);
@@ -270,8 +272,8 @@ int Timer_Start(Timer_t *Timer, uint64_t Tick, uint8_t IsRepeat)
 			llist_add_tail(&Timer->Node, &prvTimerCtrl.Head);
 		}
 	}
-	OS_ExitCritical(Critical);
 	Timer_SetNextIsr();
+	OS_ExitCritical(Critical);
 	return 0;
 }
 
@@ -295,8 +297,8 @@ void Timer_Stop(Timer_t *Timer)
 	if (prvTimerCtrl.Head.next == &Timer->Node)
 	{
 		llist_del(&Timer->Node);
-		OS_ExitCritical(Critical);
 		Timer_SetNextIsr();
+		OS_ExitCritical(Critical);
 		return;
 	}
 	else

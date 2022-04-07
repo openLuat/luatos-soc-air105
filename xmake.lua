@@ -303,6 +303,8 @@ if with_luatos then
     add_includedirs(luatos.."components/gtfont",{public = true})
     add_files(luatos.."components/gtfont/*.c")
 
+    add_files(luatos.."components/i2c-tools/*.c")
+    add_includedirs(luatos.."components/i2c-tools")
     
     add_files(luatos.."components/flashdb/src/*.c")
     add_files(luatos.."components/fal/src/*.c")

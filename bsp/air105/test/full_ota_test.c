@@ -23,11 +23,13 @@
 static uint32_t CRC32_Table[256];
 static uint32_t DataBuf[16 * 1024];
 static uint32_t DataBufBak[16 * 1024];
+static SPIFlash_CtrlStruct SPIFlash;
 void OutFlash_Test(void)
 {
+
 	CoreUpgrade_HeadStruct Head;
 	uint32_t copyaddr, flag, crc32;
-	uint32_t AppInfo[4];
+	uint32_t AppInfo[4], i;
 	PV_Union uPV;
 	CRC32_CreateTable(CRC32_Table, CRC32_GEN);
 	memcpy(AppInfo, __FLASH_APP_START_ADDR__, sizeof(AppInfo));
@@ -36,7 +38,11 @@ void OutFlash_Test(void)
 		DBG("test ok!");
 		return;
 	}
-	SPIFlash_CtrlStruct SPIFlash;
+	else
+	{
+		DBG("%x", AppInfo[2]);
+	}
+
 	memset(&SPIFlash, 0, sizeof(SPIFlash));
 	SPIFlash.SpiID = SPI_ID1;
 	crc32 = CRC32_Cal(CRC32_Table, __FLASH_APP_START_ADDR__, 1024 * 1024, 0xffffffff);
@@ -64,16 +70,26 @@ void OutFlash_Test(void)
 			flag = 1;
 			DataBuf[2] = __APP_START_MAGIC__;
 		}
+
 		SPIFlash_Erase(&SPIFlash, copyaddr - __FLASH_APP_START_ADDR__, 65536);
 		SPIFlash_Write(&SPIFlash, copyaddr - __FLASH_APP_START_ADDR__, DataBuf, 65536);
 		SPIFlash_Read(&SPIFlash, copyaddr - __FLASH_APP_START_ADDR__, DataBufBak, 65536, 1);
 		if (memcmp(DataBuf, DataBufBak, 65536))
 		{
-			DBG("%x, %x, %x, %x", DataBuf[0], DataBuf[256], DataBufBak[0], DataBufBak[256]);
+			for(i = 0; i < 16 * 1024; i++)
+			{
+				if (DataBuf[i] != DataBufBak[i])
+				{
+					DBG("%u, %x, %x", i, DataBuf[i], DataBufBak[i]);
+					break;
+				}
+			}
 		}
+
 		Head.DataCRC32 = CRC32_Cal(CRC32_Table, DataBuf, 65536, Head.DataCRC32);
 		WDT_Feed();
 	}
+
 	Head.MaigcNum = __APP_START_MAGIC__;
 	uPV.u8[0] = CORE_OTA_MODE_FULL;
 	uPV.u8[1] = CORE_OTA_OUT_SPI_FLASH;
@@ -87,8 +103,9 @@ void OutFlash_Test(void)
 	Head.DataStartAddress = 0;
 	Head.DataLen = 1024 * 1024;
 	Head.CRC32 = CRC32_Cal(CRC32_Table, &Head.Param1, sizeof(Head) - 8, 0xffffffff);
-	Flash_EraseSector(__FLASH_OTA_INFO_ADDR__, 0);
-	Flash_ProgramData(__FLASH_OTA_INFO_ADDR__, &Head, sizeof(Head), 0);
+
+	Flash_Erase(__FLASH_OTA_INFO_ADDR__, __FLASH_SECTOR_SIZE__);
+	Flash_Program(__FLASH_OTA_INFO_ADDR__, &Head, sizeof(Head));
 	DBG("reset to ota");
 	Task_DelayMS(10);
 	SystemReset();
@@ -132,8 +149,8 @@ void InFlash_Test(void)
 	Head.DataLen = 1024 * 1024;
 	Head.DataCRC32 = CRC32_Cal(CRC32_Table, __FLASH_APP_START_ADDR__ + 1024 * 1024, 1024 * 1024, 0xffffffff);
 	Head.CRC32 = CRC32_Cal(CRC32_Table, &Head.Param1, sizeof(Head) - 8, 0xffffffff);
-	Flash_EraseSector(__FLASH_OTA_INFO_ADDR__, 0);
-	Flash_ProgramData(__FLASH_OTA_INFO_ADDR__, &Head, sizeof(Head), 0);
+	Flash_Erase(__FLASH_OTA_INFO_ADDR__, __FLASH_SECTOR_SIZE__);
+	Flash_Program(__FLASH_OTA_INFO_ADDR__, &Head, sizeof(Head));
 	DBG("reset to ota");
 	Task_DelayMS(10);
 	SystemReset();

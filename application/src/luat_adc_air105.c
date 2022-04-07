@@ -66,9 +66,8 @@ int luat_adc_open(int ch, void *args)
 int luat_adc_read(int ch, int *val, int *val2)
 {
     int voltage = 0;
-    voltage = ADC_GetChannelValue(ch);
+    voltage = ADC_GetChannelValue(ch, val2);
     *val = voltage;
-    *val2 = voltage;
     return 0;
 }
 

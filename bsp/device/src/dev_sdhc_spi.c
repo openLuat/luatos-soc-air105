@@ -851,30 +851,52 @@ READ_CONFIG_ERROR:
 void SDHC_SpiReadBlocks(void *pSDHC, uint8_t *Buf, uint32_t StartLBA, uint32_t BlockNums)
 {
 	uint8_t Retry = 0;
+	uint8_t error = 1;
 	SDHC_SPICtrlStruct *Ctrl = (SDHC_SPICtrlStruct *)pSDHC;
 	Buffer_StaticInit(&Ctrl->DataBuf, Buf, BlockNums);
 SDHC_SPIREADBLOCKS_START:
 	if (SDHC_SpiCmd(Ctrl, CMD18, StartLBA + Ctrl->DataBuf.Pos, 0))
 	{
-		goto SDHC_SPIREADBLOCKS_ERROR;
+		goto SDHC_SPIREADBLOCKS_CHECK;
 	}
 	if (SDHC_SpiReadBlockData(Ctrl))
 	{
-		goto SDHC_SPIREADBLOCKS_ERROR;
+		goto SDHC_SPIREADBLOCKS_CHECK;
 	}
-	if (SDHC_SpiCmd(Ctrl, CMD12, 0, 1))
+	for (int i = 0; i < 3; i++)
 	{
-		goto SDHC_SPIREADBLOCKS_ERROR;
+		if (!SDHC_SpiCmd(Ctrl, CMD12, 0, 1))
+		{
+			error = 0;
+			break;
+		}
+		else
+		{
+			Ctrl->SDHCError = 0;
+			Ctrl->IsInitDone = 1;
+			Ctrl->SDHCState = 0;
+		}
+	}
+SDHC_SPIREADBLOCKS_CHECK:
+	if (error)
+	{
+		DBG("%x,%u,%u",Ctrl->SDHCState, Ctrl->DataBuf.Pos, Ctrl->DataBuf.MaxLen);
 	}
 	if (Ctrl->DataBuf.Pos != Ctrl->DataBuf.MaxLen)
 	{
 		Retry++;
-		DBG("%d", Retry);
+		DBG("%d,%u,%u", Retry, Ctrl->DataBuf.Pos, Ctrl->DataBuf.MaxLen);
 		if (Retry > 3)
 		{
 
 			Ctrl->SDHCError = 1;
 			goto SDHC_SPIREADBLOCKS_ERROR;
+		}
+		else
+		{
+			Ctrl->SDHCError = 0;
+			Ctrl->IsInitDone = 1;
+			Ctrl->SDHCState = 0;
 		}
 		goto SDHC_SPIREADBLOCKS_START;
 	}

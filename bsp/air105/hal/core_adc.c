@@ -204,7 +204,7 @@ void ADC_ChannelOnOff(uint8_t Channel, uint8_t OnOff)
 
 }
 
-uint32_t ADC_GetChannelValue(uint8_t Channel)
+uint32_t ADC_GetChannelValue(uint8_t Channel, uint32_t *Vol)
 {
 
 	uint32_t total= 0;
@@ -228,7 +228,16 @@ uint32_t ADC_GetChannelValue(uint8_t Channel)
 		total += value;
 	}
 	ADC0->ADC_CR1 = 0;
-	return ((total - max) -min)/(SAMPLE_PER_CH-7);
+	value = ((total - max) -min)/(SAMPLE_PER_CH-7);
+	if (!Channel)
+	{
+		*Vol = (value * 5000 / 4095);
+	}
+	else
+	{
+		*Vol = (value * 1800 / 4095);
+	}
+	return value;
 }
 
 #ifdef __BUILD_APP__
