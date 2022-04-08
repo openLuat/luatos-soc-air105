@@ -232,7 +232,7 @@ GET_NEW_EVENT:
 	}
 	if (Callback)
 	{
-		Callback(OutEvent, NULL);
+		Callback(OutEvent, TaskHandle);
 	}
 	goto GET_NEW_EVENT;
 WAIT_NEW_EVENT:

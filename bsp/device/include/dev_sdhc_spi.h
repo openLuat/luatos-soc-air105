@@ -102,8 +102,10 @@ typedef struct
 	uint64_t SDHCReadBlockTo;
 	uint64_t SDHCWriteBlockTo;
 	Buffer_Struct DataBuf;
+	Buffer_Struct CacheBuf;
 	HANDLE NotifyTask;						//设置了NotifyTask，则会在大量传输SPI数据时，休眠任务但是仍然能接收Event并在CB中处理
 	CBFuncEx_t TaskCB;
+	HANDLE RWMutex;
 	uint32_t Size;							//flash的大小KB
 	uint32_t OCR;
 	DBuffer_Struct *SCSIDataBuf;
@@ -126,6 +128,7 @@ typedef struct
 	uint8_t IsPrintData;
 	uint8_t IsMMC;
 	uint8_t USBDelayTime;
+	uint8_t WaitFree;
 }SDHC_SPICtrlStruct;
 
 
@@ -136,6 +139,7 @@ void SDHC_SpiReadCardInfo(void *pSDHC);
 void SDHC_SpiWriteBlocks(void *pSDHC, const uint8_t *Buf, uint32_t StartLBA, uint32_t BlockNums);
 void SDHC_SpiReadBlocks(void *pSDHC, uint8_t *Buf, uint32_t StartLBA, uint32_t BlockNums);
 void *SDHC_SpiCreate(uint8_t SpiID, uint8_t CSPin);
+void SDHC_SpiRelease(void *pSDHC);
 uint8_t SDHC_IsReady(void *pSDHC);
 uint32_t SDHC_GetLogBlockNbr(void *pSDHC);
 #endif

@@ -26,7 +26,9 @@ void prvSDHC_Test(void *p)
     GPIO_Iomux(GPIOC_15,2);
     GPIO_Config(SDHC.CSPin, 0, 1);
     SPI_MasterInit(SDHC.SpiID, 8, SPI_MODE_0, 400000, NULL, NULL);
-
+#ifdef __BUILD_OS__
+    SDHC.RWMutex = OS_MutexCreateUnlock();
+#endif
     SDHC_SpiInitCard(&SDHC);
     if (SDHC.IsInitDone)
     {

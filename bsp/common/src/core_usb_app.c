@@ -90,6 +90,8 @@ typedef struct
 	HANDLE hTaskHandle;
 	uint8_t *pHIDReport;
 	uint16_t HIDReportLen;
+	uint8_t IsUSBAttachSDHC;
+	uint8_t IsStart;
 }USB_AppCtrlStruct;
 
 static const uint8_t prvCore_StandardInquiryData[STANDARD_INQUIRY_DATA_LEN] =
@@ -860,6 +862,8 @@ void Core_USBDefaultDeviceStart(uint8_t USB_ID)
 {
 	uint8_t langid[2] = {0x09, 0x04};
 	int i;
+	USB_StackPowerOnOff(USB_ID, 1);
+	USB_StackStop(USB_ID);
 	prvLuatOS_VirtualHID.USB_ID = USB_ID;
 	prvLuatOS_VirtualHID.IsReady = 0;
 	prvLuatOS_VirtualHID.ToHostEpIndex = DEVICE_HID_KEYBOARD_EP_IN;
@@ -883,8 +887,7 @@ void Core_USBDefaultDeviceStart(uint8_t USB_ID)
 		prvLuatOS_VirtualHID.CB = prvCore_VHIDDummyCB;
 	}
 	OS_ReInitBuffer(&prvLuatOS_VirtualHID.TxCacheBuf, VIRTUAL_VHID_BUFFER_LEN);
-	USB_StackPowerOnOff(USB_ID, 1);
-	USB_StackStop(USB_ID);
+
 	USB_StackClearSetup(USB_ID);
 	USB_StackSetDeviceBusPower(USB_ID, 1);
 	USB_StackSetEpCB(USB_ID, 0, prvCore_USBEp0CB, NULL);
@@ -926,6 +929,7 @@ void Core_USBDefaultDeviceStart(uint8_t USB_ID)
 	USB_MSCReset(&prvUSBApp.tSCSI);
 
 	USB_StackStartDevice(USB_ID);
+	prvUSBApp.IsStart = 1;
 }
 
 
@@ -1288,31 +1292,70 @@ void Core_USBAction(uint8_t USB_ID, uint8_t Action, void *pParam)
 extern const USB_StorageSCSITypeDef prvSDHC_SCSIFun;
 void Core_UDiskAttachSDHC(uint8_t USB_ID, void *pCtrl)
 {
-	if (!prvUSBApp.pSDHC)
-	{
-		prvUSBApp.pSDHC = malloc(sizeof(SDHC_SPICtrlStruct));
-	}
-	memcpy(prvUSBApp.pSDHC, pCtrl, sizeof(SDHC_SPICtrlStruct));
+	prvUSBApp.pSDHC = pCtrl;
 	prvUSBApp.tSCSI.pSCSIUserFunList = &prvSDHC_SCSIFun;
 	prvUSBApp.tSCSI.pUserData = prvUSBApp.pSDHC;
 	prvUSBApp.tSCSI.ReadTimeout = 500;
 	DBuffer_ReInit(&prvUSBApp.DataBuf, 8 * 1024);
 	prvUSBApp.pSDHC->USBDelayTime = 0;	//如果USB不稳定，可调加大USBDelayTime
 	prvUSBApp.pSDHC->SCSIDataBuf = &prvUSBApp.DataBuf;
+	prvUSBApp.IsUSBAttachSDHC = 1;
 }
 
-void Core_UDiskDetachSDHC(uint8_t USB_ID)
+void Core_UDiskAttachSDHCRecovery(uint8_t USB_ID, void *pCtrl)
 {
-	prvUSBApp.tSCSI.pSCSIUserFunList = &prvCore_SCSIFun;
-	prvUSBApp.tSCSI.pUserData = NULL;
-	free(prvUSBApp.pSDHC);
-	prvUSBApp.pSDHC = NULL;
-	DBuffer_DeInit(&prvUSBApp.DataBuf);
+	if (prvUSBApp.IsUSBAttachSDHC)
+	{
+		DBG("recovery attach %d, %x", USB_ID, pCtrl);
+		prvUSBApp.pSDHC = pCtrl;
+		prvUSBApp.tSCSI.pSCSIUserFunList = &prvSDHC_SCSIFun;
+		prvUSBApp.tSCSI.pUserData = prvUSBApp.pSDHC;
+		prvUSBApp.tSCSI.ReadTimeout = 500;
+		DBuffer_ReInit(&prvUSBApp.DataBuf, 8 * 1024);
+		prvUSBApp.pSDHC->USBDelayTime = 0;	//如果USB不稳定，可调加大USBDelayTime
+		prvUSBApp.pSDHC->SCSIDataBuf = &prvUSBApp.DataBuf;
+		if (prvUSBApp.IsStart)
+		{
+			DBG("reboot usb");
+			Core_USBDefaultDeviceStart(USB_ID);
+		}
+	}
+}
+
+void Core_UDiskDetachSDHC(uint8_t USB_ID, void *pCtrl)
+{
+	if (pCtrl)
+	{
+		if (prvUSBApp.pSDHC != pCtrl)
+		{
+			return;
+		}
+	}
+
+	if (prvUSBApp.IsUSBAttachSDHC)
+	{
+		prvUSBApp.tSCSI.pSCSIUserFunList = &prvCore_SCSIFun;
+		prvUSBApp.tSCSI.pUserData = NULL;
+		prvUSBApp.pSDHC = NULL;
+		DBuffer_DeInit(&prvUSBApp.DataBuf);
+		DBG("detach %d, %x", USB_ID, pCtrl);
+		if (!pCtrl)	//NULL表示用户退出
+		{
+			prvUSBApp.IsUSBAttachSDHC = 0;
+			DBG("free attach %d, %x", USB_ID, pCtrl);
+		}
+	}
+	if (prvUSBApp.IsStart)
+	{
+		DBG("reboot usb");
+		Core_USBDefaultDeviceStart(USB_ID);
+	}
+
 }
 
 void Core_USBAppGlobalInit(void)
 {
-	prvUSBApp.hTaskHandle = Task_Create(prvCore_USBAppTask, NULL,2 * 1024, USB_TASK_PRO, "usb app");
+	prvUSBApp.hTaskHandle = Task_Create(prvCore_USBAppTask, NULL, 1024, USB_TASK_PRO, "usb app");
 }
 
 INIT_TASK_EXPORT(Core_USBAppGlobalInit, "2");

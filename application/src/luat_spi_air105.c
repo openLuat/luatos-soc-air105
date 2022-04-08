@@ -297,8 +297,14 @@ static void sdhc_spi_check(luat_fatfs_spi_t* userdata)
 
 static DSTATUS sdhc_spi_initialize(luat_fatfs_spi_t* userdata)
 {
+	int i;
 	if (luat_fatfs_spi_ctrl)
 	{
+		for(i = 0; i < USB_MAX; i++)
+		{
+			Core_UDiskDetachSDHC(i, luat_fatfs_spi_ctrl);
+		}
+		SDHC_SpiRelease(luat_fatfs_spi_ctrl);
 		free(luat_fatfs_spi_ctrl);
 		luat_fatfs_spi_ctrl = NULL;
 	}
@@ -310,6 +316,14 @@ static DSTATUS sdhc_spi_initialize(luat_fatfs_spi_t* userdata)
 	}else{
 		SPI_SetNewConfig(luat_spi[userdata->spi_id].id, userdata->fast_speed, 0);
 	}
+	if (SDHC_IsReady(luat_fatfs_spi_ctrl))
+	{
+		for(i = 0; i < USB_MAX; i++)
+		{
+			Core_UDiskAttachSDHCRecovery(i, luat_fatfs_spi_ctrl);
+		}
+	}
+
 	return SDHC_IsReady(luat_fatfs_spi_ctrl)?0:STA_NOINIT;
 }
 

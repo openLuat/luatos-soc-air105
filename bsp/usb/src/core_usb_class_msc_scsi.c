@@ -298,7 +298,6 @@ static void prvUSB_SCSIHandleToDeviceData(USB_EndpointDataStruct *pEpData, MSC_S
 	{
 		prvUSB_SendCSW(pEpData, pMSC);
 	}
-	pUserFun->DoWrite(pMSC->CBW.bLUN, pMSC->pUserData);
 }
 
 static void prvUSB_SCSIHandleToHostData(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)

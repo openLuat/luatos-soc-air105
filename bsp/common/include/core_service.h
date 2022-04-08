@@ -81,4 +81,6 @@ void Core_VHIDUploadStop(uint8_t USB_ID);
 uint32_t Core_VHIDRxBufferRead(uint8_t USB_ID, uint8_t *Data, uint32_t Len);
 
 void Core_UDiskAttachSDHC(uint8_t USB_ID, void *pCtrl);
+void Core_UDiskDetachSDHC(uint8_t USB_ID, void *pCtrl);
+void Core_UDiskAttachSDHCRecovery(uint8_t USB_ID, void *pCtrl);
 #endif

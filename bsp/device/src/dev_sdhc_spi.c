@@ -84,7 +84,7 @@ extern const uint8_t prvCore_MSCModeSense6data[MODE_SENSE6_LEN];
 /* USB Mass storage sense 10  Data */
 extern const uint8_t prvCore_MSCModeSense10data[MODE_SENSE10_LEN];
 
-
+static void prvSDHC_WriteBlocksBackground(void *pSDHC, void *pData);
 
 static int32_t prvSDHC_SCSIInit(uint8_t LUN, void *pUserData)
 {
@@ -217,36 +217,24 @@ static int32_t prvSDHC_SCSIPreWrite(uint8_t LUN, uint32_t BlockAddress, uint32_t
 	}
 	pSDHC->CurBlock = BlockAddress;
 	pSDHC->EndBlock = BlockAddress + BlockNums;
-	DBuffer_SetDataLen(pSDHC->SCSIDataBuf, 0, 1);
+	OS_ReInitBuffer(&pSDHC->CacheBuf, pSDHC->Info.LogBlockSize * BlockNums);
+
 	return 0;
 }
 
 static int32_t prvSDHC_SCSIWrite(uint8_t LUN, uint8_t *Data, uint32_t Len, void *pUserData)
 {
 	SDHC_SPICtrlStruct *pSDHC = pUserData;
+	void *pData;
 	if (!SDHC_IsReady(pSDHC)) return -1;
 	if (pSDHC->EndBlock <= pSDHC->CurBlock) return -1;
-	memcpy(DBuffer_GetCache(pSDHC->SCSIDataBuf, 1) + DBuffer_GetDataLen(pSDHC->SCSIDataBuf, 1), Data, Len);
-	DBuffer_SetDataLen(pSDHC->SCSIDataBuf, DBuffer_GetDataLen(pSDHC->SCSIDataBuf, 1) + Len, 1);
-	return ERROR_NONE;
-}
-
-static int32_t prvSDHC_SCSIDoWrite(uint8_t LUN, void *pUserData)
-{
-	SDHC_SPICtrlStruct *pSDHC = pUserData;
-	uint32_t WriteBlocks = DBuffer_GetDataLen(pSDHC->SCSIDataBuf, 1) >> 9;
-	if (pSDHC->EndBlock <= pSDHC->CurBlock) return -1;
-	if (WriteBlocks)
+	OS_BufferWrite(&pSDHC->CacheBuf, Data, Len);
+	if (pSDHC->CacheBuf.Pos >= pSDHC->CacheBuf.MaxLen)
 	{
-
-		if (WriteBlocks > (pSDHC->EndBlock - pSDHC->CurBlock))
-		{
-			WriteBlocks = pSDHC->EndBlock - pSDHC->CurBlock;
-		}
-		SDHC_SpiWriteBlocks(pSDHC, DBuffer_GetCache(pSDHC->SCSIDataBuf, 1), pSDHC->CurBlock, WriteBlocks);
-		DBuffer_SetDataLen(pSDHC->SCSIDataBuf, 0, 1);
+		pData = pSDHC->CacheBuf.Data;
+		memset(&pSDHC->CacheBuf, 0, sizeof(pSDHC->CacheBuf));
+		prvSDHC_WriteBlocksBackground(pSDHC, pData);
 	}
-	pSDHC->CurBlock += WriteBlocks;
 	return ERROR_NONE;
 }
 
@@ -272,7 +260,6 @@ const USB_StorageSCSITypeDef prvSDHC_SCSIFun =
 		prvSDHC_SCSIReadNext,
 		prvSDHC_SCSIPreWrite,
 		prvSDHC_SCSIWrite,
-		prvSDHC_SCSIDoWrite,
 		prvSDHC_SCSIUserCmd,
 		&prvSDHC_StandardInquiryData,
 		&prvCore_MSCPage00InquiryData,
@@ -853,6 +840,13 @@ void SDHC_SpiReadBlocks(void *pSDHC, uint8_t *Buf, uint32_t StartLBA, uint32_t B
 	uint8_t Retry = 0;
 	uint8_t error = 1;
 	SDHC_SPICtrlStruct *Ctrl = (SDHC_SPICtrlStruct *)pSDHC;
+#ifdef __BUILD_OS__
+	if (OS_MutexLockWtihTime(Ctrl->RWMutex, 1000))
+	{
+		DBG("mutex wait timeout!");
+		return;
+	}
+#endif
 	Buffer_StaticInit(&Ctrl->DataBuf, Buf, BlockNums);
 SDHC_SPIREADBLOCKS_START:
 	if (SDHC_SpiCmd(Ctrl, CMD18, StartLBA + Ctrl->DataBuf.Pos, 0))
@@ -900,11 +894,17 @@ SDHC_SPIREADBLOCKS_CHECK:
 		}
 		goto SDHC_SPIREADBLOCKS_START;
 	}
+#ifdef __BUILD_OS__
+	OS_MutexRelease(Ctrl->RWMutex);
+#endif
 	return;
 SDHC_SPIREADBLOCKS_ERROR:
 	DBG("!");
 	Ctrl->IsInitDone = 0;
 	Ctrl->SDHCError = 1;
+#ifdef __BUILD_OS__
+	OS_MutexRelease(Ctrl->RWMutex);
+#endif
 	return;
 }
 
@@ -912,6 +912,13 @@ void SDHC_SpiWriteBlocks(void *pSDHC, const uint8_t *Buf, uint32_t StartLBA, uin
 {
 	uint8_t Retry = 0;
 	SDHC_SPICtrlStruct *Ctrl = (SDHC_SPICtrlStruct *)pSDHC;
+#ifdef __BUILD_OS__
+	if (OS_MutexLockWtihTime(Ctrl->RWMutex, 1000))
+	{
+		DBG("mutex wait timeout!");
+		return;
+	}
+#endif
 	Buffer_StaticInit(&Ctrl->DataBuf, Buf, BlockNums);
 SDHC_SPIREADBLOCKS_START:
 	if (SDHC_SpiCmd(Ctrl, CMD25, StartLBA + Ctrl->DataBuf.Pos, 0))
@@ -933,11 +940,17 @@ SDHC_SPIREADBLOCKS_START:
 		}
 		goto SDHC_SPIREADBLOCKS_START;
 	}
+#ifdef __BUILD_OS__
+	OS_MutexRelease(Ctrl->RWMutex);
+#endif
 	return;
 SDHC_SPIREADBLOCKS_ERROR:
 	DBG("!");
 	Ctrl->IsInitDone = 0;
 	Ctrl->SDHCError = 1;
+#ifdef __BUILD_OS__
+	OS_MutexRelease(Ctrl->RWMutex);
+#endif
 	return;
 }
 
@@ -947,9 +960,25 @@ void *SDHC_SpiCreate(uint8_t SpiID, uint8_t CSPin)
 	Ctrl->CSPin = CSPin;
 	Ctrl->SpiID = SpiID;
 	Ctrl->SDHCReadBlockTo = 50 * CORE_TICK_1MS;
-	Ctrl->SDHCWriteBlockTo = 250 * CORE_TICK_1MS;
+	Ctrl->SDHCWriteBlockTo = 50 * CORE_TICK_1MS;
+#ifdef __BUILD_OS__
+	Ctrl->RWMutex = OS_MutexCreateUnlock();
+#endif
 //	Ctrl->IsPrintData = 1;
+
 	return Ctrl;
+}
+
+void SDHC_SpiRelease(void *pSDHC)
+{
+	SDHC_SPICtrlStruct *Ctrl = (SDHC_SPICtrlStruct *)pSDHC;
+	OS_DeInitBuffer(&Ctrl->CacheBuf);
+#ifdef __BUILD_OS__
+	OS_MutexRelease(Ctrl->RWMutex);
+	Ctrl->WaitFree = 1;
+	Task_DelayMS(100);
+#endif
+	DBG("free %x", pSDHC);
 }
 
 uint32_t SDHC_GetLogBlockNbr(void *pSDHC)
@@ -972,3 +1001,55 @@ uint8_t SDHC_IsReady(void *pSDHC)
 	}
 }
 
+#ifdef __BUILD_OS__
+
+static HANDLE prvTask;
+
+enum
+{
+
+	SDHC_WRITE = USB_APP_EVENT_ID_START + 1,
+};
+
+static void prvSDHC_Task(void* params)
+{
+	OS_EVENT Event;
+	uint32_t *Param;
+	SDHC_SPICtrlStruct *pSDHC;
+	while(1)
+	{
+		Task_GetEventByMS(prvTask, CORE_EVENT_ID_ANY, &Event, NULL, 0);
+		switch(Event.ID)
+		{
+		case SDHC_WRITE:
+			pSDHC = (SDHC_SPICtrlStruct *)Event.Param1;
+			if (pSDHC->WaitFree)
+			{
+				DBG("sdhc wait reboot");
+				free(Event.Param2);
+				free(Event.Param3);
+				break;
+			}
+			Param = (uint32_t *)Event.Param3;
+			SDHC_SpiWriteBlocks(pSDHC, Event.Param2, Param[0], Param[1]);
+			free(Event.Param2);
+			free(Event.Param3);
+			break;
+		}
+	}
+}
+
+static void prvSDHC_WriteBlocksBackground(void *pSDHC, void *pData)
+{
+	uint32_t *Param = malloc(8);
+	Param[0] =((SDHC_SPICtrlStruct *)pSDHC)->CurBlock;
+	Param[1] = ((SDHC_SPICtrlStruct *)pSDHC)->EndBlock - ((SDHC_SPICtrlStruct *)pSDHC)->CurBlock;
+	Task_SendEvent(prvTask, SDHC_WRITE, pSDHC, pData, Param);
+}
+
+void SDHC_TaskInit(void)
+{
+	prvTask = Task_Create(prvSDHC_Task, NULL, 1024, SERVICE_TASK_PRO, "sdhc task");
+}
+INIT_TASK_EXPORT(SDHC_TaskInit, "2");
+#endif

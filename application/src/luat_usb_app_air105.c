@@ -78,5 +78,5 @@ void luat_usb_udisk_attach_sdhc(uint8_t usb_id)
 
 void luat_usb_udisk_detach_sdhc(uint8_t usb_id)
 {
-	Core_UDiskDetachSDHC(usb_id);
+	Core_UDiskDetachSDHC(usb_id,  NULL);
 }
