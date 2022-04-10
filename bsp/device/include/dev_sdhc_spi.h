@@ -113,6 +113,7 @@ typedef struct
 	uint32_t PreEndBlock;
 	uint32_t CurBlock;
 	uint32_t EndBlock;
+	uint32_t SpiSpeed;
 	uint16_t WriteWaitCnt;
 	uint8_t CSPin;
 	uint8_t SpiID;

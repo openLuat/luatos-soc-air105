@@ -41,6 +41,8 @@ enum
 {
 	SERVICE_LCD_DRAW = SERVICE_EVENT_ID_START + 1,
 	SERVICE_CAMERA_DRAW,
+	SERVICE_SDHC_WRITE,
+	SERVICE_SPIFLASH_WRITE,
 	SERVICE_DECODE_QR,
 	SERVICE_SCAN_KEYBOARD,
 	SERVICE_ENCODE_JPEG_START,
@@ -53,8 +55,9 @@ typedef struct
 {
 	tje_write_func *JPEGEncodeWriteFun;
 	void *JPEGEncodeWriteParam;
-	HANDLE HardwareHandle;
+	HANDLE LCDHandle;
 	HANDLE ServiceHandle;
+	HANDLE StorgeHandle;
 	HANDLE UserHandle;
 	uint64_t LCDDrawRequireByte;
 	uint64_t LCDDrawDoneByte;
@@ -117,7 +120,7 @@ static void prv_CoreJpegSave(void* context, void* data, int size)
 
 }
 
-static void prvHW_Task(void* params)
+static void prvLCD_Task(void* params)
 {
 	uint64_t StartUS;
 	OS_EVENT Event;
@@ -132,7 +135,7 @@ static void prvHW_Task(void* params)
 	}
 	while(1)
 	{
-		Result = Task_GetEvent(prvService.HardwareHandle, CORE_EVENT_ID_ANY, &Event, NULL, 0);
+		Result = Task_GetEvent(prvService.LCDHandle, CORE_EVENT_ID_ANY, &Event, NULL, 0);
 		switch(Event.ID)
 		{
 		case SERVICE_LCD_DRAW:
@@ -213,7 +216,33 @@ static void prvHW_Task(void* params)
 	}
 }
 
-
+static void prvStorge_Task(void* params)
+{
+	OS_EVENT Event;
+	uint32_t *Param;
+	SDHC_SPICtrlStruct *pSDHC;
+	while(1)
+	{
+		Task_GetEventByMS(prvService.StorgeHandle, CORE_EVENT_ID_ANY, &Event, NULL, 0);
+		switch(Event.ID)
+		{
+		case SERVICE_SDHC_WRITE:
+			pSDHC = (SDHC_SPICtrlStruct *)Event.Param1;
+			if (pSDHC->WaitFree)
+			{
+				DBG("sdhc wait reboot");
+				free(Event.Param2);
+				free(Event.Param3);
+				break;
+			}
+			Param = (uint32_t *)Event.Param3;
+			SDHC_SpiWriteBlocks(pSDHC, Event.Param2, Param[0], Param[1]);
+			free(Event.Param2);
+			free(Event.Param3);
+			break;
+		}
+	}
+}
 
 static void prvService_Task(void* params)
 {
@@ -385,7 +414,7 @@ uint32_t Core_LCDDrawCacheLen(void)
 void Core_LCDDraw(LCD_DrawStruct *Draw)
 {
 	prvService.LCDDrawRequireByte += Draw->Size;
-	Task_SendEvent(prvService.HardwareHandle, SERVICE_LCD_DRAW, Draw, 0, 0);
+	Task_SendEvent(prvService.LCDHandle, SERVICE_LCD_DRAW, Draw, 0, 0);
 }
 
 void Core_LCDDrawBlock(LCD_DrawStruct *Draw)
@@ -424,7 +453,15 @@ void Core_LCDDrawBlock(LCD_DrawStruct *Draw)
 
 void Core_CameraDraw(LCD_DrawStruct *Draw)
 {
-	Task_SendEvent(prvService.HardwareHandle, SERVICE_CAMERA_DRAW, Draw, 0, 0);
+	Task_SendEvent(prvService.LCDHandle, SERVICE_CAMERA_DRAW, Draw, 0, 0);
+}
+
+void Core_WriteSDHC(void *pSDHC, void *pData)
+{
+	uint32_t *Param = malloc(8);
+	Param[0] =((SDHC_SPICtrlStruct *)pSDHC)->CurBlock;
+	Param[1] = ((SDHC_SPICtrlStruct *)pSDHC)->EndBlock - ((SDHC_SPICtrlStruct *)pSDHC)->CurBlock;
+	Task_SendEvent(prvService.StorgeHandle, SERVICE_SDHC_WRITE, pSDHC, pData, Param);
 }
 
 void Core_DecodeQR(uint8_t *ImageData, uint16_t ImageW, uint16_t ImageH,  CBDataFun_t CB)
@@ -530,7 +567,7 @@ static void prvCore_PrintTaskStack(HANDLE TaskHandle)
 
 void Core_PrintServiceStack(void)
 {
-	prvCore_PrintTaskStack(prvService.HardwareHandle);
+	prvCore_PrintTaskStack(prvService.LCDHandle);
 	prvCore_PrintTaskStack(prvService.UserHandle);
 	prvCore_PrintTaskStack(prvService.ServiceHandle);
 }
@@ -552,14 +589,14 @@ void Core_DebugMem(uint8_t HeapID, const char *FuncName, uint32_t Line)
 	}
 }
 
-void Core_HWTaskInit(void)
+void Core_LCDTaskInit(void)
 {
-	prvService.HardwareHandle = Task_Create(prvHW_Task, NULL, 2 * 1024, HW_TASK_PRO, "HW task");
+	prvService.LCDHandle = Task_Create(prvLCD_Task, NULL, 2 * 1024, HW_TASK_PRO, "lcd task");
 }
 
 void Core_ServiceInit(void)
 {
-	prvService.ServiceHandle = Task_Create(prvService_Task, NULL, 4 * 1024, SERVICE_TASK_PRO, "Serv task");
+	prvService.ServiceHandle = Task_Create(prvService_Task, NULL, 4 * 1024, SERVICE_TASK_PRO, "service task");
 }
 
 void Core_UserTaskInit(void)
@@ -570,7 +607,14 @@ void Core_UserTaskInit(void)
 #endif
 }
 
-INIT_TASK_EXPORT(Core_HWTaskInit, "0");
+void Core_StorgeTaskInit(void)
+{
+	prvService.StorgeHandle = Task_Create(prvStorge_Task, NULL, 1024, SERVICE_TASK_PRO, "storge task");
+}
+
+
+INIT_TASK_EXPORT(Core_LCDTaskInit, "0");
 INIT_TASK_EXPORT(Core_ServiceInit, "1");
+INIT_TASK_EXPORT(Core_StorgeTaskInit, "2");
 INIT_TASK_EXPORT(Core_UserTaskInit, "5");
 #endif

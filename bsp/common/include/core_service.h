@@ -46,6 +46,7 @@ void Core_ServiceInit(void);
 void Core_LCDDraw(LCD_DrawStruct *Draw);
 void Core_LCDDrawBlock(LCD_DrawStruct *Draw);
 void Core_CameraDraw(LCD_DrawStruct *Draw);
+void Core_WriteSDHC(void *pSDHC, void *pData);
 void Core_DecodeQR(uint8_t *ImageData, uint16_t ImageW, uint16_t ImageH,  CBDataFun_t CB);
 uint32_t Core_LCDDrawCacheLen(void);
 

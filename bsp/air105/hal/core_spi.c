@@ -1127,6 +1127,7 @@ void SPI_SetNewConfig(uint8_t SpiID, uint32_t Speed, uint8_t NewMode)
 	SPI_TypeDef *SPI;
 	uint32_t div;
 	if (prvSPI[SpiID].IsBusy) return;
+	if (NewMode == 0xff) {NewMode = prvSPI[SpiID].SpiMode;}
 	if ((prvSPI[SpiID].TargetSpeed == Speed) && (prvSPI[SpiID].SpiMode == NewMode))
 	{
 		return;

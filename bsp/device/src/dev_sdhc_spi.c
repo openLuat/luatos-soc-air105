@@ -84,8 +84,6 @@ extern const uint8_t prvCore_MSCModeSense6data[MODE_SENSE6_LEN];
 /* USB Mass storage sense 10  Data */
 extern const uint8_t prvCore_MSCModeSense10data[MODE_SENSE10_LEN];
 
-static void prvSDHC_WriteBlocksBackground(void *pSDHC, void *pData);
-
 static int32_t prvSDHC_SCSIInit(uint8_t LUN, void *pUserData)
 {
 	SDHC_SPICtrlStruct *pSDHC = pUserData;
@@ -233,7 +231,7 @@ static int32_t prvSDHC_SCSIWrite(uint8_t LUN, uint8_t *Data, uint32_t Len, void 
 	{
 		pData = pSDHC->CacheBuf.Data;
 		memset(&pSDHC->CacheBuf, 0, sizeof(pSDHC->CacheBuf));
-		prvSDHC_WriteBlocksBackground(pSDHC, pData);
+		Core_WriteSDHC(pSDHC, pData);
 	}
 	return ERROR_NONE;
 }
@@ -604,6 +602,7 @@ void SDHC_SpiInitCard(void *pSDHC)
 	Ctrl->SDHCState = 0xff;
 	Ctrl->Info.CardCapacity = 0;
 	Ctrl->WriteWaitCnt = 40;
+	SPI_SetNewConfig(Ctrl->SpiID, 400000, 0xff);
 	GPIO_Output(Ctrl->CSPin, 0);
 	SDHC_SpiXfer(Ctrl, Ctrl->TempData, 20);
 	GPIO_Output(Ctrl->CSPin, 1);
@@ -642,6 +641,7 @@ WAIT_INIT_DONE:
 		goto INIT_DONE;
 	}
 	Ctrl->OCR = BytesGetBe32(Ctrl->ExternResult);
+	SPI_SetNewConfig(Ctrl->SpiID, Ctrl->SpiSpeed, 0xff);
 //	SD_DBG("sdcard init OK OCR:0x%08x!", Ctrl->OCR);
 	return;
 INIT_DONE:
@@ -965,7 +965,7 @@ void *SDHC_SpiCreate(uint8_t SpiID, uint8_t CSPin)
 	Ctrl->RWMutex = OS_MutexCreateUnlock();
 #endif
 //	Ctrl->IsPrintData = 1;
-
+	Ctrl->SpiSpeed = 24000000;
 	return Ctrl;
 }
 
@@ -1001,55 +1001,4 @@ uint8_t SDHC_IsReady(void *pSDHC)
 	}
 }
 
-#ifdef __BUILD_OS__
 
-static HANDLE prvTask;
-
-enum
-{
-
-	SDHC_WRITE = USB_APP_EVENT_ID_START + 1,
-};
-
-static void prvSDHC_Task(void* params)
-{
-	OS_EVENT Event;
-	uint32_t *Param;
-	SDHC_SPICtrlStruct *pSDHC;
-	while(1)
-	{
-		Task_GetEventByMS(prvTask, CORE_EVENT_ID_ANY, &Event, NULL, 0);
-		switch(Event.ID)
-		{
-		case SDHC_WRITE:
-			pSDHC = (SDHC_SPICtrlStruct *)Event.Param1;
-			if (pSDHC->WaitFree)
-			{
-				DBG("sdhc wait reboot");
-				free(Event.Param2);
-				free(Event.Param3);
-				break;
-			}
-			Param = (uint32_t *)Event.Param3;
-			SDHC_SpiWriteBlocks(pSDHC, Event.Param2, Param[0], Param[1]);
-			free(Event.Param2);
-			free(Event.Param3);
-			break;
-		}
-	}
-}
-
-static void prvSDHC_WriteBlocksBackground(void *pSDHC, void *pData)
-{
-	uint32_t *Param = malloc(8);
-	Param[0] =((SDHC_SPICtrlStruct *)pSDHC)->CurBlock;
-	Param[1] = ((SDHC_SPICtrlStruct *)pSDHC)->EndBlock - ((SDHC_SPICtrlStruct *)pSDHC)->CurBlock;
-	Task_SendEvent(prvTask, SDHC_WRITE, pSDHC, pData, Param);
-}
-
-void SDHC_TaskInit(void)
-{
-	prvTask = Task_Create(prvSDHC_Task, NULL, 1024, SERVICE_TASK_PRO, "sdhc task");
-}
-INIT_TASK_EXPORT(SDHC_TaskInit, "2");
-#endif
