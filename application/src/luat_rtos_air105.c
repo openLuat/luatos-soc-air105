@@ -31,8 +31,19 @@
 #include "luat_log.h"
 
 int luat_thread_start(luat_thread_t* thread){
-    Task_Create(thread->entry, NULL, thread->stack_size, thread->priority, thread->name);
-    return 0;
+	thread->handle = Task_Create(thread->task_fun, thread->userdata, thread->stack_size, thread->priority, thread->name);
+	return 0;
+}
+
+int luat_send_event_to_task(void* task_handle, uint32_t id, uint32_t param1, uint32_t param2, uint32_t param3)
+{
+	Task_SendEvent(task_handle, id, param1, param2, param3);
+	return 0;
+}
+
+int luat_wait_event_from_task(void* task_handle, uint32_t wait_event_id, void *out_event, void *call_back, uint32_t ms)
+{
+	return Task_GetEventByMS(task_handle, wait_event_id, out_event, call_back, ms);
 }
 
 int luat_sem_create(luat_sem_t* semaphore){
@@ -51,4 +62,23 @@ int luat_sem_take(luat_sem_t* semaphore,uint32_t timeout){
 int luat_sem_release(luat_sem_t* semaphore){
     OS_MutexRelease(semaphore->userdata);
     return 0;
+}
+
+void *luat_create_rtos_timer(void *cb, void *param, void *task_handle)
+{
+	return Timer_Create(cb, param, task_handle);
+}
+
+int luat_start_rtos_timer(void *timer, uint32_t ms, uint8_t is_repeat)
+{
+	return Timer_StartMS(timer, ms, is_repeat);
+}
+
+void luat_stop_rtos_timer(void *timer)
+{
+	Timer_Stop(timer);
+}
+void luat_release_rtos_timer(void *timer)
+{
+	Timer_Release(timer);
 }

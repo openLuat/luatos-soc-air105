@@ -329,6 +329,9 @@ if with_luatos then
     add_files(luatos.."components/io_queue/*.c")
     add_includedirs(luatos.."components/io_queue")
 
+    add_files(luatos.."components/tjpgd/*.c")
+    add_includedirs(luatos.."components/tjpgd")
+
     -- shell & cmux
     add_includedirs(luatos.."components/shell",{public = true})
     add_includedirs(luatos.."components/cmux",{public = true})

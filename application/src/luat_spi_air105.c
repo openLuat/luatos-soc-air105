@@ -157,6 +157,12 @@ int luat_spi_setup(luat_spi_t* spi) {
     return 0;
 }
 
+int luat_spi_config_dma(int spi_id, uint32_t tx_channel, uint32_t rx_channel)
+{
+	SPI_DMATxInit(spi_id, (tx_channel >= 8)?ETH_SPI_TX_DMA_STREAM:tx_channel, 0);
+	SPI_DMARxInit(spi_id, (rx_channel >= 8)?ETH_SPI_RX_DMA_STREAM:rx_channel, 0);
+}
+
 //关闭SPI，成功返回0
 int luat_spi_close(int spi_id) {
     return 0;
@@ -166,7 +172,7 @@ int luat_spi_transfer(int spi_id, const char* send_buf, size_t send_length, char
     // LLOGD("SPI_MasterInit luat_spi%d:%d send_buf:%x recv_buf:%x length:%d ",spi_id,luat_spi[spi_id], *send_buf, *recv_buf, length);
     // while(luat_spi[spi_id].mark)
     luat_spi[spi_id].mark = 1;
-    if(luat_spi[spi_id].mode==1)
+    if(luat_spi[spi_id].mode==0)
         SPI_FlashBlockTransfer(luat_spi[spi_id].id, send_buf, send_length, recv_buf, recv_length);
     else
     	SPI_BlockTransfer(luat_spi[spi_id].id, send_buf, recv_buf, recv_length);

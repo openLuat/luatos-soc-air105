@@ -21,18 +21,11 @@
 
 #ifndef __CORE_TASK_H__
 #define __CORE_TASK_H__
-typedef struct
-{
-	uint32_t ID;
-	uint32_t Param1;
-	uint32_t Param2;
-	uint32_t Param3;
-}Task_EventStruct;
-#define OS_EVENT Task_EventStruct
+#include "bsp_common.h"
 HANDLE Task_Create(TaskFun_t EntryFunction, void *Param, uint32_t StackSize, uint32_t Priority, const char *Name);
 void Task_SendEvent(HANDLE TaskHandle, uint32_t ID, uint32_t P1, uint32_t P2, uint32_t P3);
-int32_t Task_GetEvent(HANDLE TaskHandle, uint32_t TargetEventID, Task_EventStruct *OutEvent, CBFuncEx_t Callback, uint64_t Tick);
-int32_t Task_GetEventByMS(HANDLE TaskHandle, uint32_t TargetEventID, Task_EventStruct *OutEvent, CBFuncEx_t Callback, uint32_t ms);
+int32_t Task_GetEvent(HANDLE TaskHandle, uint32_t TargetEventID, OS_EVENT *OutEvent, CBFuncEx_t Callback, uint64_t Tick);
+int32_t Task_GetEventByMS(HANDLE TaskHandle, uint32_t TargetEventID, OS_EVENT *OutEvent, CBFuncEx_t Callback, uint32_t ms);
 HANDLE Task_GetCurrent(void);
 void Task_DelayTick(uint64_t Tick);
 void Task_DelayUS(uint32_t US);

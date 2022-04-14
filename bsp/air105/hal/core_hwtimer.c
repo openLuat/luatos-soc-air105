@@ -109,10 +109,195 @@ static int32_t __FUNC_IN_RAM__ prvHWTimer_OperationQueuExti(void *pData, void *p
 	return 0;
 }
 
+typedef int (*queue_fun)(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin);
+#define OPERATION_GO_ON		(0)
+#define OPERATION_OUT_IRQ	(-1)
+#define OPERATION_RESET_TIMER	(1)
+static int __FUNC_IN_RAM__ prvHWTimer_OperationEnd(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	HWTimer->CurCount = 0;
+	HWTimer->RepeatCnt++;
+	if (HWTimer->TotalRepeat && (HWTimer->RepeatCnt >= HWTimer->TotalRepeat))
+	{
+		TIMM0->TIM[HWTimerID].ControlReg = 0;
+		TIMM0->TIM[HWTimerID].LoadCount = 24;
+
+		ISR_SetHandler(prvHWTimer[HWTimerID].IrqLine, prvHWTimer_IrqHandlerEndOperationQueue, HWTimerID);
+#ifdef __BUILD_OS__
+		ISR_SetPriority(prvHWTimer[HWTimerID].IrqLine, IRQ_LOWEST_PRIORITY - 1);
+#else
+		ISR_SetPriority(prvHWTimer[HWTimerID].IrqLine, 6);
+#endif
+		TIMM0->TIM[HWTimerID].ControlReg = TIMER_CONTROL_REG_TIMER_ENABLE|TIMER_CONTROL_REG_TIMER_MODE;
+		return OPERATION_OUT_IRQ;
+	}
+	else
+	{
+		return OPERATION_GO_ON;
+	}
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationDelayOnce(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	HWTimer->ContinueDelay = 0;
+	return OPERATION_RESET_TIMER;
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationDelay(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	HWTimer->ContinueDelay = 1;
+	return OPERATION_RESET_TIMER;
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationRepeatDelay(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	HWTimer->CurCount++;
+	return OPERATION_OUT_IRQ;
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationSetGPIOOut(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	GPIO_Config(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, 0, HWTimer->Cmd[HWTimer->CurCount].uArg.IOArg.Level);
+	GPIO_PullConfig(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, HWTimer->Cmd[HWTimer->CurCount].uArg.IOArg.PullMode, (HWTimer->Cmd[HWTimer->CurCount].uArg.IOArg.PullMode > 1)?0:1);
+	HWTimer->CurCount++;
+	return OPERATION_GO_ON;
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationSetGPIOIn(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	GPIO_PullConfig(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, HWTimer->Cmd[HWTimer->CurCount].uArg.IOArg.PullMode, (HWTimer->Cmd[HWTimer->CurCount].uArg.IOArg.PullMode > 1)?0:1);
+	GPIO_Config(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, 1, 0);
+	HWTimer->CurCount++;
+	return OPERATION_GO_ON;
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationGPIOOut(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	GPIO_Output(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, HWTimer->Cmd[HWTimer->CurCount].uArg.IOArg.Level);
+	HWTimer->CurCount++;
+	return OPERATION_GO_ON;
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationGPIOIn(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	HWTimer->Cmd[HWTimer->CurCount].uArg.IOArg.Level = GPIO_Input(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay);
+	HWTimer->CurCount++;
+	return OPERATION_GO_ON;
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationGPIOInCB(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	HWTimer->Cmd[HWTimer->CurCount].uArg.IOArg.Level = GPIO_Input(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay);
+	HWTimer->Cmd[HWTimer->CurCount].CB(HWTimerID, &HWTimer->Cmd[HWTimer->CurCount]);
+	HWTimer->CurCount++;
+	return OPERATION_GO_ON;
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationCB(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	HWTimer->Cmd[HWTimer->CurCount].CB(HWTimerID, HWTimer->Cmd[HWTimer->CurCount].uParam.pParam);
+	HWTimer->CurCount++;
+	return OPERATION_GO_ON;
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationCaptureSet(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	GPIO_PullConfig(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, HWTimer->Cmd[HWTimer->CurCount].uArg.ExitArg.PullMode, (HWTimer->Cmd[HWTimer->CurCount].uArg.ExitArg.PullMode > 1)?0:1);
+	GPIO_Config(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, 1, 0);
+	TIMM0->TIM[HWTimerID].ControlReg = 0;
+	TIMM0->TIM[HWTimerID].LoadCount = HWTimer->Cmd[HWTimer->CurCount].uParam.MaxCnt;
+	TIMM0->TIM[HWTimerID].ControlReg = TIMER_CONTROL_REG_TIMER_ENABLE|TIMER_CONTROL_REG_TIMER_MODE;
+	GPIO_ExtiSetCB(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, prvHWTimer_OperationQueuExti, HWTimerID);
+	prvHWTimer[HWTimerID].ContinueDelay = 0;
+	switch(HWTimer->Cmd[HWTimer->CurCount].uArg.ExitArg.ExtiMode)
+	{
+	case OP_QUEUE_CMD_IO_EXTI_BOTH:
+		GPIO_ExtiConfig(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, 0, 1, 1);
+		break;
+	case OP_QUEUE_CMD_IO_EXTI_UP:
+		GPIO_ExtiConfig(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, 0, 1, 0);
+		break;
+	case OP_QUEUE_CMD_IO_EXTI_DOWN:
+		GPIO_ExtiConfig(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, 0, 0, 1);
+		break;
+	}
+
+	HWTimer->CurCount++;
+	return OPERATION_OUT_IRQ;
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationCapture(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	HWTimer->Cmd[HWTimer->CurCount].PinOrDelay = Pin;
+	if (!TIMM0->TIM[HWTimerID].ControlReg)
+	{
+		HWTimer->Cmd[HWTimer->CurCount + 1].Operation = OP_QUEUE_CMD_CAPTURE_END;
+	}
+	else
+	{
+		HWTimer->Cmd[HWTimer->CurCount].uParam.MaxCnt = TIMM0->TIM[HWTimerID].LoadCount - TIMM0->TIM[HWTimerID].CurrentValue;
+		HWTimer->Cmd[HWTimer->CurCount].uArg.IOArg.Level = GPIO_Input(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay);
+	}
+	HWTimer->CurCount++;
+	if (OP_QUEUE_CMD_CAPTURE_END != HWTimer->Cmd[HWTimer->CurCount].Operation)
+	{
+		return OPERATION_OUT_IRQ;
+	}
+	return OPERATION_GO_ON;
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationCaptureCB(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	HWTimer->Cmd[HWTimer->CurCount].PinOrDelay = Pin;
+	if (!TIMM0->TIM[HWTimerID].ControlReg)
+	{
+		HWTimer->Cmd[HWTimer->CurCount + 1].Operation = OP_QUEUE_CMD_CAPTURE_END;
+	}
+	else
+	{
+		HWTimer->Cmd[HWTimer->CurCount].uParam.MaxCnt = TIMM0->TIM[HWTimerID].LoadCount - TIMM0->TIM[HWTimerID].CurrentValue;
+		HWTimer->Cmd[HWTimer->CurCount].uArg.IOArg.Level = GPIO_Input(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay);
+	}
+	HWTimer->Cmd[HWTimer->CurCount].CB(HWTimerID, &HWTimer->Cmd[HWTimer->CurCount]);
+	HWTimer->CurCount++;
+	if (OP_QUEUE_CMD_CAPTURE_END != HWTimer->Cmd[HWTimer->CurCount].Operation)
+	{
+		return OPERATION_OUT_IRQ;
+	}
+	return OPERATION_GO_ON;
+}
+
+static int __FUNC_IN_RAM__ prvHWTimer_OperationCaptureEnd(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
+{
+	GPIO_ExtiSetCB(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, NULL, NULL);
+	GPIO_ExtiConfig(HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, 0, 0, 0);
+	TIMM0->TIM[HWTimerID].ControlReg = 0;
+	HWTimer->CurCount++;
+	return OPERATION_GO_ON;
+}
+
+static queue_fun queueFunlist[] =
+{
+		prvHWTimer_OperationEnd,
+		prvHWTimer_OperationDelayOnce,	//只有一次delay
+		prvHWTimer_OperationDelay,	//连续delay，配合OP_QUEUE_CMD_REPEAT_DELAY使用
+		prvHWTimer_OperationRepeatDelay,	//重复OP_QUEUE_CMD_CONTINUE_DELAY
+		prvHWTimer_OperationSetGPIOOut,
+		prvHWTimer_OperationSetGPIOIn,
+		prvHWTimer_OperationGPIOOut,
+		prvHWTimer_OperationGPIOIn,
+		prvHWTimer_OperationGPIOInCB,
+		prvHWTimer_OperationCB,
+		prvHWTimer_OperationCaptureSet,
+		prvHWTimer_OperationCapture,
+		prvHWTimer_OperationCaptureCB,
+		prvHWTimer_OperationCaptureEnd,
+};
 
 static void __FUNC_IN_RAM__ prvHWTimer_StartOperationQueue(uint8_t HWTimerID, HWTimer_CtrlStruct *HWTimer, uint8_t Pin)
 {
 	volatile uint32_t Period;
+	int result;
 	while(HWTimer->IsQueueRunning)
 	{
 
@@ -121,7 +306,17 @@ static void __FUNC_IN_RAM__ prvHWTimer_StartOperationQueue(uint8_t HWTimerID, HW
 //				HWTimer->Cmd[HWTimer->CurCount].PinOrDelay, HWTimer->Cmd[HWTimer->CurCount].uArg.IOArg.Level,
 //				HWTimer->Cmd[HWTimer->CurCount].uArg.IOArg.PullMode, HWTimer->Cmd[HWTimer->CurCount].uArg.Time,
 //				HWTimer->Cmd[HWTimer->CurCount].CB);
-
+#if 1
+		result = queueFunlist[HWTimer->Cmd[HWTimer->CurCount].Operation](HWTimerID, HWTimer, Pin);
+		switch(result)
+		{
+		case OPERATION_OUT_IRQ:
+			return;
+		case OPERATION_RESET_TIMER:
+			goto START_HWTIMER;
+			break;
+		}
+#else
 		switch(HWTimer->Cmd[HWTimer->CurCount].Operation)
 		{
 		case OP_QUEUE_CMD_GPIO_OUT:
@@ -248,6 +443,8 @@ static void __FUNC_IN_RAM__ prvHWTimer_StartOperationQueue(uint8_t HWTimerID, HW
 			}
 			break;
 		}
+#endif
+
 	}
 	return ;
 START_HWTIMER:

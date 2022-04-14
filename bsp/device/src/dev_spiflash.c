@@ -81,7 +81,7 @@ static int32_t SPIFlash_SpiIrqCB(void *pData, void *pParam)
 static void SPIFlash_Wait(SPIFlash_CtrlStruct *Ctrl, uint32_t Tick)
 {
 #ifdef __BUILD_OS__
-	Task_EventStruct Event;
+	OS_EVENT Event;
 	if (Ctrl->NotifyTask && Ctrl->TaskCB)
 	{
 		Task_GetEvent(Ctrl->NotifyTask, 0xffffffff, &Event, Ctrl->TaskCB, Tick);
@@ -426,7 +426,7 @@ int32_t SPIFlash_WriteSR(SPIFlash_CtrlStruct *Ctrl, uint8_t SR)
 int32_t SPIFlash_Read(SPIFlash_CtrlStruct *Ctrl, uint32_t Address, uint8_t *Buf, uint32_t Length, uint8_t FastRead)
 {
 #ifdef __BUILD_OS__
-	Task_EventStruct Event;
+	OS_EVENT Event;
 #endif
 	Ctrl->FlashError = 0;
 	Ctrl->Tx[1] = (Address & 0x00ff0000) >> 16;
@@ -487,7 +487,7 @@ int32_t SPIFlash_Read(SPIFlash_CtrlStruct *Ctrl, uint32_t Address, uint8_t *Buf,
 int32_t SPIFlash_Write(SPIFlash_CtrlStruct *Ctrl, uint32_t Address, const uint8_t *Buf, uint32_t Length)
 {
 #ifdef __BUILD_OS__
-	Task_EventStruct Event;
+	OS_EVENT Event;
 #endif
 	uint32_t FlashAddress, DummyLen;
 	Ctrl->FlashError = 0;

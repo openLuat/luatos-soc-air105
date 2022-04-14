@@ -159,7 +159,7 @@ void Task_SendEvent(HANDLE TaskHandle, uint32_t ID, uint32_t P1, uint32_t P2, ui
 #endif
 }
 
-int32_t Task_GetEvent(HANDLE TaskHandle, uint32_t TargetEventID, Task_EventStruct *OutEvent, CBFuncEx_t Callback, uint64_t Tick)
+int32_t Task_GetEvent(HANDLE TaskHandle, uint32_t TargetEventID, OS_EVENT *OutEvent, CBFuncEx_t Callback, uint64_t Tick)
 {
 	uint64_t ToTick = 0;
 	Core_EventStruct *Event;
@@ -261,7 +261,7 @@ GET_EVENT_DONE:
 	return Result;
 }
 
-int32_t Task_GetEventByMS(HANDLE TaskHandle, uint32_t TargetEventID, Task_EventStruct *OutEvent, CBFuncEx_t Callback, uint32_t ms)
+int32_t Task_GetEventByMS(HANDLE TaskHandle, uint32_t TargetEventID, OS_EVENT *OutEvent, CBFuncEx_t Callback, uint32_t ms)
 {
 	uint64_t ToTick = ms;
 	ToTick *= SYS_TIMER_1MS;

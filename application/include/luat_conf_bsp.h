@@ -65,7 +65,11 @@
 #define LUAT_USE_FATFS 1
 #define LUAT_USE_I2CTOOLS 1
 #define LUAT_USE_SOFTKB 1
-
+#ifdef __DEBUG__
+#define LUAT_USE_W5500  1
+#define LUAT_USE_DHCP  1
+#define LUAT_USE_DNS  1
+#endif
 //----------------------------
 // 高通字体, 需配合芯片使用
 #define LUAT_USE_GTFONT 1
@@ -85,6 +89,7 @@
 // UI
 #define LUAT_USE_LCD
 #define LUAT_LCD_CMD_DELAY_US 7
+#define LUAT_USE_TJPGD
 #define LUAT_USE_EINK
 
 //---------------------

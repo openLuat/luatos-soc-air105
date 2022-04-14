@@ -160,6 +160,15 @@ enum
 	USB_APP_EVENT_ID_START = 0xf0300000,
 	USER_EVENT_ID_START = 0xf1000000,
 	INVALID_EVENT_ID = 0xffffffff,
+
+	NW_EVENT_CONNECTED = 0,
+	NW_EVENT_REMOTE_CLOSE,
+	NW_EVENT_RECV,
+	NW_EVENT_ERR,
+	NW_EVENT_SENT,
+	NW_EVENT_ACCEPT,
+	NW_EVENT_CLOSE_OK,
+
 };
 
 #define INVALID_HANDLE_VALUE  ((void *)0xffffffff)
@@ -208,6 +217,14 @@ typedef uint64_t LongInt;
 
 typedef struct
 {
+	uint32_t ID;
+	uint32_t Param1;
+	uint32_t Param2;
+	uint32_t Param3;
+}OS_EVENT;
+
+typedef struct
+{
 	CBFuncEx_t CB;
 	union {
 		void *pParam;	//用户回调模式
@@ -228,6 +245,48 @@ typedef struct
     uint8_t Operation;	//操作类型
     uint8_t PinOrDelay;		//IO操作时为IOpin，delay操作时则为微调值，0~47，48为1us
 }OPQueue_CmdStruct;
+
+enum
+{
+    UDATA_TYPE_UNDEFINED = 0,
+	UDATA_MULTIPLE_RESOURCE,
+	UDATA_TYPE_STRING,
+	UDATA_TYPE_OPAQUE,
+	UDATA_TYPE_INTEGER,
+	UDATA_TYPE_DWORD,
+	UDATA_TYPE_WORD,
+	UDATA_TYPE_BYTE,
+	UDATA_TYPE_FLOAT,
+	UDATA_TYPE_BOOLEAN,
+	UDATA_TYPE_UNSIGNED,
+	UDATA_TYPE_UNUSD
+};
+
+typedef struct _u_data_t uData_t;
+
+struct _u_data_t
+{
+    union
+    {
+        uint8_t     asBoolean;
+        uint64_t	asUnsigned;
+        int64_t     asInteger;
+        PV_Union	asDword;
+        double      asFloat;
+        struct
+        {
+            size_t   length;
+            uint8_t *buffer;
+        } asBuffer;
+        struct
+        {
+            size_t       count;
+            uData_t 	*array;
+        } asChildren;
+    } value;
+	uint32_t ID;
+	uint8_t Type;
+};
 
 __attribute__((weak)) uint8_t OS_CheckInIrq(void);
 #ifdef __BUILD_OS__

@@ -202,6 +202,9 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_YMODEM
   {"ymodem", luaopen_ymodem},
 #endif
+#ifdef LUAT_USE_W5500
+  {"w5500", luaopen_w5500},
+#endif
   {"usbapp", luaopen_usbapp},
   {"audio", luaopen_multimedia_audio},
   {"codec", luaopen_multimedia_codec},

@@ -558,11 +558,6 @@ static int32_t prvCore_SCSIWrite(uint8_t LUN, uint8_t *Data, uint32_t Len, void 
 	return 0;
 }
 
-static int32_t prvCore_SCSIDoWrite(uint8_t LUN, void *pUserData)
-{
-	return 0;
-}
-
 static int32_t prvCore_SCSIUserCmd(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
 {
 	return -1;
@@ -585,7 +580,6 @@ static const USB_StorageSCSITypeDef prvCore_SCSIFun =
 		prvCore_SCSIReadNext,
 		prvCore_SCSIPreWrite,
 		prvCore_SCSIWrite,
-		prvCore_SCSIDoWrite,
 		prvCore_SCSIUserCmd,
 		&prvCore_StandardInquiryData,
 		&prvCore_MSCPage00InquiryData,

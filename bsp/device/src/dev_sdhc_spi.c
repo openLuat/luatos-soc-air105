@@ -313,7 +313,7 @@ static uint8_t CRC7(uint8_t * chr, int cnt)
 static void SDHC_SpiXfer(SDHC_SPICtrlStruct *Ctrl, uint8_t *Buf, uint16_t TxLen)
 {
 #ifdef __BUILD_OS__
-	Task_EventStruct Event;
+	OS_EVENT Event;
 #endif
 #ifdef __BUILD_OS__
 	if (Ctrl->NotifyTask && Ctrl->TaskCB)
