@@ -161,13 +161,15 @@ enum
 	USER_EVENT_ID_START = 0xf1000000,
 	INVALID_EVENT_ID = 0xffffffff,
 
-	NW_EVENT_CONNECTED = 0,
-	NW_EVENT_REMOTE_CLOSE,
+	NW_EVENT_SENT = 0,
 	NW_EVENT_RECV,
 	NW_EVENT_ERR,
-	NW_EVENT_SENT,
+	NW_EVENT_CONNECTED,
+	NW_EVENT_REMOTE_CLOSE,
 	NW_EVENT_ACCEPT,
 	NW_EVENT_CLOSE_OK,
+
+
 
 };
 
@@ -518,6 +520,7 @@ double BytesGetDoubleFromBuf(Buffer_Struct *Buf);
 void BytesPutDoubleToBuf(Buffer_Struct *Buf, double v);
 /*************************************************************************/
 
+extern uint64_t GetSysTickMS();
 
 #define malloc OS_Malloc
 #define free OS_Free
