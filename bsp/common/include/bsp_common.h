@@ -298,6 +298,8 @@ void OS_MutexLock(HANDLE Sem);
 int32_t OS_MutexLockWtihTime(HANDLE Sem, uint32_t TimeoutMs);
 void OS_MutexRelease(HANDLE Sem);
 void OS_MutexDelete(HANDLE Sem);
+void OS_SuspendTask(HANDLE taskHandle);
+void OS_ResumeTask(HANDLE taskHandle);
 #endif
 uint32_t OS_EnterCritical(void);
 void OS_ExitCritical(uint32_t Critical);

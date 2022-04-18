@@ -360,6 +360,30 @@ void OS_MutexDelete(HANDLE Sem)
 {
 	vSemaphoreDelete(Sem);
 }
+
+void OS_SuspendTask(HANDLE taskHandle)
+{
+	if (taskHandle)
+	{
+		vTaskSuspend(taskHandle);
+	}
+	else
+	{
+		vTaskSuspendAll();
+	}
+}
+
+void OS_ResumeTask(HANDLE taskHandle)
+{
+	if (taskHandle)
+	{
+		vTaskResume(taskHandle);
+	}
+	else
+	{
+		xTaskResumeAll();
+	}
+}
 #endif
 static uint8_t prvOSRunFlag;
 extern const uint32_t __os_heap_start;

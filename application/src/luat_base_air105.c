@@ -204,6 +204,7 @@ static const luaL_Reg loadedlibs[] = {
 #endif
 #ifdef LUAT_USE_W5500
   {"w5500", luaopen_w5500},
+  {"network", luaopen_network_adapter},
 #endif
   {"usbapp", luaopen_usbapp},
   {"audio", luaopen_multimedia_audio},

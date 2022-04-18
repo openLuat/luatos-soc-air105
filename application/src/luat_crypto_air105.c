@@ -28,13 +28,25 @@
 int luat_crypto_trng(char* buff, size_t len) {
     size_t t = 0;
     uint32_t tmp[4];
+    int i;
+    char *temp = tmp;
     while (len > t) {
         RNG_GetData(tmp);
-        BytesPutLe32(&buff[t], tmp[0]);
-        BytesPutLe32(&buff[t + 4], tmp[1]);
-        BytesPutLe32(&buff[t + 8], tmp[2]);
-        BytesPutLe32(&buff[t + 12], tmp[3]);
-        t += 16;
+        if ((len - t) >=16)
+        {
+        	memcpy(buff + t, temp, 16);
+        	t += 16;
+        }
+        else
+        {
+        	i = 0;
+        	while (len > t)
+        	{
+        		buff[t] = temp[i];
+        		t++;
+        		i++;
+        	}
+        }
     }
     return 0;
 }
