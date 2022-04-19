@@ -57,7 +57,7 @@ if not with_luatos then luatos_define = nil end
 add_defines("__AIR105_BSP__","__USE_XTL__","CMB_CPU_PLATFORM_TYPE=CMB_CPU_ARM_CORTEX_M4","HSE_VALUE=12000000","CORTEX_M4","__FLASH_APP_START_ADDR__=0x01010000",luatos_define)
 add_defines("__FLASH_OTA_INFO_ADDR__=0x0100F000")
 add_defines("_7ZIP_ST")
-
+add_defines("MBEDTLS_CONFIG_FILE=\"mbedtls_config.h\"")
 -- set warning all as error
 set_warnings("allextra")
 -- set_optimize("smallest")

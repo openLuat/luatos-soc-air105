@@ -64,3 +64,13 @@ int luat_rtc_timer_start(int id, struct tm *tblock) {
 int luat_rtc_timer_stop(int id) {
     return -1; // 暂不支持
 }
+
+uint32_t luat_get_utc(uint32_t *tamp)
+{
+	uint32_t sec = RTC_GetUTC();
+	if (tamp)
+	{
+		*tamp = sec;
+	}
+	return sec;
+}

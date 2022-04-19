@@ -458,4 +458,12 @@ void luat_crypto_HmacMd5(const unsigned char *input, int ilen, unsigned char *ou
 }
 #endif
 
+struct tm *mbedtls_platform_gmtime_r( const mbedtls_time_t *tt,
+                                      struct tm *tm_buf )
+{
+	Date_UserDataStruct Date;
+	Time_UserDataStruct Time;
+	Tamp2UTC(*tt, &Date, &Time, 0);
+}
+
 #endif

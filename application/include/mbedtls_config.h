@@ -26,7 +26,7 @@
 
 #ifndef MBEDTLS_CONFIG_H
 #define MBEDTLS_CONFIG_H
-
+#include "bsp_common.h"
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
@@ -130,7 +130,7 @@
  *
  * Comment if your system does not support time functions
  */
-// #define MBEDTLS_HAVE_TIME
+#define MBEDTLS_HAVE_TIME
 
 /**
  * \def MBEDTLS_HAVE_TIME_DATE
@@ -151,7 +151,7 @@
  * mbedtls_platform_gmtime_r() at compile-time by using the macro
  * MBEDTLS_PLATFORM_GMTIME_R_ALT.
  */
-// #define MBEDTLS_HAVE_TIME_DATE
+#define MBEDTLS_HAVE_TIME_DATE
 
 /**
  * \def MBEDTLS_PLATFORM_MEMORY
@@ -175,7 +175,7 @@
  *
  * Enable this layer to allow use of alternative memory allocators.
  */
-//#define MBEDTLS_PLATFORM_MEMORY
+#define MBEDTLS_PLATFORM_MEMORY
 
 /**
  * \def MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
@@ -194,7 +194,7 @@
  * Uncomment to prevent default assignment of standard functions in the
  * platform layer.
  */
-//#define MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
+#define MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
 
 /**
  * \def MBEDTLS_PLATFORM_EXIT_ALT
@@ -902,7 +902,7 @@
  *      MBEDTLS_TLS_PSK_WITH_3DES_EDE_CBC_SHA
  *      MBEDTLS_TLS_PSK_WITH_RC4_128_SHA
  */
-// #define MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+#define MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
 
 /**
  * \def MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
@@ -978,7 +978,7 @@
  *      MBEDTLS_TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA
  *      MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
  */
-// #define MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+#define MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 
 /**
  * \def MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
@@ -1006,7 +1006,7 @@
  *      MBEDTLS_TLS_RSA_WITH_RC4_128_SHA
  *      MBEDTLS_TLS_RSA_WITH_RC4_128_MD5
  */
-// #define MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
+#define MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 
 /**
  * \def MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
@@ -1169,7 +1169,7 @@
  *
  * Disable if you only need to support RFC 5915 + 5480 key formats.
  */
-// #define MBEDTLS_PK_PARSE_EC_EXTENDED
+#define MBEDTLS_PK_PARSE_EC_EXTENDED
 
 /**
  * \def MBEDTLS_ERROR_STRERROR_DUMMY
@@ -1184,7 +1184,7 @@
  * Disable if you run into name conflicts and want to really remove the
  * mbedtls_strerror()
  */
-#define MBEDTLS_ERROR_STRERROR_DUMMY
+//#define MBEDTLS_ERROR_STRERROR_DUMMY
 
 /**
  * \def MBEDTLS_GENPRIME
@@ -1325,7 +1325,7 @@
  *
  * This enables support for PKCS#1 v1.5 operations.
  */
-// #define MBEDTLS_PKCS1_V15
+#define MBEDTLS_PKCS1_V15
 
 /**
  * \def MBEDTLS_PKCS1_V21
@@ -1336,7 +1336,7 @@
  *
  * This enables support for RSAES-OAEP and RSASSA-PSS operations.
  */
-// #define MBEDTLS_PKCS1_V21
+#define MBEDTLS_PKCS1_V21
 
 /** \def MBEDTLS_PSA_CRYPTO_CLIENT
  *
@@ -1446,7 +1446,7 @@
  *
  * Enable the checkup functions (*_self_test).
  */
-#define MBEDTLS_SELF_TEST
+//#define MBEDTLS_SELF_TEST
 
 /**
  * \def MBEDTLS_SHA256_SMALLER
@@ -1612,7 +1612,7 @@
  *
  * Comment this macro to disable support for Encrypt-then-MAC
  */
-// #define MBEDTLS_SSL_ENCRYPT_THEN_MAC
+#define MBEDTLS_SSL_ENCRYPT_THEN_MAC
 
 /** \def MBEDTLS_SSL_EXTENDED_MASTER_SECRET
  *
@@ -1630,7 +1630,7 @@
  *
  * Comment this macro to disable support for Extended Master Secret.
  */
-// #define MBEDTLS_SSL_EXTENDED_MASTER_SECRET
+#define MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 
 /**
  * \def MBEDTLS_SSL_FALLBACK_SCSV
@@ -1695,7 +1695,7 @@
  *
  * Comment this macro to disable 1/n-1 record splitting.
  */
-// #define MBEDTLS_SSL_CBC_RECORD_SPLITTING
+#define MBEDTLS_SSL_CBC_RECORD_SPLITTING
 
 /**
  * \def MBEDTLS_SSL_RENEGOTIATION
@@ -1717,7 +1717,7 @@
  *          configuration of this extension).
  *
  */
-// #define MBEDTLS_SSL_RENEGOTIATION
+#define MBEDTLS_SSL_RENEGOTIATION
 
 /**
  * \def MBEDTLS_SSL_SRV_SUPPORT_SSLV2_CLIENT_HELLO
@@ -1749,7 +1749,7 @@
  *
  * Comment this macro to disable support for the max_fragment_length extension
  */
-// #define MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
+#define MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
 
 /**
  * \def MBEDTLS_SSL_PROTO_SSL3
@@ -1776,7 +1776,7 @@
  *
  * Comment this macro to disable support for TLS 1.0
  */
-// #define MBEDTLS_SSL_PROTO_TLS1
+#define MBEDTLS_SSL_PROTO_TLS1
 
 /**
  * \def MBEDTLS_SSL_PROTO_TLS1_1
@@ -1788,7 +1788,7 @@
  *
  * Comment this macro to disable support for TLS 1.1 / DTLS 1.0
  */
-// #define MBEDTLS_SSL_PROTO_TLS1_1
+#define MBEDTLS_SSL_PROTO_TLS1_1
 
 /**
  * \def MBEDTLS_SSL_PROTO_TLS1_2
@@ -1800,7 +1800,7 @@
  *
  * Comment this macro to disable support for TLS 1.2 / DTLS 1.2
  */
-// #define MBEDTLS_SSL_PROTO_TLS1_2
+#define MBEDTLS_SSL_PROTO_TLS1_2
 
 /**
  * \def MBEDTLS_SSL_PROTO_TLS1_3_EXPERIMENTAL
@@ -1834,7 +1834,7 @@
  *
  * Comment this macro to disable support for DTLS
  */
-// #define MBEDTLS_SSL_PROTO_DTLS
+#define MBEDTLS_SSL_PROTO_DTLS
 
 /**
  * \def MBEDTLS_SSL_ALPN
@@ -1858,7 +1858,7 @@
  *
  * Comment this to disable anti-replay in DTLS.
  */
-// #define MBEDTLS_SSL_DTLS_ANTI_REPLAY
+#define MBEDTLS_SSL_DTLS_ANTI_REPLAY
 
 /**
  * \def MBEDTLS_SSL_DTLS_HELLO_VERIFY
@@ -1876,7 +1876,7 @@
  *
  * Comment this to disable support for HelloVerifyRequest.
  */
-// #define MBEDTLS_SSL_DTLS_HELLO_VERIFY
+#define MBEDTLS_SSL_DTLS_HELLO_VERIFY
 
 /**
  * \def MBEDTLS_SSL_DTLS_SRTP
@@ -1934,7 +1934,7 @@
  *
  * Requires: MBEDTLS_SSL_PROTO_DTLS
  */
-// #define MBEDTLS_SSL_DTLS_BADMAC_LIMIT
+#define MBEDTLS_SSL_DTLS_BADMAC_LIMIT
 
 /**
  * \def MBEDTLS_SSL_SESSION_TICKETS
@@ -1958,7 +1958,7 @@
  *
  * Comment this macro to disable support for key export
  */
-// #define MBEDTLS_SSL_EXPORT_KEYS
+#define MBEDTLS_SSL_EXPORT_KEYS
 
 /**
  * \def MBEDTLS_SSL_SERVER_NAME_INDICATION
@@ -1978,7 +1978,7 @@
  *
  * Comment this macro to disable support for truncated HMAC in SSL
  */
-// #define MBEDTLS_SSL_TRUNCATED_HMAC
+#define MBEDTLS_SSL_TRUNCATED_HMAC
 
 /**
  * \def MBEDTLS_SSL_TRUNCATED_HMAC_COMPAT
@@ -2148,7 +2148,7 @@
  *
  * Comment this to disable run-time checking and save ROM space
  */
-#define MBEDTLS_VERSION_FEATURES
+//#define MBEDTLS_VERSION_FEATURES
 
 /**
  * \def MBEDTLS_X509_ALLOW_EXTENSIONS_NON_V3
@@ -2226,7 +2226,7 @@
  *
  * Comment this macro to disallow using RSASSA-PSS in certificates.
  */
-// #define MBEDTLS_X509_RSASSA_PSS_SUPPORT
+#define MBEDTLS_X509_RSASSA_PSS_SUPPORT
 
 /**
  * \def MBEDTLS_ZLIB_SUPPORT
@@ -2620,7 +2620,7 @@
  * Requires: MBEDTLS_AES_C or MBEDTLS_DES_C
  *
  */
-//#define MBEDTLS_CMAC_C
+#define MBEDTLS_CMAC_C
 
 /**
  * \def MBEDTLS_CTR_DRBG_C
@@ -2796,7 +2796,7 @@
  *
  * This module enables mbedtls_strerror().
  */
-#define MBEDTLS_ERROR_C
+//#define MBEDTLS_ERROR_C
 
 /**
  * \def MBEDTLS_GCM_C
@@ -3001,7 +3001,7 @@
  *
  * This modules translates between OIDs and internal values.
  */
-// #define MBEDTLS_OID_C
+#define MBEDTLS_OID_C
 
 /**
  * \def MBEDTLS_PADLOCK_C
@@ -3033,7 +3033,7 @@
  *
  * This modules adds support for decoding / parsing PEM files.
  */
-// #define MBEDTLS_PEM_PARSE_C
+#define MBEDTLS_PEM_PARSE_C
 
 /**
  * \def MBEDTLS_PEM_WRITE_C
@@ -3065,7 +3065,7 @@
  *
  * Uncomment to enable generic public key wrappers.
  */
-// #define MBEDTLS_PK_C
+#define MBEDTLS_PK_C
 
 /**
  * \def MBEDTLS_PK_PARSE_C
@@ -3080,7 +3080,7 @@
  *
  * Uncomment to enable generic public key parse functions.
  */
-// #define MBEDTLS_PK_PARSE_C
+#define MBEDTLS_PK_PARSE_C
 
 /**
  * \def MBEDTLS_PK_WRITE_C
@@ -3107,7 +3107,7 @@
  *
  * This module adds support for the PKCS#5 functions.
  */
-// #define MBEDTLS_PKCS5_C
+#define MBEDTLS_PKCS5_C
 
 /**
  * \def MBEDTLS_PKCS11_C
@@ -3141,7 +3141,7 @@
  *
  * This module enables PKCS#12 functions.
  */
-// #define MBEDTLS_PKCS12_C
+#define MBEDTLS_PKCS12_C
 
 /**
  * \def MBEDTLS_PLATFORM_C
@@ -3260,7 +3260,7 @@
  *
  * Requires: MBEDTLS_BIGNUM_C, MBEDTLS_OID_C
  */
-// #define MBEDTLS_RSA_C
+#define MBEDTLS_RSA_C
 
 /**
  * \def MBEDTLS_SHA1_C
@@ -3336,7 +3336,7 @@
  * Module:  library/ssl_cookie.c
  * Caller:
  */
-// #define MBEDTLS_SSL_COOKIE_C
+#define MBEDTLS_SSL_COOKIE_C
 
 /**
  * \def MBEDTLS_SSL_TICKET_C
@@ -3362,7 +3362,7 @@
  *
  * This module is required for SSL/TLS client support.
  */
-// #define MBEDTLS_SSL_CLI_C
+#define MBEDTLS_SSL_CLI_C
 
 /**
  * \def MBEDTLS_SSL_SRV_C
@@ -3392,7 +3392,7 @@
  *
  * This module is required for SSL/TLS.
  */
-// #define MBEDTLS_SSL_TLS_C
+#define MBEDTLS_SSL_TLS_C
 
 /**
  * \def MBEDTLS_THREADING_C
@@ -3448,7 +3448,7 @@
  *
  * This module provides run-time version information.
  */
-#define MBEDTLS_VERSION_C
+// #define MBEDTLS_VERSION_C
 
 /**
  * \def MBEDTLS_X509_USE_C
@@ -3465,7 +3465,7 @@
  *
  * This module is required for the X.509 parsing modules.
  */
-// #define MBEDTLS_X509_USE_C
+#define MBEDTLS_X509_USE_C
 
 /**
  * \def MBEDTLS_X509_CRT_PARSE_C
@@ -3481,7 +3481,7 @@
  *
  * This module is required for X.509 certificate parsing.
  */
-// #define MBEDTLS_X509_CRT_PARSE_C
+#define MBEDTLS_X509_CRT_PARSE_C
 
 /**
  * \def MBEDTLS_X509_CRL_PARSE_C
@@ -3625,16 +3625,16 @@
 
 /* To Use Function Macros MBEDTLS_PLATFORM_C must be enabled */
 /* MBEDTLS_PLATFORM_XXX_MACRO and MBEDTLS_PLATFORM_XXX_ALT cannot both be defined */
-//#define MBEDTLS_PLATFORM_CALLOC_MACRO        calloc /**< Default allocator macro to use, can be undefined */
-//#define MBEDTLS_PLATFORM_FREE_MACRO            free /**< Default free macro to use, can be undefined */
+#define MBEDTLS_PLATFORM_CALLOC_MACRO        calloc /**< Default allocator macro to use, can be undefined */
+#define MBEDTLS_PLATFORM_FREE_MACRO            free /**< Default free macro to use, can be undefined */
 //#define MBEDTLS_PLATFORM_EXIT_MACRO            exit /**< Default exit macro to use, can be undefined */
-//#define MBEDTLS_PLATFORM_TIME_MACRO            time /**< Default time macro to use, can be undefined. MBEDTLS_HAVE_TIME must be enabled */
-//#define MBEDTLS_PLATFORM_TIME_TYPE_MACRO       time_t /**< Default time macro to use, can be undefined. MBEDTLS_HAVE_TIME must be enabled */
+#define MBEDTLS_PLATFORM_TIME_MACRO            luat_get_utc /**< Default time macro to use, can be undefined. MBEDTLS_HAVE_TIME must be enabled */
+#define MBEDTLS_PLATFORM_TIME_TYPE_MACRO       uint32_t /**< Default time macro to use, can be undefined. MBEDTLS_HAVE_TIME must be enabled */
 //#define MBEDTLS_PLATFORM_FPRINTF_MACRO      fprintf /**< Default fprintf macro to use, can be undefined */
-//#define MBEDTLS_PLATFORM_PRINTF_MACRO        printf /**< Default printf macro to use, can be undefined */
+#define MBEDTLS_PLATFORM_PRINTF_MACRO        printf_ /**< Default printf macro to use, can be undefined */
 /* Note: your snprintf must correctly zero-terminate the buffer! */
-//#define MBEDTLS_PLATFORM_SNPRINTF_MACRO    snprintf /**< Default snprintf macro to use, can be undefined */
-//#define MBEDTLS_PLATFORM_VSNPRINTF_MACRO    vsnprintf /**< Default vsnprintf macro to use, can be undefined */
+#define MBEDTLS_PLATFORM_SNPRINTF_MACRO    snprintf_ /**< Default snprintf macro to use, can be undefined */
+#define MBEDTLS_PLATFORM_VSNPRINTF_MACRO    vsnprintf_ /**< Default vsnprintf macro to use, can be undefined */
 //#define MBEDTLS_PLATFORM_NV_SEED_READ_MACRO   mbedtls_platform_std_nv_seed_read /**< Default nv_seed_read function to use, can be undefined */
 //#define MBEDTLS_PLATFORM_NV_SEED_WRITE_MACRO  mbedtls_platform_std_nv_seed_write /**< Default nv_seed_write function to use, can be undefined */
 
@@ -3845,7 +3845,7 @@
 
 //#define MBEDTLS_SSL_DEFAULT_TICKET_LIFETIME     86400 /**< Lifetime of session tickets (if enabled) */
 //#define MBEDTLS_PSK_MAX_LEN               32 /**< Max size of TLS pre-shared keys, in bytes (default 256 bits) */
-//#define MBEDTLS_SSL_COOKIE_TIMEOUT        60 /**< Default expiration delay of DTLS cookies, in seconds if HAVE_TIME, or in number of cookies issued */
+#define MBEDTLS_SSL_COOKIE_TIMEOUT        86400 /**< Default expiration delay of DTLS cookies, in seconds if HAVE_TIME, or in number of cookies issued */
 
 /**
  * Complete list of ciphersuites to use, in order of preference.
@@ -3877,7 +3877,7 @@
  *            on it, and considering stronger message digests instead.
  *
  */
-//#define MBEDTLS_TLS_DEFAULT_ALLOW_SHA1_IN_CERTIFICATES
+#define MBEDTLS_TLS_DEFAULT_ALLOW_SHA1_IN_CERTIFICATES
 
 /**
  * Allow SHA-1 in the default TLS configuration for TLS 1.2 handshake
@@ -3894,7 +3894,7 @@
  *            on it, and considering stronger message digests instead.
  *
  */
-// #define MBEDTLS_TLS_DEFAULT_ALLOW_SHA1_IN_KEY_EXCHANGE
+#define MBEDTLS_TLS_DEFAULT_ALLOW_SHA1_IN_KEY_EXCHANGE
 
 /**
  * Uncomment the macro to let mbed TLS use your alternate implementation of
@@ -3933,7 +3933,7 @@
  * unconditionally use the implementation for mbedtls_platform_gmtime_r()
  * supplied at compile time.
  */
-//#define MBEDTLS_PLATFORM_GMTIME_R_ALT
+#define MBEDTLS_PLATFORM_GMTIME_R_ALT
 
 /**
  * Enable the verified implementations of ECDH primitives from Project Everest
