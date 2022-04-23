@@ -341,6 +341,10 @@ if with_luatos then
     -- ymodem
     add_includedirs(luatos.."components/ymodem",{public = true})
     add_files(luatos.."components/ymodem/*.c")
+
+    -- usbapp
+    add_includedirs(luatos.."components/usbapp",{public = true})
+    add_files(luatos.."components/usbapp/*.c")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})

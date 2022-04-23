@@ -34,7 +34,7 @@ void luat_usb_app_set_vid_pid(uint8_t usb_id, uint16_t vid, uint16_t pid)
 	Core_USBSetID(usb_id, vid, pid);
 
 }
-void uat_usb_app_set_hid_mode(uint8_t usb_id, uint8_t hid_mode, uint8_t buff_size)
+void luat_usb_app_set_hid_mode(uint8_t usb_id, uint8_t hid_mode, uint8_t buff_size)
 {
 	Core_USBSetHIDMode(usb_id, hid_mode, buff_size);
 }
