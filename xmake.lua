@@ -377,7 +377,7 @@ end
         import("lib.detect.find_file")
         local path7z = nil
         if is_plat("windows") then
-            path7z = find_file("7z.exe", { "C:/Program Files/7-Zip/", "D:/Program Files/7-Zip/", "E:/Program Files/7-Zip/"})
+            path7z = "$(buildir)/../7za.exe"
         elseif is_plat("linux") then
             path7z = find_file("7z", { "/usr/bin/"})
             if not path7z then
