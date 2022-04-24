@@ -53,12 +53,13 @@ static int32_t luat_timer_callback(void *pData, void *pParam)
     size_t timer_id = (size_t)pParam;
     luat_timer_t *timer = luat_timer_get(timer_id);
     if (timer == NULL)
-        return;
+        return 0;
     msg.handler = timer->func;
     msg.ptr = timer;
     msg.arg1 = timer_id;
     msg.arg2 = 0;
     luat_msgbus_put(&msg, 0);
+    return 0;
 }
 
 static int nextTimerSlot() {

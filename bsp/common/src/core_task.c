@@ -118,7 +118,7 @@ void Task_SendEvent(HANDLE TaskHandle, uint32_t ID, uint32_t P1, uint32_t P2, ui
 {
 	if (!TaskHandle) return;
 	uint32_t Critical;
-	llist_head *Head = (llist_head *)vTaskGetPoint(TaskHandle, TASK_POINT_LIST_HEAD);
+	volatile llist_head *Head = (llist_head *)vTaskGetPoint(TaskHandle, TASK_POINT_LIST_HEAD);
 #ifdef __USE_SEMAPHORE__
 	SemaphoreHandle_t sem = (SemaphoreHandle_t)vTaskGetPoint(TaskHandle, TASK_POINT_EVENT_SEM);
 #endif
@@ -127,12 +127,13 @@ void Task_SendEvent(HANDLE TaskHandle, uint32_t ID, uint32_t P1, uint32_t P2, ui
 	Event->Param1 = P1;
 	Event->Param2 = P2;
 	Event->Param3 = P3;
+
 	Critical = OS_EnterCritical();
 	vTaskModifyPoint(TaskHandle, TASK_POINT_DEBUG, 1);
 	llist_add_tail(&Event->Node, Head);
 	if (vTaskGetPoint(TaskHandle, TASK_POINT_DEBUG) >= 1024)
 	{
-		DBG_Trace("%s wait too much msg!", vTaskInfo(TaskHandle, &ID, &P1, &P2));
+		DBG_Trace("%s wait too much msg! %u", vTaskInfo(TaskHandle, &ID, &P1, &P2), vTaskGetPoint(TaskHandle, TASK_POINT_DEBUG));
 		Core_PrintServiceStack();
 		__disable_irq();
 		while(1) {;}
@@ -181,19 +182,27 @@ int32_t Task_GetEvent(HANDLE TaskHandle, uint32_t TargetEventID, OS_EVENT *OutEv
 	}
 GET_NEW_EVENT:
 	Critical = OS_EnterCritical();
+
 	if (!llist_empty(Head))
 	{
 		Event = (Core_EventStruct *)Head->next;
 		llist_del(&Event->Node);
-		vTaskModifyPoint(TaskHandle, TASK_POINT_DEBUG, -1);
+		if (vTaskGetPoint(TaskHandle, TASK_POINT_DEBUG) > 0)
+		{
+			vTaskModifyPoint(TaskHandle, TASK_POINT_DEBUG, -1);
+		}
+
 	}
 	else
 	{
 		Event = NULL;
 	}
+
 	OS_ExitCritical(Critical);
+
 	if (Event)
 	{
+
 		OutEvent->ID = Event->ID;
 		OutEvent->Param1 = Event->Param1;
 		OutEvent->Param2 = Event->Param2;
@@ -313,5 +322,15 @@ void Task_DelayMS(uint32_t MS)
 	uint64_t ToTick = MS;
 	ToTick *= SYS_TIMER_1MS;
 	Task_DelayTick(ToTick);
+}
+
+void Task_Debug(HANDLE TaskHandle)
+{
+	if (!TaskHandle)
+	{
+		TaskHandle = vTaskGetCurrent();
+	}
+	volatile llist_head *Head = (llist_head *)vTaskGetPoint(TaskHandle, TASK_POINT_LIST_HEAD);
+	DBG("%x,%x,%x", Head, Head->next, Head->prev);
 }
 #endif

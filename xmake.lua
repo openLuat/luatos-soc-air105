@@ -345,6 +345,12 @@ if with_luatos then
     -- usbapp
     add_includedirs(luatos.."components/usbapp",{public = true})
     add_files(luatos.."components/usbapp/*.c")
+    -- network
+    add_includedirs(luatos.."components/ethernet/common",{public = true})
+    add_includedirs(luatos.."components/ethernet/w5500",{public = true})
+    add_includedirs(luatos.."components/network/adapter",{public = true})
+    add_files(luatos.."components/ethernet/*/*.c")
+    add_files(luatos.."components/network/adapter/*.c")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})
