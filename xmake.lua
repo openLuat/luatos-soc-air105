@@ -273,7 +273,6 @@ if with_luatos then
     add_files(luatos.."luat/packages/lfs/*.c")
     add_files(luatos.."luat/packages/lua-cjson/*.c")
     add_files(luatos.."luat/packages/minmea/*.c")
-    add_files(luatos.."luat/packages/qrcode/*.c")
     add_files(luatos.."luat/packages/u8g2/*.c")
     add_files(luatos.."luat/packages/fatfs/*.c")
     add_files(luatos.."luat/weak/*.c")
@@ -295,7 +294,6 @@ if with_luatos then
     add_includedirs(luatos.."luat/packages/lfs")
     add_includedirs(luatos.."luat/packages/lua-cjson")
     add_includedirs(luatos.."luat/packages/minmea")
-    add_includedirs(luatos.."luat/packages/qrcode")
     add_includedirs(luatos.."luat/packages/u8g2")
     add_includedirs(luatos.."luat/packages/fatfs")
 
