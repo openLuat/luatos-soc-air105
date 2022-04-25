@@ -322,13 +322,31 @@ HANDLE OS_MutexCreateUnlock(void)
 
 void OS_MutexLock(HANDLE Sem)
 {
+	uint8_t suspend = !OS_IsSchedulerRun();
+	if (suspend)
+	{
+		xTaskResumeAll();
+	}
 	xSemaphoreTake(Sem, portMAX_DELAY);
-
+	if (suspend)
+	{
+		vTaskSuspendAll();
+	}
 }
 
 int32_t OS_MutexLockWtihTime(HANDLE Sem, uint32_t TimeoutMs)
 {
-	if (pdTRUE != xSemaphoreTake(Sem, TimeoutMs))
+	uint8_t suspend = !OS_IsSchedulerRun();
+	if (suspend)
+	{
+		xTaskResumeAll();
+	}
+	int result = xSemaphoreTake(Sem, TimeoutMs);
+	if (suspend)
+	{
+		vTaskSuspendAll();
+	}
+	if (pdTRUE != result)
 	{
 		return -ERROR_OPERATION_FAILED;
 	}
@@ -359,6 +377,11 @@ void OS_MutexRelease(HANDLE Sem)
 void OS_MutexDelete(HANDLE Sem)
 {
 	vSemaphoreDelete(Sem);
+}
+
+uint8_t OS_IsSchedulerRun(void)
+{
+	return (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING);
 }
 
 void OS_SuspendTask(HANDLE taskHandle)

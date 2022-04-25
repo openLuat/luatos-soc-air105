@@ -5064,7 +5064,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
             /* If the task is in the blocked state specifically to wait for a
              * notification then unblock it now. */
-            if( ucOriginalNotifyState == taskWAITING_NOTIFICATION )
+            if( (ucOriginalNotifyState == taskWAITING_NOTIFICATION)  && (listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) == NULL))
             {
                 /* The task should not have been on an event list. */
                 configASSERT( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) == NULL );
@@ -5155,7 +5155,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
             /* If the task is in the blocked state specifically to wait for a
              * notification then unblock it now. */
-            if( ucOriginalNotifyState == taskWAITING_NOTIFICATION )
+            if( (ucOriginalNotifyState == taskWAITING_NOTIFICATION)  && (listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) == NULL))
             {
                 /* The task should not have been on an event list. */
                 configASSERT( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) == NULL );
@@ -5470,4 +5470,10 @@ void vTaskModifyPoint(TaskHandle_t xHandle, uint8_t Sn, int Add)
 void *vTaskGetCurrent(void)
 {
 	return pxCurrentTCB;
+}
+
+uint8_t vTaskIsEventListItemEmpty(TaskHandle_t xHandle)
+{
+	TCB_t * pxTCB = prvGetTCBFromHandle( xHandle );
+	return (listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) == NULL);
 }

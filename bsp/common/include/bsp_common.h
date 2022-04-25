@@ -300,6 +300,7 @@ void OS_MutexRelease(HANDLE Sem);
 void OS_MutexDelete(HANDLE Sem);
 void OS_SuspendTask(HANDLE taskHandle);
 void OS_ResumeTask(HANDLE taskHandle);
+uint8_t OS_IsSchedulerRun(void);
 #endif
 uint32_t OS_EnterCritical(void);
 void OS_ExitCritical(uint32_t Critical);
