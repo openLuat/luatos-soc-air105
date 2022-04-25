@@ -91,6 +91,7 @@
 // UI
 #define LUAT_USE_LCD
 #define LUAT_LCD_CMD_DELAY_US 7
+#define LUAT_USE_QRCODE
 #define LUAT_USE_TJPGD
 #define LUAT_USE_EINK
 

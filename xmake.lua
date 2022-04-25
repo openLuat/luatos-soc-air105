@@ -351,6 +351,10 @@ if with_luatos then
     add_includedirs(luatos.."components/network/adapter",{public = true})
     add_files(luatos.."components/ethernet/*/*.c")
     add_files(luatos.."components/network/adapter/*.c")
+
+    -- qrcode
+    add_includedirs(luatos.."components/qrcode",{public = true})
+    add_files(luatos.."components/qrcode/*.c")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})
