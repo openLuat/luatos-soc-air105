@@ -320,9 +320,11 @@ void Uart_DeInit(uint8_t UartID)
     {
     	PM_SetHardwareRunFlag(PM_HW_UART_0 + UartID, 0);
     }
+#ifdef __BUILD_OS__
 	OS_DeInitBuffer(&prvUart[UartID].TxBuf);
 	OS_DeInitBuffer(&prvUart[UartID].TxCacheBuf);
 	OS_DeInitBuffer(&prvUart[UartID].RxBuf);
+#endif
 }
 
 int Uart_DMATxInit(uint8_t UartID, uint8_t Stream, uint32_t Channel)
