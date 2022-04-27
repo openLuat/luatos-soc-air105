@@ -332,7 +332,7 @@ int luat_camera_init(luat_camera_conf_t *conf){
     prvCamera.PWMID = conf->pwm_id;
     luat_i2c_setup(conf->i2c_id,1,NULL);
     for(size_t i = 0; i < conf->init_cmd_size; i++){
-        if (luat_i2c_send(conf->i2c_id, conf->i2c_addr, &(conf->init_cmd[i]), 2))
+        if (luat_i2c_send(conf->i2c_id, conf->i2c_addr, &(conf->init_cmd[i]), 2,1))
         {
         	error = -ERROR_OPERATION_FAILED;
         }

@@ -58,6 +58,7 @@ typedef struct
 	uint8_t State;
 	uint8_t IsBusy;
 	uint8_t IsBlockMode;
+	uint8_t no_stop_end;
 }I2C_CtrlStruct;
 static I2C_CtrlStruct prvI2C = {
 		I2C0,
@@ -70,6 +71,7 @@ static void prvI2C_Done(uint8_t I2CID, int32_t Result)
 	prvI2C.State = I2C_STATE_FREE;
 	prvI2C.Result = Result;
 	prvI2C.IsBusy = 0;
+	prvI2C.no_stop_end = 0;
 #ifdef __BUILD_OS__
 	if (prvI2C.IsBlockMode) OS_MutexRelease(prvI2C.Sem);
 #endif
@@ -126,7 +128,14 @@ static void I2C_IrqHandle(int32_t IrqLine, void *pData)
 			}
 			else
 			{
-				I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[prvI2C.DataBuf.Pos]|I2C_IC_DATA_CMD_STOP;
+				if (!prvI2C.no_stop_end)
+				{
+					I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[prvI2C.DataBuf.Pos]|I2C_IC_DATA_CMD_STOP;
+				}
+				else
+				{
+					I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[prvI2C.DataBuf.Pos];
+				}
 			}
 			prvI2C.DataBuf.Pos++;
 		}
@@ -359,7 +368,14 @@ void I2C_MasterXfer(uint8_t I2CID, uint8_t Operate, uint8_t RegAddress, uint8_t 
 		}
 		else
 		{
-			I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[0]|I2C_IC_DATA_CMD_STOP;
+			if (!prvI2C.no_stop_end)
+			{
+				I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[0]|I2C_IC_DATA_CMD_STOP;
+			}
+			else
+			{
+				I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[0];
+			}
 		}
 		prvI2C.DataBuf.Pos++;
 		I2C->IC_INTR_MASK = I2C_IC_INTR_MASK_M_TX_EMPTY|I2C_IC_INTR_MASK_M_STOP_DET|I2C_IC_INTR_MASK_M_TX_ABRT;
@@ -471,6 +487,12 @@ int32_t I2C_BlockRead(uint8_t I2CID, uint8_t ChipAddress, uint8_t *Reg, uint8_t 
 	return Result;
 }
 
+void I2C_SetTxStopFlag(uint8_t I2CID)
+{
+	int32_t Result;
+	while(!I2C_WaitResult(I2CID, &Result)) {;}
+	prvI2C.no_stop_end = 1;
+}
 #ifdef __BUILD_APP__
 INIT_HW_EXPORT(I2C_GlobalInit, "1");
 #endif

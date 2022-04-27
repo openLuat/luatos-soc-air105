@@ -259,6 +259,7 @@ void Uart_BaseInit(uint8_t UartID, uint32_t BaudRate, uint8_t IsRxCacheEnable, u
     if (IsRxCacheEnable)
     {
     	OS_ReInitBuffer(&prvUart[UartID].RxBuf, RX_BUF_INIT);
+    	OS_ReInitBuffer(&prvUart[UartID].TxCacheBuf, TX_BUF_INIT);
 #ifdef __RX_USE_DMA__
     	for(i = 0; i < RX_BUF_BAND; i++)
     	{
@@ -319,7 +320,9 @@ void Uart_DeInit(uint8_t UartID)
     {
     	PM_SetHardwareRunFlag(PM_HW_UART_0 + UartID, 0);
     }
-
+	OS_DeInitBuffer(&prvUart[UartID].TxBuf);
+	OS_DeInitBuffer(&prvUart[UartID].TxCacheBuf);
+	OS_DeInitBuffer(&prvUart[UartID].RxBuf);
 }
 
 int Uart_DMATxInit(uint8_t UartID, uint8_t Stream, uint32_t Channel)
@@ -444,6 +447,7 @@ int32_t Uart_BufferTx(uint8_t UartID, const uint8_t *Data, uint32_t Len)
 	if (prvUart[UartID].TxBuf.Pos >= prvUart[UartID].TxBuf.MaxLen)
 	{
 		// 只有少量数据，只靠FIFO就能填充满，就不需要重新分配内存
+
 		memset(&prvUart[UartID].TxBuf, 0, sizeof(prvUart[UartID].TxBuf));
 #ifdef __BUILD_OS__
 		prvUart[UartID].TxCacheBuf.Pos = 0;

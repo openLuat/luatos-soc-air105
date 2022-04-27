@@ -464,6 +464,14 @@ struct tm *mbedtls_platform_gmtime_r( const mbedtls_time_t *tt,
 	Date_UserDataStruct Date;
 	Time_UserDataStruct Time;
 	Tamp2UTC(*tt, &Date, &Time, 0);
+	tm_buf->tm_year = Date.Year - 1900;
+	tm_buf->tm_mon = Date.Mon - 1;
+	tm_buf->tm_mday = Date.Day;
+	tm_buf->tm_hour = Time.Hour;
+	tm_buf->tm_min = Time.Min;
+	tm_buf->tm_sec = Time.Sec;
+	return tm_buf;
+
 }
 
 #endif

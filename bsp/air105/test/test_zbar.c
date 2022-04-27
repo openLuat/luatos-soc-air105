@@ -490,7 +490,7 @@ static void zbar_task(void *pData)
 			memcpy(prvDecodeQR.TestBuf, string, len);
 			Core_VUartBufferTx(VIRTUAL_UART0, prvDecodeQR.TestBuf, len);
 			DBG("%.*s", len, string);
-			Core_PrintMemInfo();
+//			Core_PrintMemInfo();
 			Core_VHIDUploadData(USB_ID0, string, len);
 		}
 		zbar_destory(zbar);

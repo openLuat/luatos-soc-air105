@@ -49,7 +49,8 @@ int luat_i2c_close(int id) {
     return 0;
 }
 
-int luat_i2c_send(int id, int addr, void* buff, size_t len) {
+int luat_i2c_send(int id, int addr, void* buff, size_t len, uint8_t stop) {
+	if (!stop) I2C_SetTxStopFlag(id);
 	return I2C_BlockWrite(id, addr, (const uint8_t *)buff, len, 100, NULL, NULL);
     // I2C_Prepare(id, addr, 1, NULL, NULL);
     // I2C_MasterXfer(id, I2C_OP_WRITE, 0, buff, len, 20);
