@@ -166,7 +166,7 @@ extern unsigned int gLVFlashTime;
 #define LV_TICK_CUSTOM_INCLUDE  "app_interface.h"         /*Header for the system time function*/
 #define LV_TICK_CUSTOM_SYS_TIME_EXPR ((uint32_t)GetSysTickMS())     /*Expression evaluating to current system time in ms*/
 
-#define LV_NO_BLOCK_FLUSH
+#define LUAT_USE_LCD_CUSTOM_DRAW
 #define time(X)	luat_time(X)
 
 #define LV_USE_PERF_MONITOR     1
