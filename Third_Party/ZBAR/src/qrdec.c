@@ -3933,8 +3933,8 @@ int _zbar_qr_decode (qr_reader *reader,
     qr_svg_centers(centers, ncenters);
 
     if(ncenters >= 3) {
-        void *bin = qr_binarize(img->data, img->width, img->height);
-
+//		void *bin = qr_binarize(img->data, img->width, img->height);
+    	void *bin = qr_binarize2(img->data, img->width, img->height);
         qr_code_data_list qrlist;
         qr_code_data_list_init(&qrlist);
 
@@ -3945,7 +3945,7 @@ int _zbar_qr_decode (qr_reader *reader,
             nqrdata = qr_code_data_list_extract_text(&qrlist, iscn, img);
 
         qr_code_data_list_clear(&qrlist);
-        free(bin);
+//        free(bin);
     }
     svg_group_end();
 
