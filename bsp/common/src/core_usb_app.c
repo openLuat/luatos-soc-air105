@@ -388,7 +388,7 @@ static char prvCore_HIDCustomReportDescriptor[34] = {
 	    0x09, 0x00,                    // USAGE (Undefined)
 	    0xa1, 0x01,                    // COLLECTION (Application)
 	    0x09, 0x00,                    //   USAGE (Undefined)
-	    0x95, USB_HID_KB_DATA_CACHE,      //   REPORT_COUNT (32)
+	    0x95, USB_HID_KB_DATA_CACHE,      //   REPORT_COUNT (8)
 	    0x75, 0x08,      			   //   REPORT_SIZE (8)
 	    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
 	    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
@@ -396,7 +396,7 @@ static char prvCore_HIDCustomReportDescriptor[34] = {
 	    0x09, 0x00,                    //   USAGE (Undefined)
 	    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
 	    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-	    0x95, USB_HID_KB_DATA_CACHE,      //   REPORT_COUNT (32)
+	    0x95, USB_HID_KB_DATA_CACHE,      //   REPORT_COUNT (8)
 	    0x75, 0x08,                    //   REPORT_SIZE (8)
 	    0x91, 0x02,                    //   OUTPUT (Data,Var,Abs)
 	    0xc0                           // END_COLLECTION
@@ -1203,9 +1203,9 @@ void Core_VHIDSendRawData(uint8_t USB_ID, uint8_t *Data, uint32_t Len)
 	Virtual_HIDCtrlStruct *pVHID = &prvLuatOS_VirtualHID;
 	USB_StackEpIntOnOff(pVHID->USB_ID, pVHID->ToHostEpIndex, 0, 0);
 	OS_BufferWrite(&pVHID->TxCacheBuf, Data, Len);
-	if (Len % prvCore_HIDCustomReportDescriptor[28])
+	if (Len % prvCore_HIDEndpointDesc[1].wMaxPacketSize[0])
 	{
-		OS_BufferWrite(&pVHID->TxCacheBuf, zero, prvCore_HIDCustomReportDescriptor[28] - (Len % prvCore_HIDCustomReportDescriptor[28]));
+		OS_BufferWrite(&pVHID->TxCacheBuf, zero, prvCore_HIDEndpointDesc[1].wMaxPacketSize[0] - (Len % prvCore_HIDEndpointDesc[1].wMaxPacketSize[0]));
 	}
 	Buffer_StaticInit(&pVHID->TxBuf, pVHID->TxCacheBuf.Data, pVHID->TxCacheBuf.Pos);
 	OS_InitBuffer(&pVHID->TxCacheBuf, VIRTUAL_VHID_BUFFER_LEN);

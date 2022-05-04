@@ -1682,3 +1682,153 @@ uint32_t BSP_Swap32(uint32_t n)
 {
   return (uint32_t)PP_HTONL(n);
 }
+
+uint32_t utf8_to_unicode(uint8_t *string, uint32_t len, void *out, uint8_t is_only_16)
+{
+	uint32_t i = 0;
+	uint32_t result = 0;
+	uint8_t bit, n;
+	if (is_only_16)
+	{
+		uint16_t *buf = (uint16_t *)out;
+		while (i < len)
+		{
+			if (string[i] & 0x80)
+			{
+				if (!(string[i] & (1 << 5)))
+				{
+					n = 2;
+					buf[result] = string[i] & ((1 << 5) - 1);
+				}
+				else
+				{
+					buf[result] = string[i] & ((1 << 4) - 1);
+					n = 3;
+				}
+
+				for (bit = 1; bit < n; bit++)
+				{
+					buf[result] = (buf[result] << 6) | (string[i + bit] & 0x3f);
+				}
+				i += n;
+			}
+			else
+			{
+				buf[result] = string[i];
+				i++;
+			}
+			result++;
+		}
+	}
+	else
+	{
+		uint8_t table[7] = {0, 0, 0x1f, 0x0f, 0x07, 0x03, 0x01};
+		uint32_t *buf = (uint32_t *)out;
+		while (i < len)
+		{
+			if (string[i] & 0x80)
+			{
+				n = 7;
+				for (bit = 5; bit >= 1; bit--)
+				{
+					if (!(string[i] & (1 << bit)))
+					{
+						n -= bit;
+						break;
+					}
+				}
+				if (n >= 7)
+				{
+					return result;
+				}
+				buf[result] = string[i] & table[n];
+
+				for (bit = 1; bit < n; bit++)
+				{
+					buf[result] = (buf[result] << 6) | (string[i + bit] & 0x3f);
+				}
+				i += n;
+			}
+			else
+			{
+				buf[result] = string[i];
+				i++;
+			}
+			result++;
+		}
+	}
+	return result;
+}
+
+uint32_t unicode_to_utf8(void *in, uint32_t unicodelen, uint8_t *out, uint8_t is_only_16)
+{
+	uint32_t i = 0;
+	uint32_t result = 0;
+	uint8_t bit, n;
+	if (is_only_16)
+	{
+		uint16_t *buf = (uint16_t *)in;
+		while (i < unicodelen)
+		{
+			if (buf[i] <= 0x007f)
+			{
+				out[result] = buf[i];
+
+				result++;
+			}
+			else
+			{
+				if (buf[i] >> 12)
+				{
+					out[result + 2] = (buf[i] & 0x3f) | 0x80;
+					out[result + 1] = ((buf[i] >> 6) & 0x3f) | 0x80;
+					out[result] = 0xe0 | (buf[i] >> 12);
+					result += 3;
+				}
+				else
+				{
+					out[result + 1] = (buf[i] & 0x3f) | 0x80;
+					out[result] = 0xc0 | (buf[i] >> 6);
+					result += 2;
+				}
+			}
+			i++;
+		}
+
+	}
+	else
+	{
+		uint8_t table[7] = {0,0,0xc0,0xe0, 0xf0, 0xf8, 0xfc};
+		uint8_t pos[7] = {0,0,6,12,18,24,30};
+		uint32_t *buf = (uint32_t *)in;
+		while (i < unicodelen)
+		{
+			if (buf[i] <= 0x007f)
+			{
+				out[result] = buf[i];
+
+				result++;
+			}
+			else
+			{
+				n = 6;
+				for (bit = 1; bit < 6; bit++)
+				{
+					if (!(buf[i] >> ((bit + 1) * 6)))
+					{
+						n = bit + 1;
+						break;
+					}
+				}
+				out[result] = table[n] | (buf[i] >> pos[n]);
+				for (bit = 1; bit < n; bit++)
+				{
+					out[result + bit] = ( (buf[i] >> ((n - bit - 1) * 6)) & 0x3f) | 0x80;
+				}
+				result += n;
+			}
+			i++;
+		}
+	}
+	return result;
+}
