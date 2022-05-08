@@ -27,6 +27,52 @@
 #define __enable_irq()
 #endif
 
+void __FUNC_IN_RAM__ CACHE_EncryptInit(uint8_t *key, uint8_t *iv, uint32_t start, uint32_t end)
+{
+	int i;
+	uint32_t ckey[4];
+	uint32_t civ[4];
+	for(i = 0; i < 4; i++)
+	{
+		ckey[3 - i] = BytesGetBe32(key + i * 4);
+		civ[3 - i] = BytesGetBe32(iv + i * 4);
+	}
+
+	__disable_irq();
+	for (i = 0; i < 5000; i++)
+	{
+		if (CACHE->CACHE_CS & CACHE_IS_BUSY)	//cache正在从Flash中取指
+		{
+			continue;
+		}
+		break;
+	}
+	CACHE->CACHE_CS = 0x00000000 + CACHE_KEY_GEN;	//密钥生成模式
+
+	CACHE->CACHE_I3 = civ[3];
+	CACHE->CACHE_I2 = civ[2];
+	CACHE->CACHE_I1 = civ[1];
+	CACHE->CACHE_I0 = civ[0];
+	CACHE->CACHE_K3 = ckey[3];
+	CACHE->CACHE_K2 = ckey[2];
+	CACHE->CACHE_K1 = ckey[1];
+	CACHE->CACHE_K0 = ckey[0];
+
+	CACHE->CACHE_CS |= CACHE_KEY_GEN_START;
+	for (i = 0; i < 10000; i++)
+	{
+		if((CACHE->CACHE_CS & CACHE_KEY_GEN_START) == 0)
+		{
+		    break;
+		}
+	}
+	CACHE->CACHE_CS = 0;
+	CACHE->CACHE_SADDR = start;
+	CACHE->CACHE_EADDR = end;
+	CACHE->CACHE_CONFIG = 0xA5A50055;
+	__enable_irq();
+}
+
 void __FUNC_IN_RAM__ CACHE_CleanAll(CACHE_TypeDef *Cache)
 {
 	while (Cache->CACHE_CS & CACHE_IS_BUSY);

@@ -152,6 +152,7 @@ void __FUNC_IN_RAM__ GPIO_Config(uint32_t Pin, uint8_t IsInput, uint8_t InitValu
 		prvGPIO_Resource[Port].RegBase->OEN &= ~Pin;
 	}
 	prvGPIO_Resource[Port].ODBitMap &= ~Pin;
+//	DBG("%d, %x, %x, %x",Port, Pin, prvGPIO_Resource[Port].RegBase->OEN,prvGPIO_Resource[Port].RegBase->IODR);
 }
 
 void __FUNC_IN_RAM__ GPIO_ODConfig(uint32_t Pin, uint8_t InitValue)
@@ -164,13 +165,16 @@ void __FUNC_IN_RAM__ GPIO_ODConfig(uint32_t Pin, uint8_t InitValue)
 	if (InitValue)
 	{
 		prvGPIO_Resource[Port].RegBase->OEN |= Pin;
+		prvGPIO_Resource[Port].RegBase->PUE |= Pin;
 	}
 	else
 	{
+		prvGPIO_Resource[Port].RegBase->PUE &= ~Pin;
 		prvGPIO_Resource[Port].RegBase->BSRR |= (Pin << 16);
 		prvGPIO_Resource[Port].RegBase->OEN &= ~Pin;
 	}
 	prvGPIO_Resource[Port].ODBitMap |= Pin;
+//	DBG("%d, %x, %x, %x",Port, Pin, prvGPIO_Resource[Port].RegBase->OEN, prvGPIO_Resource[Port].RegBase->IODR);
 }
 
 void __FUNC_IN_RAM__ GPIO_PullConfig(uint32_t Pin, uint8_t IsPull, uint8_t IsUp)
@@ -271,10 +275,12 @@ void __FUNC_IN_RAM__ GPIO_Output(uint32_t Pin, uint8_t Level)
 	{
 		if (Level)
 		{
+			prvGPIO_Resource[Port].RegBase->PUE |= Pin;
 			prvGPIO_Resource[Port].RegBase->OEN |= Pin;
 		}
 		else
 		{
+			prvGPIO_Resource[Port].RegBase->PUE &= ~Pin;
 			prvGPIO_Resource[Port].RegBase->BSRR |= (Pin << 16);
 			prvGPIO_Resource[Port].RegBase->OEN &= ~Pin;
 		}
@@ -283,7 +289,7 @@ void __FUNC_IN_RAM__ GPIO_Output(uint32_t Pin, uint8_t Level)
 	{
 		prvGPIO_Resource[Port].RegBase->BSRR |= Level?Pin:(Pin << 16);
 	}
-
+//	DBG("%d, %x, %x, %x",Port, Pin, prvGPIO_Resource[Port].RegBase->OEN, prvGPIO_Resource[Port].RegBase->IODR);
 //	DBG("%d, %x, %x, %x",Port, Pin, prvGPIO_Resource[Port].RegBase, prvGPIO_Resource[Port].RegBase->IODR);
 }
 

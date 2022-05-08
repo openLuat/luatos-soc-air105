@@ -42,6 +42,10 @@ void RNG_GetData(uint32_t Buf[4])
 		TRNG->RNG_CSR = 0;
 		while(!(TRNG->RNG_CSR & TRNG_RNG_CSR_S128_TRNG0_Mask)){;}
 	}
+	if (TRNG->RNG_CSR & TRNG_RNG_CSR_ATTACK_TRNG0_Mask)
+	{
+		DBG_ERR("rng attacked !");
+	}
 	Buf[0] = TRNG->RNG_DATA[0];
 	Buf[1] = TRNG->RNG_DATA[0];
 	Buf[2] = TRNG->RNG_DATA[0];
