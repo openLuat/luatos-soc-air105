@@ -39,10 +39,7 @@ static int32_t prvAudio_DACCB(void *pData, void *pParam)
 	}
 	free(OldBlock->uPV.pu8);
 	free(OldBlock);
-	if (!pStream->IsPause)
-	{
-		pStream->CB(pStream, NULL);
-	}
+	pStream->CB(pStream, NULL);
 	if (llist_empty(&pStream->DataHead))
 	{
 		pStream->IsHardwareRun = 0;
@@ -203,7 +200,7 @@ static int32_t prvAudio_WriteDACRaw(Audio_StreamStruct *pStream, uint8_t *pByteD
 	Critical = OS_EnterCritical();
 	llist_add_tail(&Block->Node, &pStream->DataHead);
 	OS_ExitCritical(Critical);
-	if (!pStream->IsHardwareRun)
+	if (!pStream->IsHardwareRun && !pStream->IsPause)
 	{
 		return prvAudio_RunDAC(pStream);
 	}

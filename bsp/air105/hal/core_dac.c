@@ -56,7 +56,7 @@ static int32_t DAC_DMADoneCB(void *pData, void *pParam)
 
 static int32_t DAC_DummyCB(void *pData, void *pParam)
 {
-	DBG("!");
+//	DBG("!");
 	return 0;
 }
 
@@ -133,7 +133,8 @@ uint8_t DAC_CheckRun(uint8_t DAC_ID)
 
 void DAC_Stop(uint8_t DAC_ID)
 {
-
+	DMA_StopStream(prvDAC.DMATxStream);
+	prvDAC.Callback = DAC_DummyCB;
 	while (DAC->DAC_CR1 & (1 << 29));
 	DAC_ForceStop(DAC_ID);
 }
@@ -144,5 +145,6 @@ void DAC_ForceStop(uint8_t DAC_ID)
 	DAC->DAC_CR1 |= (1 << 4);
 	DAC->DAC_CR1 &= ~0x04;
 	PM_SetHardwareRunFlag(PM_HW_DAC_0 + DAC_ID, 0);
+	prvDAC.IsBusy = 0;
 //	PM_SetHardwareRunFlag(PM_HW_DAC_0, 0);
 }

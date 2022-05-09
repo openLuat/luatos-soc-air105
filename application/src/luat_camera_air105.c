@@ -49,8 +49,7 @@ typedef struct
 	uint16_t Width;
 	uint16_t Height;
 	uint8_t DataBytes;
-	uint8_t IsDecode;
-	uint8_t BufferFull;
+	uint8_t IsDecoding;
 	uint8_t JPEGQuality;
 	uint8_t CaptureMode;
 	uint8_t CaptureWait;
@@ -122,7 +121,7 @@ static int32_t Camera_SaveJPEGDone(void *pData, void *pParam)
 }
 
 void DecodeQR_CBDataFun(uint8_t *Data, uint32_t Len){
-    prvCamera.IsDecode = 0;
+    prvCamera.IsDecoding = 0;
     rtos_msg_t msg = {0};
 	if (Data){
         msg.handler = l_camera_handler;
@@ -231,64 +230,32 @@ static int32_t prvCamera_DCMICB(void *pData, void *pParam){
         Buffer_Struct *RxBuf = (Buffer_Struct *)pData;
         if (!pData)
         {
-            if (!prvCamera.DataCache)
+            if (!prvCamera.DataCache && !prvCamera.IsDecoding)
             {
                 prvCamera.DataCache = malloc(prvCamera.TotalSize);
-                prvCamera.BufferFull = 0;
             }
-            else
+            else if (prvCamera.DataCache)
             {
-                if (prvCamera.TotalSize != prvCamera.CurSize)
-                {
-    //				DBG_ERR("%d, %d", prvCamera.CurSize, prvCamera.TotalSize);
-                }
-                else if (!prvCamera.IsDecode)
-                {
-                    prvCamera.IsDecode = 1;
-                    if (draw_lcd)
-                        Camera_DrawLcd(prvCamera.DataCache, zbar_scan);
-                    Core_DecodeQR(prvCamera.DataCache, prvCamera.Width, prvCamera.Height,  DecodeQR_CBDataFun);
-                    prvCamera.DataCache = malloc(prvCamera.TotalSize);
-                    prvCamera.BufferFull = 0;
-                }
-                else
-                {
-                    prvCamera.BufferFull = 1;
-                }
+            	if (draw_lcd) {
+            	    Camera_DrawLcd(prvCamera.DataCache, zbar_scan);
+            	}
+            	Core_DecodeQR(prvCamera.DataCache, prvCamera.Width, prvCamera.Height,  DecodeQR_CBDataFun);
+            	prvCamera.DataCache = NULL;
+            	prvCamera.IsDecoding = 1;
             }
             prvCamera.CurSize = 0;
             return 0;
         }
         if (prvCamera.DataCache)
         {
-            if (prvCamera.BufferFull)
-            {
-                if (!prvCamera.IsDecode){
-                    prvCamera.IsDecode = 1;
-                    if (draw_lcd)
-                        Camera_DrawLcd(prvCamera.DataCache, zbar_scan);
-                    Core_DecodeQR(prvCamera.DataCache, prvCamera.Width, prvCamera.Height,  DecodeQR_CBDataFun);
-                    prvCamera.DataCache = malloc(prvCamera.TotalSize);
-                    prvCamera.BufferFull = 0;
-                    prvCamera.CurSize = 0;
-                }else{
-                    return 0;
-                }
+            memcpy(&prvCamera.DataCache[prvCamera.CurSize], RxBuf->Data, RxBuf->MaxLen * 4);
+            prvCamera.CurSize += RxBuf->MaxLen * 4;
+            if (prvCamera.TotalSize < prvCamera.CurSize){
+                DBG_ERR("%d,%d", prvCamera.TotalSize, prvCamera.CurSize);
+                prvCamera.CurSize = 0;
             }
         }
-        else
-        {
-            prvCamera.DataCache = malloc(prvCamera.TotalSize);
-            prvCamera.BufferFull = 0;
-            prvCamera.CurSize = 0;
-            prvCamera.IsDecode = 0;
-        }
-        memcpy(&prvCamera.DataCache[prvCamera.CurSize], RxBuf->Data, RxBuf->MaxLen * 4);
-        prvCamera.CurSize += RxBuf->MaxLen * 4;
-        if (prvCamera.TotalSize < prvCamera.CurSize){
-            DBG_ERR("%d,%d", prvCamera.TotalSize, prvCamera.CurSize);
-            prvCamera.CurSize = 0;
-        }
+
         return 0;
     }
 }
@@ -318,8 +285,18 @@ int luat_camera_init(luat_camera_conf_t *conf){
     memcpy(&camera_conf, conf, sizeof(luat_camera_conf_t));
     lcd_conf = conf->lcd_conf;
     draw_lcd = conf->draw_lcd;
-    prvCamera.Width = lcd_conf->w;
-    prvCamera.Height = lcd_conf->h;
+    if (lcd_conf)
+    {
+        prvCamera.Width = lcd_conf->w;
+        prvCamera.Height = lcd_conf->h;
+    }
+    else
+    {
+        prvCamera.Width = camera_conf.sensor_width;
+        prvCamera.Height = camera_conf.sensor_height;
+        draw_lcd = 0;
+    }
+
     if (conf->zbar_scan == 1){
         prvCamera.DataCache = NULL;
 
@@ -361,13 +338,29 @@ int luat_camera_start(int id)
 		free(prvCamera.DataCache);
 	}
     if (camera_conf.zbar_scan == 0){
-        DCMI_SetCROPConfig(1, (camera_conf.sensor_height-lcd_conf->h)/2, ((camera_conf.sensor_width-lcd_conf->w)/2)*2, lcd_conf->h - 1, 2*lcd_conf->w - 1);
-        DCMI_CaptureSwitch(1, 0, lcd_conf->w, lcd_conf->h, 2, &prvCamera.drawVLen);
+    	if (lcd_conf)
+    	{
+            DCMI_SetCROPConfig(1, (camera_conf.sensor_height-lcd_conf->h)/2, ((camera_conf.sensor_width-lcd_conf->w)/2)*2, lcd_conf->h - 1, 2*lcd_conf->w - 1);
+            DCMI_CaptureSwitch(1, 0, lcd_conf->w, lcd_conf->h, 2, &prvCamera.drawVLen);
+    	}
+    	else
+    	{
+    		DCMI_SetCROPConfig(0, 0, 0, 0, 0);
+    		DCMI_CaptureSwitch(1, 0, camera_conf.sensor_width, camera_conf.sensor_height, 2, &prvCamera.drawVLen);
+    	}
         prvCamera.CaptureMode = 0;
         prvCamera.VLen = 0;
     }else if(camera_conf.zbar_scan == 1){
-        DCMI_SetCROPConfig(1, (camera_conf.sensor_height-prvCamera.Height)/2, ((camera_conf.sensor_width-prvCamera.Width)/2)*prvCamera.DataBytes, prvCamera.Height - 1, prvCamera.DataBytes*prvCamera.Width - 1);
-        DCMI_CaptureSwitch(1, 0,lcd_conf->w, lcd_conf->h, prvCamera.DataBytes, &prvCamera.drawVLen);
+    	if (lcd_conf)
+    	{
+    		DCMI_SetCROPConfig(1, (camera_conf.sensor_height-prvCamera.Height)/2, ((camera_conf.sensor_width-prvCamera.Width)/2)*prvCamera.DataBytes, prvCamera.Height - 1, prvCamera.DataBytes*prvCamera.Width - 1);
+    		DCMI_CaptureSwitch(1, 0,lcd_conf->w, lcd_conf->h, prvCamera.DataBytes, &prvCamera.drawVLen);
+    	}
+    	else
+    	{
+    		DCMI_SetCROPConfig(0, 0, 0, 0, 0);
+    		DCMI_CaptureSwitch(1, 0, camera_conf.sensor_width, camera_conf.sensor_height, prvCamera.DataBytes, &prvCamera.drawVLen);
+    	}
     }
     prvCamera.NewDataFlag = 0;
     Timer_StartMS(prvCamera.CheckTimer, 1000, 1);
