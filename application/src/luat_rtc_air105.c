@@ -40,6 +40,10 @@ int luat_rtc_set(struct tm *tblock) {
     return 0;
 }
 
+void luat_rtc_set_tamp32(uint32_t tamp) {
+	RTC_SetUTC(tamp, 1);
+}
+
 int luat_rtc_get(struct tm *tblock) {
 	Date_UserDataStruct Date;
 	Time_UserDataStruct Time;

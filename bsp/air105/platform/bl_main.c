@@ -590,7 +590,7 @@ OTA_END:
 
 void SystemInit(void)
 {
-	SYSCTRL->LDO25_CR = (1 << 5);
+	SYSCTRL->LDO25_CR = (1 << 4);
 #ifdef __RUN_IN_RAM__
 	memcpy(__SRAM_BASE_ADDR__, &__isr_start_address, 1024);
 	SCB->VTOR = __SRAM_BASE_ADDR__;
@@ -649,7 +649,7 @@ LOCAL_UPGRADE_START:
 	Remote_Upgrade();
 //	__disable_irq();
 	BL_LockFlash();
-
+	BL_EncryptCheck();
 	memcpy(AppInfo, __FLASH_APP_START_ADDR__, sizeof(AppInfo));
 	if (__APP_START_MAGIC__ == AppInfo[0])
 	{
@@ -658,7 +658,7 @@ LOCAL_UPGRADE_START:
 #else
 		DBG_INFO("bootloader build release %s %s!", __DATE__, __TIME__, QSPI->DEVICE_PARA);
 #endif
-		Jump_AppRun(__FLASH_APP_START_ADDR__ + AppInfo[1]);
+		Jump_AppRun(AppInfo[1]);
 	}
 	else
 	{

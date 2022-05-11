@@ -29,6 +29,7 @@ void RTC_SetDateTime(Date_UserDataStruct *pDate, Time_UserDataStruct *pTime, uin
 void RTC_GetDateTime(Date_UserDataStruct *pDate, Time_UserDataStruct *pTime);
 
 uint64_t RTC_GetUTC(void);
+void RTC_SetUTC(uint32_t Tamp, uint8_t isForce);
 
 void RTC_SetAlarm(uint32_t TimeSecond, CBFuncEx_t CB, void *pParam);
 #endif

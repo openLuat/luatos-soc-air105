@@ -105,11 +105,10 @@ void RTC_GlobalInit(void)
 
 }
 
-void RTC_SetDateTime(Date_UserDataStruct *pDate, Time_UserDataStruct *pTime, uint8_t isForce)
+void RTC_SetUTC(uint32_t Tamp, uint8_t isForce)
 {
-	uint64_t Tamp = UTC2Tamp(pDate, pTime);
 	uint32_t curTime;
-	uint32_t newTime = (uint32_t)Tamp;
+	uint32_t newTime = Tamp;
 	while (!(RTC->RTC_CS & RTC_CS_READY)) {;}
 	if (isForce)
 	{
@@ -130,6 +129,11 @@ void RTC_SetDateTime(Date_UserDataStruct *pDate, Time_UserDataStruct *pTime, uin
 			RTC->RTC_REF = newTime;
 		}
 	}
+}
+
+void RTC_SetDateTime(Date_UserDataStruct *pDate, Time_UserDataStruct *pTime, uint8_t isForce)
+{
+	RTC_SetUTC((uint32_t)UTC2Tamp(pDate, pTime), isForce);
 }
 
 void RTC_GetDateTime(Date_UserDataStruct *pDate, Time_UserDataStruct *pTime)

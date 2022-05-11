@@ -32,22 +32,20 @@ extern const uint32_t __init_fun_array_start;
 extern const uint32_t __init_fun_array_end;
 extern const uint32_t __task_fun_array_start;
 extern const uint32_t __task_fun_array_end;
+#define SCRIPT_LUADB_START_ADDR			(__FLASH_BASE_ADDR__ + __CORE_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__)
 const uint32_t __attribute__((section (".app_info")))
-    g_CAppInfo[256] =
+    g_CAppInfo[8] =
 {
 	__APP_START_MAGIC__,
-	sizeof(g_CAppInfo),
+	&__isr_start_address,
 	0,//此处后期放入luatos固件版本
+	0,
+	SCRIPT_LUADB_START_ADDR,
+	SCRIPT_LUADB_START_ADDR + __SCRIPT_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__,
+	0,
 	0,
 };
 
-//enum
-//{
-//	USER_EVENT_TEST_START = USER_EVENT_ID_START+1,
-//	USER_EVENT_SPI_DONE,
-//	USER_EVENT_I2C_DONE,
-//	USER_EVENT_HWTIMER_DONE,
-//};
 static void prvSystemReserCtrl(void)
 {
 #ifdef __DEBUG__

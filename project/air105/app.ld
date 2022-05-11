@@ -22,9 +22,10 @@ SECTIONS
     /* The startup code into "FLASH" Rom type memory */
     .app_info :
     {
-        . = ALIGN(512);
+        . = ALIGN(32);
         KEEP(*(.app_info)) /* Startup code */
-        . = ALIGN(512);
+        KEEP(*(.safe_code)) /* Startup code */
+        . = ALIGN(1024);
     } >FLASH
     .isr_vector :
     {

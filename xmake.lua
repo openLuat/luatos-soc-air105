@@ -112,7 +112,7 @@ target("bootloader.elf")
     add_includedirs("bsp/device/include",{public = true})
     add_files("bsp/device/src/*.c",{public = true})
 
-    add_ldflags("-Wl,-Map=./build/out/bootloader.map","-Wl,-T$(projectdir)/project/air105/bl.ld",{force = true})
+    add_ldflags("-Wl,--start-group ./lib/libencrypt.a -Wl,--end-group -Wl,-Map=./build/out/bootloader.map","-Wl,-T$(projectdir)/project/air105/bl.ld",{force = true})
 
 	after_build(function(target)
         sdk_dir = target:toolchains()[1]:sdkdir().."/"
@@ -157,7 +157,6 @@ target("lvgl")
     add_includedirs(luatos.."components/lvgl/font",{public = true})
     add_includedirs(luatos.."luat/packages/u8g2",{public = true})
     add_includedirs(luatos.."components/qrcode",{public = true})
-
 
     set_targetdir("$(buildir)/lib")
 target_end()
@@ -316,6 +315,9 @@ if with_luatos then
     add_files(luatos.."components/zlib/*.c")
     add_includedirs(luatos.."components/zlib")
 
+    add_files(luatos.."components/mlx90640-library/*.c")
+    add_includedirs(luatos.."components/mlx90640-library")
+
     add_files(luatos.."components/camera/*.c")
     add_includedirs(luatos.."components/camera")
 
@@ -365,7 +367,7 @@ end
     -- add_files(luatos.."components/nes/*.cpp",luatos.."components/nes/luat/*.c",{public = true})
     -- add_includedirs(luatos.."components/nes",luatos.."components/nes/luat",{public = true})
 
-    add_ldflags("-Wl,--whole-archive -Wl,--start-group ./lib/libgt.a -Wl,--end-group -Wl,--no-whole-archive","-Wl,-Map=./build/out/app.map","-Wl,-T$(projectdir)/project/air105/app.ld",{force = true})
+    add_ldflags("-Wl,--whole-archive -Wl,--start-group ./lib/libgt.a ./lib/libencrypt.a -Wl,--end-group -Wl,--no-whole-archive","-Wl,-Map=./build/out/app.map","-Wl,-T$(projectdir)/project/air105/app.ld",{force = true})
 
 	after_build(function(target)
         sdk_dir = target:toolchains()[1]:sdkdir().."/"
