@@ -379,6 +379,11 @@ end
         -- os.run(sdk_dir .. "bin/arm-none-eabi-size $(buildir)/out/app.elf > $(buildir)/out/app.size")
         io.cat("$(buildir)/out/app.size")
 
+        -- os.tryrm("./key.bin")
+        -- os.exec("./project/air105/soc_download.exe make_key key.bin "..os.time())
+        -- local KEY_DATA = io.readfile("./key.bin")
+        -- os.exec("./project/air105/soc_download.exe encrypt_bin $(buildir)/out/app.bin 1 "..KEY_DATA.." \"20\" 992")
+
         import("lib.detect.find_file")
         local path7z = nil
         if is_plat("windows") then

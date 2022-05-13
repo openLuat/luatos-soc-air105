@@ -257,6 +257,35 @@ int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint
 	}
 }
 
+void luat_lcd_draw_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, luat_color_t* color, uint8_t last_flush)
+{
+	LCD_DrawStruct draw;
+	if (conf->port == LUAT_LCD_SPI_DEVICE){
+		luat_spi_device_t* spi_dev = (luat_spi_device_t*)conf->lcd_spi_device;
+		int spi_id = spi_dev->bus_id;
+	    uint8_t spi_mode = SPI_MODE_0;
+	    if(spi_dev->spi_config.CPHA&&spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_3;
+	    else if(spi_dev->spi_config.CPOL)spi_mode = SPI_MODE_2;
+	    else if(spi_dev->spi_config.CPHA)spi_mode = SPI_MODE_1;
+	    draw.DCDelay = conf->dc_delay_us;
+	    draw.Mode = spi_mode;
+	    draw.Speed = spi_dev->spi_config.bandrate;
+	    draw.SpiID = luat_spi[spi_id].id;
+	    draw.CSPin = spi_dev->spi_config.cs;
+	    draw.DCPin = conf->pin_dc;
+	    draw.x1 = x1;
+	    draw.x2 = x2;
+	    draw.y1 = y1;
+	    draw.y2 = y2;
+	    draw.xoffset = conf->xoffset;
+	    draw.yoffset = conf->yoffset;
+	    draw.Size = (draw.x2 - draw.x1 + 1) * (draw.y2 - draw.y1 + 1) * 2;
+	    draw.ColorMode = COLOR_MODE_RGB_565;
+	    draw.Data = color;
+	    Core_LCDDrawBlock(&draw);
+	}
+}
+
 #ifdef LUAT_USE_LCD_CUSTOM_DRAW
 int luat_lcd_flush(luat_lcd_conf_t* conf) {
     if (conf->buff == NULL) {
@@ -267,6 +296,19 @@ int luat_lcd_flush(luat_lcd_conf_t* conf) {
         // 没有需要刷新的内容,直接跳过
         //LLOGD("luat_lcd_flush no need");
         return 0;
+    }
+    if (conf->is_init_done) {
+    	luat_lcd_draw_no_block(conf, 0, conf->flush_y_min, conf->w - 1, conf->flush_y_max, &conf->buff[conf->flush_y_min * conf->w], 0);
+    }
+    else {
+        uint32_t size = conf->w * (conf->flush_y_max - conf->flush_y_min + 1) * 2;
+        luat_lcd_set_address(conf, 0, conf->flush_y_min, conf->w - 1, conf->flush_y_max);
+        const char* tmp = (const char*)(conf->buff + conf->flush_y_min * conf->w);
+    	if (conf->port == LUAT_LCD_SPI_DEVICE){
+    		luat_spi_device_send((luat_spi_device_t*)(conf->lcd_spi_device), tmp, size);
+    	}else{
+    		luat_spi_send(conf->port, tmp, size);
+    	}
     }
     // 重置为不需要刷新的状态
     conf->flush_y_max = 0;
