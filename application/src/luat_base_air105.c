@@ -234,7 +234,7 @@ void luat_os_reboot(int code) {
 }
 
 const char* luat_os_bsp(void) {
-    return "air105";
+    return "AIR105";
 }
 
 void vConfigureTimerForRunTimeStats( void ) {}
