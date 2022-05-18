@@ -21,7 +21,7 @@
 
 #include "luat_base.h"
 #include "luat_mcu.h"
-
+#include "luat_spi.h"
 #include "app_interface.h"
 
 #include "FreeRTOS.h"
@@ -82,4 +82,81 @@ void luat_mcu_set_clk_source(uint8_t source_main, uint8_t source_32k, uint32_t d
 		PM_Set32KSource(1);
 		break;
 	}
+}
+
+int luat_mcu_fota_init(uint32_t start_address, uint32_t len, luat_spi_device_t* spi_device, const char *path, uint32_t pathlen)
+{
+	PV_Union uPV;
+	CoreUpgrade_HeadStruct *Head = luat_heap_malloc(sizeof(CoreUpgrade_HeadStruct));
+	memset(Head, 0, sizeof(CoreUpgrade_HeadStruct));
+	Head->MaigcNum = __APP_START_MAGIC__;
+	uPV.u8[0] = CORE_OTA_MODE_FULL;
+	Head->DataStartAddress = start_address;
+	if (path && pathlen)
+	{
+		uPV.u8[1] = CORE_OTA_IN_FILE;
+		memcpy(Head->FilePath, path, pathlen);
+	}
+	else
+	{
+		if (start_address > __FLASH_BASE_ADDR__)
+		{
+			uPV.u8[1] = CORE_OTA_IN_FLASH;
+		}
+		else
+		{
+			uPV.u8[1] = CORE_OTA_OUT_SPI_FLASH;
+			uPV.u8[2] = luat_spi_get_hw_bus(spi_device->bus_id);
+			Head->Param1 = uPV.u32;
+
+			switch(luat_spi_get_hw_bus(spi_device->bus_id))
+			{
+			case HSPI_ID0:
+				uPV.u8[0] = GPIOC_13;
+				uPV.u8[1] = GPIOC_12;
+				uPV.u8[2] = GPIOC_15;
+				break;
+			case SPI_ID0:
+				uPV.u8[0] = GPIOB_14;
+				uPV.u8[1] = GPIOB_15;
+				uPV.u8[2] = GPIOB_12;
+				break;
+			case SPI_ID1:
+				uPV.u8[0] = GPIOA_08;
+				uPV.u8[1] = GPIOA_09;
+				uPV.u8[2] = GPIOA_06;
+				break;
+			case SPI_ID2:
+				uPV.u8[0] = GPIOB_04;
+				uPV.u8[1] = GPIOB_05;
+				uPV.u8[2] = GPIOB_02;
+				break;
+
+			}
+			uPV.u8[3] = spi_device->spi_config.cs;
+			Head->Param2 = uPV.u32;
+		}
+	}
+	return Core_OTAInit(Head, len);
+}
+
+int luat_mcu_fota_write(uint8_t *data, uint32_t len)
+{
+	return Core_OTAWrite(data, len);
+}
+
+int luat_mcu_fota_done(void)
+{
+	return Core_OTACheckDone();
+}
+
+int luat_mcu_fota_end(uint8_t is_ok)
+{
+	Core_OTAEnd(is_ok);
+	return 0;
+}
+
+uint8_t luat_mcu_fota_wait_ready(void)
+{
+	return Core_OTACheckReadyStart();
 }

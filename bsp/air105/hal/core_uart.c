@@ -27,7 +27,7 @@
 //static Buffer_Struct prvUartTxBuffer[UART_MAX];
 #define RX_BUF_LOW	(1024)
 #define RX_BUF_INIT	(2048)
-#define RX_BUF_HIGH	(4096)
+#define RX_BUF_HIGH	(8192)
 #define RX_BUF_BAND (3)
 #define TX_BUF_INIT	(2048)
 //#define __RX_USE_DMA__
@@ -55,6 +55,7 @@ typedef struct
 	uint8_t RxCacheMode;
 	uint8_t DMATxStream;
 	uint8_t DMARxStream;
+//	uint8_t IsHighSpeed;
 }Uart_ResourceStruct;
 
 static Uart_ResourceStruct prvUart[UART_MAX] = {
@@ -258,8 +259,15 @@ void Uart_BaseInit(uint8_t UartID, uint32_t BaudRate, uint8_t IsRxCacheEnable, u
 #ifdef __BUILD_OS__
     if (IsRxCacheEnable)
     {
-    	OS_ReInitBuffer(&prvUart[UartID].RxBuf, RX_BUF_INIT);
-    	OS_ReInitBuffer(&prvUart[UartID].TxCacheBuf, TX_BUF_INIT);
+    	if (BaudRate >= 1000000)
+    	{
+    		OS_ReInitBuffer(&prvUart[UartID].RxBuf, RX_BUF_HIGH);
+    	}
+    	else
+    	{
+    		OS_ReInitBuffer(&prvUart[UartID].RxBuf, RX_BUF_INIT);
+    	}
+
 #ifdef __RX_USE_DMA__
     	for(i = 0; i < RX_BUF_BAND; i++)
     	{
@@ -496,6 +504,20 @@ static uint32_t prvUart_FifoRead(uint8_t UartID, uint8_t *Data, uint8_t Len)
 
 }
 
+static void Uart_CacheRead(uint8_t UartID, uint8_t Len)
+{
+	uint8_t Flag = 0;
+	if ((prvUart[UartID].RxBuf.Pos + 32) > prvUart[UartID].RxBuf.MaxLen)
+	{
+		prvUart[UartID].RxBuf.Pos += prvUart_FifoRead(UartID, &prvUart[UartID].RxBuf.Data[prvUart[UartID].RxBuf.Pos], Len);
+		OS_ReSizeBuffer(&prvUart[UartID].RxBuf, prvUart[UartID].RxBuf.MaxLen * 2);
+	}
+	else
+	{
+		prvUart[UartID].RxBuf.Pos += prvUart_FifoRead(UartID, &prvUart[UartID].RxBuf.Data[prvUart[UartID].RxBuf.Pos], Len);
+	}
+}
+
 uint32_t Uart_FifoRead(uint8_t UartID, uint8_t *Data)
 {
 	uint32_t i = 0;
@@ -628,15 +650,7 @@ static void prvUart_IrqHandle(int32_t IrqLine, void *pData)
 #ifdef __BUILD_OS__
 			if (prvUart[UartID].RxCacheMode)
 			{
-				if ((prvUart[UartID].RxBuf.Pos + 32) < prvUart[UartID].RxBuf.MaxLen)
-				{
-					prvUart[UartID].RxBuf.Pos += prvUart_FifoRead(UartID, &prvUart[UartID].RxBuf.Data[prvUart[UartID].RxBuf.Pos], 7);
-				}
-				else
-				{
-					OS_ReSizeBuffer(&prvUart[UartID].RxBuf, prvUart[UartID].RxBuf.MaxLen * 2);
-					prvUart[UartID].RxBuf.Pos += prvUart_FifoRead(UartID, &prvUart[UartID].RxBuf.Data[prvUart[UartID].RxBuf.Pos], 7);
-				}
+				Uart_CacheRead(UartID, 8);
 				break;
 			}
 #endif
@@ -689,15 +703,7 @@ static void prvUart_IrqHandle(int32_t IrqLine, void *pData)
 #else
 		if (prvUart[UartID].RxCacheMode)
 		{
-			if ((prvUart[UartID].RxBuf.Pos + 32) < prvUart[UartID].RxBuf.MaxLen)
-			{
-				prvUart[UartID].RxBuf.Pos += prvUart_FifoRead(UartID, &prvUart[UartID].RxBuf.Data[prvUart[UartID].RxBuf.Pos], 32);
-			}
-			else
-			{
-				OS_ReSizeBuffer(&prvUart[UartID].RxBuf, prvUart[UartID].RxBuf.MaxLen * 2);
-				prvUart[UartID].RxBuf.Pos += prvUart_FifoRead(UartID, &prvUart[UartID].RxBuf.Data[prvUart[UartID].RxBuf.Pos], 32);
-			}
+			Uart_CacheRead(UartID, 33);
 		}
 #endif
 #endif

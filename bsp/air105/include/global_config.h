@@ -44,4 +44,6 @@
 #else
 #define __FUNC_IN_RAM__	__attribute__((section (".RamFunc")))
 #endif
+#define __BL_VERSION__	(1)
+#define __CORE_VERSION__	(8)
 #endif

@@ -42,6 +42,28 @@ typedef struct
 
 typedef struct
 {
+	uint32_t MaigcNum; //升级包标识，标识不对直接抛弃
+	uint32_t CRC32;		//后续字节的CRC32校验
+	uint32_t MainVersion;//目标的底层版本，升级成功的话就是这个版本号了
+	uint32_t AppVersion;//整包的版本号
+	uint32_t STDVersion;//允许升级的底层版本号
+	uint32_t DataLen;//升级包大小
+	uint32_t DataCRC32;//升级包整包数据的CRC32，这里验证传输的准确性
+}CoreUpgrade_FileHeadStruct;
+
+typedef struct
+{
+	uint32_t MaigcNum; //升级包标识，标识不对直接抛弃
+	uint32_t TotalLen;	//解压前占据的空间
+	uint32_t DataLen;	//解压后占据的空间，如果和TotalLen一样，则表示未启用压缩，不需要解压，也没有压缩参数
+						//如果是0，则表示是差分升级
+						//其他表示是整包升级，数据包经过了lzma压缩
+	uint32_t DataCRC32;	//解压后的数据的CRC32，这里验证烧录的正确性
+	uint32_t StartAddress;	//烧写的起始地址
+}CoreUpgrade_SectorStruct;
+
+typedef struct
+{
 	uint32_t param_max_num;
 	uint32_t param_max_len;
 	uint32_t param_num;

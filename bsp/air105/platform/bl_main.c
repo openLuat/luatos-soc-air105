@@ -49,10 +49,10 @@ typedef struct
 	uint32_t NextLzmaDataLen;
 	uint8_t NextLzmaHeader[LZMA_PROPS_SIZE + 8];
 	uint32_t NextLzmaHeaderSize;
-	uint32_t CurSPIFlashStart;
-	uint32_t NextSPIFlashStart;
-	uint8_t *CurSPIFlashData;
-	uint8_t *NextSPIFlashData;
+//	uint32_t CurSPIFlashStart;
+//	uint32_t NextSPIFlashStart;
+//	uint8_t *CurSPIFlashData;
+//	uint8_t *NextSPIFlashData;
 	uint8_t State;
 	uint8_t ForceOut;
 	uint8_t SPIFlashReadDone;
@@ -114,11 +114,6 @@ void BL_LockFlash(void)
 static void BL_OTAErase(uint32_t Address, uint32_t Len)
 {
 	Flash_Erase(Address, Len);
-}
-
-static void BL_OTAWrite(uint32_t Address, uint8_t *Data, uint32_t Len)
-{
-	Flash_Program(Address, Data, Len);
 }
 
 void FileSystem_Init(void)
@@ -229,6 +224,7 @@ void Local_Upgrade(void)
 			}
 			break;
 		case FW_UPGRADE_STATE_START:
+			BL_OTAErase(__FLASH_OTA_INFO_ADDR__, __FLASH_SECTOR_SIZE__);
 			AllToTick = GetSysTick() + FW_UPGRADE_ALL_TIME * CORE_TICK_1MS;
 			prvBL.State = FW_UPGRADE_STATE_RUN;
 			uint8_t *CurLzmaData = NULL;
@@ -349,42 +345,15 @@ static int32_t BL_OTAReadDataInSpiFlash(void *pData, void *pParam)
 {
 	uint32_t StartAddress = (uint32_t)pData;
 	Buffer_Struct *pBuffer = (Buffer_Struct *)pParam;
-//	DBG_INFO("%x,%x,%x,%x,%x", StartAddress, prvBL.CurSPIFlashStart, prvBL.NextSPIFlashStart, prvBL.CurSPIFlashData, prvBL.NextSPIFlashData);
-	if (prvBL.CurSPIFlashData)
+	while(!SPIFlash_WaitOpDone(&prvSPIFlash))
 	{
-		if (StartAddress >= prvBL.NextSPIFlashStart)
-		{
-			if (!prvBL.SPIFlashReadDone)
-			{
-				while(!SPIFlash_WaitOpDone(&prvSPIFlash))
-				{
-					;
-				}
-				prvBL.SPIFlashReadDone = 1;
-			}
-			free(prvBL.CurSPIFlashData);
-			prvBL.CurSPIFlashStart = prvBL.NextSPIFlashStart;
-			prvBL.CurSPIFlashData = prvBL.NextSPIFlashData;
-			prvBL.NextSPIFlashData = malloc(FW_OTA_FLASH_BUF_LEN);
-			prvBL.NextSPIFlashStart += FW_OTA_FLASH_BUF_LEN;
-			SPIFlash_Read(&prvSPIFlash, prvBL.NextSPIFlashStart, prvBL.NextSPIFlashData, FW_OTA_FLASH_BUF_LEN, 1);
-			prvBL.SPIFlashReadDone = 0;
-		}
-
+		;
 	}
-	else
+	SPIFlash_Read(&prvSPIFlash, StartAddress, pBuffer->Data, pBuffer->Pos, 1);
+	while(!SPIFlash_WaitOpDone(&prvSPIFlash))
 	{
-		prvBL.CurSPIFlashData = malloc(FW_OTA_FLASH_BUF_LEN);
-		prvBL.NextSPIFlashData = malloc(FW_OTA_FLASH_BUF_LEN);
-		SPIFlash_Read(&prvSPIFlash, prvBL.CurSPIFlashStart, prvBL.CurSPIFlashData, FW_OTA_FLASH_BUF_LEN, 1);
-		while(!SPIFlash_WaitOpDone(&prvSPIFlash))
-		{
-			;
-		}
-		SPIFlash_Read(&prvSPIFlash, prvBL.NextSPIFlashStart, prvBL.NextSPIFlashData, FW_OTA_FLASH_BUF_LEN, 1);
-		prvBL.SPIFlashReadDone = 0;
+		;
 	}
-	memcpy(pBuffer->Data, prvBL.CurSPIFlashData, pBuffer->Pos);
 	return 0;
 }
 
@@ -451,16 +420,21 @@ static void BL_SpiInit(uint8_t SpiID, uint8_t *Pin)
 
 void Remote_Upgrade(void)
 {
-
+	CoreUpgrade_SectorStruct Sector;
 	CoreUpgrade_HeadStruct Head;
 	Buffer_Struct ReadBuffer;
 	CBFuncEx_t pReadFunc;
 	PV_Union uPV, uPin;
 	uint32_t Check;
-	uint32_t DoneLen;
+	uint32_t DoneLen, ReadLen;
+	volatile uint32_t ProgramPos, FlashPos;
 	int32_t Result;
 	uint8_t Reboot = 0;
+	uint32_t LzmaDataLen;
+	uint8_t LzmaHead[LZMA_PROPS_SIZE + 8];
+	uint8_t LzmaHeadLen;
 	OS_InitBuffer(&ReadBuffer, FW_OTA_FLASH_BUF_LEN);
+
 	memcpy(&Head, __FLASH_OTA_INFO_ADDR__, sizeof(CoreUpgrade_HeadStruct));
 	Check = CRC32_Cal(CRC32_Table, &Head.Param1, sizeof(Head) - 8, 0xffffffff);
 	if (Head.MaigcNum != __APP_START_MAGIC__)
@@ -498,10 +472,6 @@ void Remote_Upgrade(void)
 		SPI_DMATxInit(prvSPIFlash.SpiID, FLASH_SPI_TX_DMA_STREAM, 0);
 		SPI_DMARxInit(prvSPIFlash.SpiID, FLASH_SPI_RX_DMA_STREAM, 0);
 		SPIFlash_Init(&prvSPIFlash, NULL);
-		prvBL.CurSPIFlashStart = Head.DataStartAddress;
-		prvBL.NextSPIFlashStart = Head.DataStartAddress + FW_OTA_FLASH_BUF_LEN;
-		prvBL.CurSPIFlashData = NULL;
-		prvBL.NextSPIFlashData = NULL;
 		pReadFunc = BL_OTAReadDataInSpiFlash;
 		DoneLen = 0;
 		Check = 0xffffffff;
@@ -532,49 +502,85 @@ void Remote_Upgrade(void)
 		break;
 	}
 
-	switch(uPV.u8[0])
-	{
-	case CORE_OTA_MODE_FULL:
-		goto OTA_FULL;
-		break;
-	default:
-		DBG_INFO("core ota mode %u not support", uPV.u8[0]);
-		return;
-		break;
-	}
-	goto OTA_END;
-OTA_FULL:
 	DoneLen = 0;
+
 	while(DoneLen < Head.DataLen)
 	{
-		ReadBuffer.Pos = ((Head.DataLen - DoneLen) > ReadBuffer.MaxLen)?ReadBuffer.MaxLen:(Head.DataLen - DoneLen);
+		ReadBuffer.Pos = sizeof(CoreUpgrade_SectorStruct);
+
 		Result = pReadFunc(Head.DataStartAddress + DoneLen, &ReadBuffer);
-		if (Result < 0)
+		DoneLen += sizeof(CoreUpgrade_SectorStruct);
+		memcpy(&Sector, ReadBuffer.Data, sizeof(CoreUpgrade_SectorStruct));
+		if (Sector.MaigcNum != __APP_START_MAGIC__)
 		{
-			Reboot = 1;
-			DBG_INFO("core ota read data fail");
+			DBG_INFO("ota sector info error %x", Sector.MaigcNum);
 			goto OTA_END;
 		}
-		if (memcmp(__FLASH_APP_START_ADDR__ + DoneLen, ReadBuffer.Data, ReadBuffer.Pos))
+		ProgramPos = Sector.StartAddress;
+		FlashPos = DoneLen + Head.DataStartAddress;
+		DoneLen += Sector.TotalLen;
+//		CRC32_CreateTable(CRC32_Table, CRC32_GEN);
+		if (Sector.DataLen && (Sector.DataLen != Sector.TotalLen))
 		{
-			DBG_INFO("ota %x", __FLASH_APP_START_ADDR__ + DoneLen);
-			BL_OTAErase(__FLASH_APP_START_ADDR__ + DoneLen, ReadBuffer.Pos);
-			BL_OTAWrite(__FLASH_APP_START_ADDR__ + DoneLen, ReadBuffer.Data, ReadBuffer.Pos);
+			ReadLen = 0;
+			while(ReadLen < Sector.TotalLen)
+			{
+				DBG_INFO("ota %x,%x,%u,%u", ProgramPos, FlashPos, ReadLen, Sector.TotalLen);
+				Flash_EraseStart(ProgramPos, 1);
+				ReadBuffer.Pos = 1;
+				pReadFunc(FlashPos, &ReadBuffer);
+				FlashPos += ReadBuffer.Pos;
+				ReadLen += ReadBuffer.Pos;
+				LzmaHeadLen = ReadBuffer.Data[0];
+				if (LzmaHeadLen > sizeof(LzmaHead))
+				{
+					Reboot = 1;
+					DBG_INFO("ota zip head error");
+					goto OTA_END;
+				}
+				ReadBuffer.Pos = LzmaHeadLen + 4;
+				pReadFunc(FlashPos, &ReadBuffer);
+				FlashPos += ReadBuffer.Pos;
+				ReadLen += ReadBuffer.Pos;
+				memcpy(LzmaHead, ReadBuffer.Data, LzmaHeadLen);
+				memcpy(&LzmaDataLen, ReadBuffer.Data + LzmaHeadLen, 4);
+				ReadBuffer.Pos = LzmaDataLen;
+				pReadFunc(FlashPos, &ReadBuffer);
+				FlashPos += ReadBuffer.Pos;
+				ReadLen += ReadBuffer.Pos;
+
+				prvBL.FWDataBuffer.Pos = __FLASH_BLOCK_SIZE__;
+				Result = LzmaUncompress(prvBL.FWDataBuffer.Data, &prvBL.FWDataBuffer.Pos, ReadBuffer.Data, &LzmaDataLen, LzmaHead, LzmaHeadLen);
+				while(Flash_CheckBusy()){;}
+				Flash_Program(ProgramPos, prvBL.FWDataBuffer.Data, prvBL.FWDataBuffer.Pos);
+				WDT_Feed();
+				ProgramPos += __FLASH_BLOCK_SIZE__;
+
+			}
 			CACHE_CleanAll(CACHE);
-			WDT_Feed();
+			Check = CRC32_Cal(CRC32_Table, Sector.StartAddress, Sector.DataLen, 0xffffffff);
+			DBG_INFO("%08x,%08x", Check, Sector.DataCRC32);
+			if (Sector.DataCRC32 != Check)
+			{
+//				Reboot = 1;
+				DBG_INFO("ota final check crc32 fail %x %x", Check, Sector.DataCRC32);
+				goto OTA_END;
+			}
 		}
-		DoneLen += ReadBuffer.Pos;
+		else
+		{
+			DBG_INFO("fota file must zip file!!!");
+			goto OTA_END;
+		}
+
+
+
+
+
+
 	}
-	Check = CRC32_Cal(CRC32_Table, __FLASH_APP_START_ADDR__, Head.DataLen, 0xffffffff);
-	if (Head.DataCRC32 != Check)
-	{
-		Reboot = 1;
-		DBG_INFO("core ota final check crc32 fail %x %x", Check, Head.DataCRC32);
-		goto OTA_END;
-	}
-	goto OTA_END;
-OTA_DIFF:
-	goto OTA_END;
+
+
 OTA_END:
 	if (Reboot)
 	{

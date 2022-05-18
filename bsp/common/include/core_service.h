@@ -84,4 +84,10 @@ uint32_t Core_VHIDRxBufferRead(uint8_t USB_ID, uint8_t *Data, uint32_t Len);
 void Core_UDiskAttachSDHC(uint8_t USB_ID, void *pCtrl);
 void Core_UDiskDetachSDHC(uint8_t USB_ID, void *pCtrl);
 void Core_UDiskAttachSDHCRecovery(uint8_t USB_ID, void *pCtrl);
+
+int Core_OTAInit(CoreUpgrade_HeadStruct *Head, uint32_t size);
+int Core_OTAWrite(uint8_t *Data, uint32_t Len);
+uint8_t Core_OTACheckReadyStart(void);
+int Core_OTACheckDone(void);
+void Core_OTAEnd(uint8_t isOK);
 #endif

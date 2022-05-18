@@ -257,6 +257,11 @@ int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint
 	}
 }
 
+int luat_spi_get_hw_bus(int spi_id)
+{
+	return luat_spi[spi_id].id;
+}
+
 void luat_lcd_draw_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, luat_color_t* color, uint8_t last_flush)
 {
 	LCD_DrawStruct draw;

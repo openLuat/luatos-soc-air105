@@ -102,7 +102,6 @@ static int32_t luat_uart_cb(void *pData, void *pParam){
         	}
             break;
         case UART_CB_RX_BUFFER_FULL:
-            break;
         case UART_CB_RX_TIMEOUT:
             if (serials[uartid].rx_mark) return 0;
             serials[uartid].rx_mark = 1;

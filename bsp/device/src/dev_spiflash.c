@@ -140,9 +140,13 @@ __attribute__ ((aligned (8))) static char lfs_lookahead_buff[16];
 
 void SPIFlash_Init(SPIFlash_CtrlStruct *Ctrl, void *LFSConfig)
 {
+	Ctrl->IsInit = 0;
 	Ctrl->State = SPIFLASH_STATE_IDLE;
-	SPIFlash_ID(Ctrl);
-
+	if (SPIFlash_ID(Ctrl) != ERROR_NONE)
+	{
+		return;
+	}
+	Ctrl->IsInit = 1;
 //用外部flash存储文件才需要开启
 #if 0
 	struct lfs_config *config = LFSConfig;
@@ -172,7 +176,7 @@ void SPIFlash_Init(SPIFlash_CtrlStruct *Ctrl, void *LFSConfig)
 	Ctrl->EraseSectorWaitTime = 50;
 	Ctrl->EraseBlockWaitTime = 250;
 	Ctrl->ProgramWaitTimeUS = 300;
-	Ctrl->ProgramTime = 3;
+	Ctrl->ProgramTime = 10;
 	Ctrl->EraseSectorTime = 400;
 	Ctrl->EraseBlockTime = 2400;
 	SPIFlash_ReadSR(Ctrl);
@@ -187,6 +191,7 @@ void SPIFlash_Init(SPIFlash_CtrlStruct *Ctrl, void *LFSConfig)
 			{
 				SPIFlash_ReadSR(Ctrl);
 			}
+
 		}
 	}
 

@@ -73,7 +73,6 @@ enum
 	CORE_OTA_OUT_SPI_FLASH,
 	CORE_OTA_IN_FILE,
 
-
 };
 
 enum

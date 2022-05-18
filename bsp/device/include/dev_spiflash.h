@@ -80,6 +80,7 @@ typedef struct
 	uint8_t IsBlockMode;					//是否在擦读写操作时采用阻塞模式，如果是0，则需要调用SPIFlash_WaitOpDone来获取结果
 	uint8_t IsSpiDMAMode;
 	uint8_t CSPin;
+	uint8_t IsInit;
 }SPIFlash_CtrlStruct;
 
 

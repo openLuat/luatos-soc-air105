@@ -38,8 +38,8 @@ const uint32_t __attribute__((section (".app_info")))
 {
 	__APP_START_MAGIC__,
 	&__isr_start_address,
-	0,//此处后期放入luatos固件版本
-	0,
+	__BL_VERSION__,
+	__CORE_VERSION__,
 	SCRIPT_LUADB_START_ADDR,
 	SCRIPT_LUADB_START_ADDR + __SCRIPT_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__,
 	0,

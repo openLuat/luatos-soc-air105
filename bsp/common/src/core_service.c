@@ -20,7 +20,7 @@
  */
 
 #include "user.h"
-
+#include "LzmaLib.h"
 #ifdef __BUILD_OS__
 #include "zbar.h"
 #include "symbol.h"
@@ -42,7 +42,9 @@ enum
 	SERVICE_LCD_DRAW = SERVICE_EVENT_ID_START + 1,
 	SERVICE_CAMERA_DRAW,
 	SERVICE_SDHC_WRITE,
+	SERVICE_SPIFLASH_ERASE,
 	SERVICE_SPIFLASH_WRITE,
+	SERVICE_SPIFLASH_CLOSE,
 	SERVICE_DECODE_QR,
 	SERVICE_SCAN_KEYBOARD,
 	SERVICE_ENCODE_JPEG_START,
@@ -55,6 +57,8 @@ typedef struct
 {
 	tje_write_func *JPEGEncodeWriteFun;
 	void *JPEGEncodeWriteParam;
+	CoreUpgrade_HeadStruct *pFotaHead;
+	SPIFlash_CtrlStruct *pSpiFlash;
 	HANDLE LCDHandle;
 	HANDLE ServiceHandle;
 	HANDLE StorgeHandle;
@@ -63,9 +67,16 @@ typedef struct
 	uint64_t LCDDrawDoneByte;
 	uint32_t InitAllocMem;
 	uint32_t LastAllocMem;
+	uint32_t CRC32_Table[256];
+	Buffer_Struct FotaDataBuf;
+	uint32_t FotaPos;
+	uint32_t FotaDoneLen;
+	uint32_t FotaCRC32;
 	uint8_t RFix;
 	uint8_t GFix;
 	uint8_t BFix;
+	uint8_t FotaFindHead;
+	uint8_t FotaReady;
 }Service_CtrlStruct;
 
 static Service_CtrlStruct prvService;
@@ -221,6 +232,7 @@ static void prvStorge_Task(void* params)
 	OS_EVENT Event;
 	uint32_t *Param;
 	SDHC_SPICtrlStruct *pSDHC;
+	CommonFun_t CB;
 	while(1)
 	{
 		Task_GetEventByMS(prvService.StorgeHandle, CORE_EVENT_ID_ANY, &Event, NULL, 0);
@@ -239,6 +251,30 @@ static void prvStorge_Task(void* params)
 			SDHC_SpiWriteBlocks(pSDHC, Event.Param2, Param[0], Param[1]);
 			free(Event.Param2);
 			free(Event.Param3);
+			break;
+		case SERVICE_SPIFLASH_ERASE:
+			if (prvService.pSpiFlash)
+			{
+				SPIFlash_Erase(prvService.pSpiFlash, Event.Param1, Event.Param2);
+			}
+			if (Event.Param3)
+			{
+				CB = (CommonFun_t )Event.Param3;
+				CB();
+			}
+			break;
+		case SERVICE_SPIFLASH_WRITE:
+			if (prvService.pSpiFlash)
+			{
+				SPIFlash_Write(prvService.pSpiFlash, Event.Param1, Event.Param2, Event.Param3);
+				prvService.FotaCRC32 = CRC32_Cal(prvService.CRC32_Table, Event.Param2, Event.Param3, prvService.FotaCRC32);
+				prvService.FotaDoneLen += Event.Param3;
+			}
+			free(Event.Param2);
+			break;
+		case SERVICE_SPIFLASH_CLOSE:
+			free(prvService.pSpiFlash);
+			prvService.pSpiFlash = NULL;
 			break;
 		}
 	}
@@ -589,6 +625,304 @@ void Core_DebugMem(uint8_t HeapID, const char *FuncName, uint32_t Line)
 	}
 }
 
+static void Core_OTAReady(void)
+{
+	prvService.FotaReady = 1;
+}
+
+int Core_OTAInit(CoreUpgrade_HeadStruct *Head, uint32_t size)
+{
+	prvService.FotaReady = 0;
+	PV_Union uPV;
+	Flash_Erase(__FLASH_OTA_INFO_ADDR__, __FLASH_SECTOR_SIZE__);
+	if (prvService.pFotaHead)
+	{
+		free(prvService.pFotaHead);
+	}
+	prvService.pFotaHead = Head;
+	OS_ReInitBuffer(&prvService.FotaDataBuf, __FLASH_BLOCK_SIZE__);
+	prvService.FotaPos = 0;
+	uPV.u32 = prvService.pFotaHead->Param1;
+	if (uPV.u8[1] == CORE_OTA_OUT_SPI_FLASH)
+	{
+		if (prvService.pSpiFlash)
+		{
+			free(prvService.pSpiFlash);
+		}
+	}
+	prvService.FotaCRC32 = 0xffffffff;
+	prvService.FotaPos = 0;
+	prvService.FotaDoneLen = 0;
+	prvService.FotaFindHead = 0;
+	if (uPV.u8[1] == CORE_OTA_OUT_SPI_FLASH)
+	{
+		prvService.pSpiFlash = zalloc(sizeof(SPIFlash_CtrlStruct));
+		prvService.pSpiFlash->SpiID = uPV.u8[2];
+		uPV.u32 = prvService.pFotaHead->Param2;
+		prvService.pSpiFlash->CSPin = uPV.u8[3];
+		prvService.pSpiFlash->IsBlockMode = 1;
+		SPIFlash_Init(prvService.pSpiFlash, NULL);
+		if (!prvService.pSpiFlash->IsInit)
+		{
+			return -1;
+		}
+		Task_SendEvent(prvService.StorgeHandle, SERVICE_SPIFLASH_ERASE, prvService.pFotaHead->DataStartAddress, size, Core_OTAReady);
+	}
+	return 0;
+}
+
+int Core_OTAWrite(uint8_t *Data, uint32_t Len)
+{
+	if (!prvService.FotaFindHead)
+	{
+		if (Len < sizeof(CoreUpgrade_FileHeadStruct))
+		{
+			return -1;
+		}
+		CoreUpgrade_FileHeadStruct Head;
+		memcpy(&Head, Data, sizeof(CoreUpgrade_FileHeadStruct));
+
+		if (Head.MaigcNum != __APP_START_MAGIC__)
+		{
+			DBG("%x", Head.MaigcNum);
+			return -1;
+		}
+		uint32_t crc32 = CRC32_Cal(prvService.CRC32_Table, &Head.MainVersion, sizeof(CoreUpgrade_FileHeadStruct) - 8, 0xffffffff);
+		if (crc32 != Head.CRC32)
+		{
+			DBG("crc32 %x,%x", crc32, Head.CRC32);
+			return -1;
+		}
+		//由于是整包升级，就不考虑版本的事情了
+		prvService.FotaFindHead = 1;
+		prvService.pFotaHead->DataLen = Head.DataLen;
+		prvService.pFotaHead->DataCRC32 = Head.DataCRC32;
+		prvService.pFotaHead->CRC32 = CRC32_Cal(prvService.CRC32_Table, &prvService.pFotaHead->Param1, sizeof(CoreUpgrade_HeadStruct) - 8, 0xffffffff);
+		Data = Data + sizeof(CoreUpgrade_FileHeadStruct);
+		Len -= sizeof(CoreUpgrade_FileHeadStruct);
+		if (!Len) return 0;
+	}
+	uint32_t DummyLen;
+	PV_Union uPV;
+	uPV.u32 = prvService.pFotaHead->Param1;
+	if (!prvService.pFotaHead )
+	{
+		return -1;
+	}
+	switch(uPV.u8[1])
+	{
+	case CORE_OTA_IN_FLASH:
+		break;
+	case CORE_OTA_OUT_SPI_FLASH:
+		if (!prvService.pSpiFlash)
+		{
+			return -1;
+		}
+		break;
+	case CORE_OTA_IN_FILE:
+		break;
+	}
+
+	DummyLen = ((prvService.FotaDataBuf.MaxLen - prvService.FotaDataBuf.Pos) >= Len)?Len:(prvService.FotaDataBuf.MaxLen - prvService.FotaDataBuf.Pos);
+	OS_BufferWrite(&prvService.FotaDataBuf, Data, DummyLen);
+	if (prvService.FotaDataBuf.Pos == __FLASH_BLOCK_SIZE__)
+	{
+		switch(uPV.u8[1])
+		{
+		case CORE_OTA_IN_FLASH:
+			prvService.FotaDataBuf.Pos = 0;
+			prvService.FotaDoneLen += __FLASH_BLOCK_SIZE__;
+			break;
+		case CORE_OTA_OUT_SPI_FLASH:
+			Task_SendEvent(prvService.StorgeHandle, SERVICE_SPIFLASH_WRITE, prvService.pFotaHead->DataStartAddress + prvService.FotaPos, prvService.FotaDataBuf.Data, __FLASH_BLOCK_SIZE__);
+			OS_InitBuffer(&prvService.FotaDataBuf, __FLASH_BLOCK_SIZE__);
+			break;
+		case CORE_OTA_IN_FILE:
+			prvService.FotaDataBuf.Pos = 0;
+			prvService.FotaDoneLen += __FLASH_BLOCK_SIZE__;
+			break;
+		}
+		prvService.FotaPos += __FLASH_BLOCK_SIZE__;
+	}
+	else if ((prvService.FotaPos + prvService.FotaDataBuf.Pos) >= prvService.pFotaHead->DataLen)
+	{
+//		DBG("all data rx");
+		switch(uPV.u8[1])
+		{
+		case CORE_OTA_IN_FLASH:
+			prvService.FotaDoneLen += prvService.FotaDataBuf.Pos;
+			OS_DeInitBuffer(&prvService.FotaDataBuf);
+			break;
+		case CORE_OTA_OUT_SPI_FLASH:
+			Task_SendEvent(prvService.StorgeHandle, SERVICE_SPIFLASH_WRITE, prvService.pFotaHead->DataStartAddress + prvService.FotaPos, prvService.FotaDataBuf.Data, prvService.FotaDataBuf.Pos);
+			memset(&prvService.FotaDataBuf, 0, sizeof(prvService.FotaDataBuf));
+			break;
+		case CORE_OTA_IN_FILE:
+			prvService.FotaDoneLen += prvService.FotaDataBuf.Pos;
+			OS_DeInitBuffer(&prvService.FotaDataBuf);
+			break;
+		}
+		return 0;
+	}
+	if (DummyLen < Len)
+	{
+		OS_BufferWrite(&prvService.FotaDataBuf, Data + DummyLen, Len - DummyLen);
+	}
+
+	if (prvService.FotaDoneLen < prvService.FotaPos)
+	{
+		return (prvService.FotaPos - prvService.FotaDoneLen);
+	}
+
+	return 1;
+}
+
+uint8_t Core_OTACheckReadyStart(void)
+{
+	return prvService.FotaReady;
+}
+
+int Core_OTACheckDone(void)
+{
+	if (!prvService.pFotaHead )
+	{
+		return -1;
+	}
+	if (prvService.FotaDoneLen >= prvService.pFotaHead->DataLen)
+	{
+		return (prvService.FotaCRC32 == prvService.pFotaHead->DataCRC32)?0:-1;
+	}
+	return 1;
+}
+
+//static void Core_OTACheckSpiFlash(void)
+//{
+//	CoreUpgrade_SectorStruct Sector;
+//	Buffer_Struct ReadBuffer;
+//	Buffer_Struct DataBuffer;
+//	int result;
+//	uint32_t Check;
+//	uint32_t DoneLen, ReadLen;
+//	volatile uint32_t ProgramPos, FlashPos;
+//	uint32_t LzmaDataLen;
+//	uint8_t LzmaHead[LZMA_PROPS_SIZE + 8];
+//	uint8_t LzmaHeadLen;
+//
+//	DoneLen = 0;
+//	OS_InitBuffer(&DataBuffer, SPI_FLASH_BLOCK_SIZE);
+//	OS_InitBuffer(&ReadBuffer, SPI_FLASH_BLOCK_SIZE);
+//	while(DoneLen < prvService.pFotaHead->DataLen)
+//	{
+//		ReadBuffer.Pos = sizeof(CoreUpgrade_SectorStruct);
+//		SPIFlash_Read(prvService.pSpiFlash, prvService.pFotaHead->DataStartAddress + DoneLen, ReadBuffer.Data, ReadBuffer.Pos, 1);
+//		DoneLen += sizeof(CoreUpgrade_SectorStruct);
+//		memcpy(&Sector, ReadBuffer.Data, sizeof(CoreUpgrade_SectorStruct));
+//		DBG("%x,%x,%x,%x,%x", Sector.MaigcNum, Sector.StartAddress, Sector.TotalLen, Sector.DataLen, Sector.DataCRC32);
+//		if (Sector.MaigcNum != __APP_START_MAGIC__)
+//		{
+//			DBG("ota sector info error %x", Sector.MaigcNum);
+//			return;
+//		}
+//		ProgramPos = Sector.StartAddress;
+//		FlashPos = DoneLen + prvService.pFotaHead->DataStartAddress;
+//		DoneLen += Sector.TotalLen;
+//
+//		Check = 0xffffffff;
+//		ReadLen = 0;
+//		while(ReadLen < Sector.TotalLen)
+//		{
+//			DBG("ota %x,%x,%u,%u", ProgramPos, FlashPos, ReadLen, Sector.TotalLen);
+//			ReadBuffer.Pos = 1;
+//			SPIFlash_Read(prvService.pSpiFlash, FlashPos, ReadBuffer.Data, ReadBuffer.Pos, 1);
+//			FlashPos += ReadBuffer.Pos;
+//			ReadLen += ReadBuffer.Pos;
+//			LzmaHeadLen = ReadBuffer.Data[0];
+//			if (LzmaHeadLen > sizeof(LzmaHead))
+//			{
+//				DBG("ota zip head error");
+//				return;
+//			}
+//			ReadBuffer.Pos = LzmaHeadLen + 4;
+//			SPIFlash_Read(prvService.pSpiFlash, FlashPos, ReadBuffer.Data, ReadBuffer.Pos, 1);
+//			FlashPos += ReadBuffer.Pos;
+//			ReadLen += ReadBuffer.Pos;
+//			memcpy(LzmaHead, ReadBuffer.Data, LzmaHeadLen);
+//			memcpy(&LzmaDataLen, ReadBuffer.Data + LzmaHeadLen, 4);
+//			ReadBuffer.Pos = LzmaDataLen;
+//			SPIFlash_Read(prvService.pSpiFlash, FlashPos, ReadBuffer.Data, ReadBuffer.Pos, 1);
+//			FlashPos += ReadBuffer.Pos;
+//			ReadLen += ReadBuffer.Pos;
+//
+//			DataBuffer.Pos = __FLASH_BLOCK_SIZE__;
+//			result = LzmaUncompress(DataBuffer.Data, &DataBuffer.Pos, ReadBuffer.Data, &LzmaDataLen, LzmaHead, LzmaHeadLen);
+//			if (DataBuffer.Pos != __FLASH_BLOCK_SIZE__)
+//			{
+//				DataBuffer.Pos = Sector.DataLen - (ProgramPos - Sector.StartAddress);
+//			}
+//			Check = CRC32_Cal(prvService.CRC32_Table, DataBuffer.Data, DataBuffer.Pos, Check);
+//			ProgramPos += DataBuffer.Pos;
+//
+//		}
+//		DBG("%u, %u", ProgramPos - Sector.StartAddress, Sector.DataLen);
+//		if (Sector.DataCRC32 != Check)
+//		{
+////				Reboot = 1;
+//			DBG("ota %x check crc32 fail %x %x", Sector.StartAddress, Check, Sector.DataCRC32);
+//			return;
+//		}
+//		else
+//		{
+//			DBG("ota %x check ok", Sector.StartAddress);
+//		}
+//	}
+//	OS_DeInitBuffer(&DataBuffer);
+//	OS_DeInitBuffer(&ReadBuffer);
+//}
+
+void Core_OTAEnd(uint8_t isOK)
+{
+	PV_Union uPV;
+	uPV.u32 = prvService.pFotaHead->Param1;
+	if (isOK && prvService.pFotaHead)
+	{
+		Flash_Erase(__FLASH_OTA_INFO_ADDR__, __FLASH_SECTOR_SIZE__);
+		Flash_Program(__FLASH_OTA_INFO_ADDR__, prvService.pFotaHead, sizeof(CoreUpgrade_HeadStruct));
+		switch(uPV.u8[1])
+		{
+		case CORE_OTA_IN_FLASH:
+			break;
+		case CORE_OTA_OUT_SPI_FLASH:
+//			Core_OTACheckSpiFlash();
+
+			free(prvService.pSpiFlash);
+			prvService.pSpiFlash = NULL;
+			break;
+		case CORE_OTA_IN_FILE:
+			break;
+		}
+
+	}
+	else
+	{
+		switch(uPV.u8[1])
+		{
+		case CORE_OTA_IN_FLASH:
+			break;
+		case CORE_OTA_OUT_SPI_FLASH:
+			Task_SendEvent(prvService.StorgeHandle, SERVICE_SPIFLASH_CLOSE, 0, 0, 0);
+			break;
+		case CORE_OTA_IN_FILE:
+			break;
+		}
+	}
+	free(prvService.pFotaHead);
+	prvService.pFotaHead = NULL;
+	OS_DeInitBuffer(&prvService.FotaDataBuf);
+}
+
+
+
+
 void Core_LCDTaskInit(void)
 {
 	prvService.LCDHandle = Task_Create(prvLCD_Task, NULL, 2 * 1024, HW_TASK_PRO, "lcd task");
@@ -596,6 +930,7 @@ void Core_LCDTaskInit(void)
 
 void Core_ServiceInit(void)
 {
+	CRC32_CreateTable(prvService.CRC32_Table, CRC32_GEN);
 	prvService.ServiceHandle = Task_Create(prvService_Task, NULL, 4 * 1024, SERVICE_TASK_PRO, "service task");
 }
 
