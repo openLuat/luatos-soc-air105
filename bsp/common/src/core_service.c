@@ -20,7 +20,6 @@
  */
 
 #include "user.h"
-#include "LzmaLib.h"
 #ifdef __BUILD_OS__
 #include "zbar.h"
 #include "symbol.h"
