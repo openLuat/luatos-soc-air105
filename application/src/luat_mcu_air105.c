@@ -96,6 +96,7 @@ int luat_mcu_fota_init(uint32_t start_address, uint32_t len, luat_spi_device_t* 
 	{
 		uPV.u8[1] = CORE_OTA_IN_FILE;
 		memcpy(Head->FilePath, path, pathlen);
+		Head->Param1 = uPV.u32;
 	}
 	else
 	{

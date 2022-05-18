@@ -498,8 +498,7 @@ void Remote_Upgrade(void)
 		break;
 	default:
 		DBG_INFO("core ota storage mode %u not support", uPV.u8[1]);
-		return;
-		break;
+		goto OTA_END;
 	}
 
 	DoneLen = 0;

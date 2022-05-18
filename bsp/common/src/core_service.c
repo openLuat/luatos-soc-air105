@@ -44,6 +44,7 @@ enum
 	SERVICE_SPIFLASH_ERASE,
 	SERVICE_SPIFLASH_WRITE,
 	SERVICE_SPIFLASH_CLOSE,
+	SERVICE_FILE_WRITE,
 	SERVICE_DECODE_QR,
 	SERVICE_SCAN_KEYBOARD,
 	SERVICE_ENCODE_JPEG_START,
@@ -232,6 +233,7 @@ static void prvStorge_Task(void* params)
 	uint32_t *Param;
 	SDHC_SPICtrlStruct *pSDHC;
 	CommonFun_t CB;
+	HANDLE fd;
 	while(1)
 	{
 		Task_GetEventByMS(prvService.StorgeHandle, CORE_EVENT_ID_ANY, &Event, NULL, 0);
@@ -274,6 +276,19 @@ static void prvStorge_Task(void* params)
 		case SERVICE_SPIFLASH_CLOSE:
 			free(prvService.pSpiFlash);
 			prvService.pSpiFlash = NULL;
+			break;
+		case SERVICE_FILE_WRITE:
+#ifdef __LUATOS__
+			fd = luat_fs_fopen((char *)Event.Param1, "w");
+			//DBG("%x,%s",fd, (char *)Event.Param1);
+			if (fd)
+			{
+				luat_fs_fwrite(Event.Param2, Event.Param3, 1, fd);
+				luat_fs_fclose(fd);
+			}
+#endif
+			prvService.FotaDoneLen += Event.Param3;
+			free(Event.Param2);
 			break;
 		}
 	}
@@ -667,6 +682,10 @@ int Core_OTAInit(CoreUpgrade_HeadStruct *Head, uint32_t size)
 		}
 		Task_SendEvent(prvService.StorgeHandle, SERVICE_SPIFLASH_ERASE, prvService.pFotaHead->DataStartAddress, size, Core_OTAReady);
 	}
+	else
+	{
+		prvService.FotaReady = 1;
+	}
 	return 0;
 }
 
@@ -737,8 +756,8 @@ int Core_OTAWrite(uint8_t *Data, uint32_t Len)
 			OS_InitBuffer(&prvService.FotaDataBuf, __FLASH_BLOCK_SIZE__);
 			break;
 		case CORE_OTA_IN_FILE:
-			prvService.FotaDataBuf.Pos = 0;
-			prvService.FotaDoneLen += __FLASH_BLOCK_SIZE__;
+			Task_SendEvent(prvService.StorgeHandle, SERVICE_FILE_WRITE, prvService.pFotaHead->FilePath, prvService.FotaDataBuf.Data, prvService.FotaDataBuf.Pos);
+			OS_InitBuffer(&prvService.FotaDataBuf, __FLASH_BLOCK_SIZE__);
 			break;
 		}
 		prvService.FotaPos += __FLASH_BLOCK_SIZE__;
@@ -757,8 +776,8 @@ int Core_OTAWrite(uint8_t *Data, uint32_t Len)
 			memset(&prvService.FotaDataBuf, 0, sizeof(prvService.FotaDataBuf));
 			break;
 		case CORE_OTA_IN_FILE:
-			prvService.FotaDoneLen += prvService.FotaDataBuf.Pos;
-			OS_DeInitBuffer(&prvService.FotaDataBuf);
+			Task_SendEvent(prvService.StorgeHandle, SERVICE_FILE_WRITE, prvService.pFotaHead->FilePath, prvService.FotaDataBuf.Data, prvService.FotaDataBuf.Pos);
+			memset(&prvService.FotaDataBuf, 0, sizeof(prvService.FotaDataBuf));
 			break;
 		}
 		return 0;
