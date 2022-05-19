@@ -322,15 +322,36 @@ time_t luat_time(time_t *_Time) {
   return RTC_GetUTC();
 }
 
-//static uint32_t cri = 0;
-void luat_os_entry_cri(void) {
-//  if (cri == 0)
-//    cri = OS_EnterCritical();
+
+static uint32_t cri;
+static uint8_t cri_flag;
+static uint8_t disable_all;	//如果设置成1，将关闭总中断，非常危险，谨慎使用
+
+void luat_os_set_cri_all(uint8_t onoff)
+{
+	disable_all = onoff;
 }
 
+//进入临界保护，不可重入
+void luat_os_entry_cri(void) {
+	if (disable_all) {
+		__disable_irq();
+		return;
+	}
+	if (!cri_flag) {
+		cri = OS_EnterCritical();
+		cri_flag = 1;
+	}
+}
+
+//退出临界保护，不可重入
 void luat_os_exit_cri(void) {
-//  if (cri != 0) {
-//    OS_ExitCritical(cri);
-//    cri = 0;
-//  }
+	if (disable_all) {
+		__enable_irq();
+		return;
+	}
+	if (cri_flag) {
+		cri_flag = 0;
+		OS_ExitCritical(cri);
+	}
 }
