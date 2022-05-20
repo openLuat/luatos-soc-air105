@@ -111,10 +111,10 @@ void BL_LockFlash(void)
 
 }
 
-static void BL_OTAErase(uint32_t Address, uint32_t Len)
-{
-	Flash_Erase(Address, Len);
-}
+//static void BL_OTAErase(uint32_t Address, uint32_t Len)
+//{
+//	Flash_Erase(Address, Len);
+//}
 
 void FileSystem_Init(void)
 {
@@ -224,7 +224,6 @@ void Local_Upgrade(void)
 			}
 			break;
 		case FW_UPGRADE_STATE_START:
-			BL_OTAErase(__FLASH_OTA_INFO_ADDR__, __FLASH_SECTOR_SIZE__);
 			AllToTick = GetSysTick() + FW_UPGRADE_ALL_TIME * CORE_TICK_1MS;
 			prvBL.State = FW_UPGRADE_STATE_RUN;
 			uint8_t *CurLzmaData = NULL;
@@ -329,7 +328,7 @@ PROGRAM_CHECK:
 	}
 	if (ConnectOK)
 	{
-		BL_OTAErase(__FLASH_OTA_INFO_ADDR__, __FLASH_SECTOR_SIZE__);
+		Flash_Erase(__FLASH_OTA_INFO_ADDR__, __FLASH_SECTOR_SIZE__);
 	}
 	DBuffer_DeInit(&DBuf);
 }
@@ -588,7 +587,7 @@ OTA_END:
 	}
 	else
 	{
-		BL_OTAErase(__FLASH_OTA_INFO_ADDR__, __FLASH_SECTOR_SIZE__);
+		Flash_Erase(__FLASH_OTA_INFO_ADDR__, __FLASH_SECTOR_SIZE__);
 	}
 
 }
