@@ -194,7 +194,7 @@ header file. */
               using a different time base (TIM based for example).
  */
 #define xPortSysTickHandler SysTick_Handler
-#define traceTASK_SWITCHED_IN OS_SetStartFlag
+#define traceTASK_SWITCHED_IN()
 #define configUSE_TIME_SLICING 0
 #endif /* FREERTOS_CONFIG_H */
 
