@@ -30,6 +30,7 @@ typedef struct
 	Buffer_Struct AudioDataBuffer;
 	llist_head DataHead;
 	uint32_t SampleRate;
+	uint32_t waitRequire;
 	uint8_t BitDepth;
 	uint8_t ChannelCount;	//声道，目前只有1或者2
 	auStreamFormat_t Format;
@@ -38,6 +39,9 @@ typedef struct
 	uint8_t IsDataSigned;	//数据是否是有符号的
 	uint8_t IsHardwareRun;
 	uint8_t IsPause;
+	uint8_t IsStop;
+	uint8_t IsPlaying;
+
 }Audio_StreamStruct;
 
 void Audio_GlobalInit(void);

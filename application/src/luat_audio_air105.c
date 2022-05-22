@@ -27,8 +27,92 @@
 #include "luat_multimedia.h"
 #include "app_interface.h"
 #include "mp3_decode/minimp3.h"
+#define LUAT_LOG_TAG "audio"
+#include "luat_log.h"
+
 #define MP3_FRAME_LEN 4 * 1152
 static Audio_StreamStruct prvAudioStream;
+static int32_t luat_audio_wav_decode(void *pData, void *pParam)
+{
+	Audio_StreamStruct *Stream = (Audio_StreamStruct *)pData;
+	while ( (llist_num(&Stream->DataHead) < 3) && !Stream->IsStop)
+	{
+		Stream->FileDataBuffer.Pos = luat_fs_fread(Stream->FileDataBuffer.Data, Stream->FileDataBuffer.MaxLen, 1, Stream->fd);
+		if (Stream->FileDataBuffer.Pos > 0)
+		{
+			if (!Stream->IsStop)
+			{
+				Audio_WriteRaw(Stream, Stream->FileDataBuffer.Data, Stream->FileDataBuffer.Pos);
+			}
+		}
+		else
+		{
+			return 0;
+		}
+	}
+
+
+	return 0;
+}
+
+static int32_t luat_audio_mp3_decode(void *pData, void *pParam)
+{
+	uint32_t pos;
+	int read_len;
+	int result;
+	uint32_t is_not_end = 1;
+	mp3dec_frame_info_t info;
+	mp3dec_t *mp3_decoder = (mp3dec_t *)pParam;
+	Audio_StreamStruct *Stream = (Audio_StreamStruct *)pData;
+	Stream->AudioDataBuffer.Pos = 0;
+	while ((llist_num(&Stream->DataHead) < 3) && is_not_end && !Stream->IsStop)
+	{
+		while (( Stream->AudioDataBuffer.Pos < (Stream->AudioDataBuffer.MaxLen >> 1) ) && is_not_end && !Stream->IsStop)
+		{
+			if (Stream->FileDataBuffer.Pos < MINIMP3_MAX_SAMPLES_PER_FRAME)
+			{
+				read_len = luat_fs_fread(Stream->FileDataBuffer.Data + Stream->FileDataBuffer.Pos, MINIMP3_MAX_SAMPLES_PER_FRAME, 1, Stream->fd);
+				if (read_len > 0)
+				{
+					Stream->FileDataBuffer.Pos += read_len;
+				}
+				else
+				{
+					is_not_end = 0;
+				}
+			}
+			pos = 0;
+			do
+			{
+				memset(&info, 0, sizeof(info));
+				result = mp3dec_decode_frame(mp3_decoder, Stream->FileDataBuffer.Data + pos, Stream->FileDataBuffer.Pos - pos,
+						Stream->AudioDataBuffer.Data + Stream->AudioDataBuffer.Pos, &info);
+				Stream->AudioDataBuffer.Pos += (result * info.channels * 2);
+				pos += info.frame_bytes;
+				if (Stream->AudioDataBuffer.Pos >= (Stream->AudioDataBuffer.MaxLen >> 1))
+				{
+					break;
+				}
+			} while ( ((Stream->FileDataBuffer.Pos - pos) >= (MINIMP3_MAX_SAMPLES_PER_FRAME * is_not_end + 1)) && !Stream->IsStop);
+			OS_BufferRemove(&Stream->FileDataBuffer, pos);
+		}
+		if (!Stream->IsStop)
+		{
+			Audio_WriteRaw(Stream, Stream->AudioDataBuffer.Data, Stream->AudioDataBuffer.Pos);
+		}
+		Stream->AudioDataBuffer.Pos = 0;
+	}
+	return 0;
+}
+
+int32_t luat_audio_decode_run(void *pData, void *pParam)
+{
+	prvAudioStream.Decoder(pData, pParam);
+	if (prvAudioStream.waitRequire)
+	{
+		prvAudioStream.waitRequire--;
+	}
+}
 
 int32_t luat_audio_app_cb(void *pData, void *pParam)
 {
@@ -37,7 +121,7 @@ int32_t luat_audio_app_cb(void *pData, void *pParam)
 	msg.arg1 = (pParam == INVALID_HANDLE_VALUE)?MULTIMEDIA_CB_AUDIO_DONE:MULTIMEDIA_CB_AUDIO_NEED_DATA;
 	msg.arg2 = prvAudioStream.pParam;
 	luat_msgbus_put(&msg, 1);
-
+	return 0;
 }
 
 int32_t luat_audio_play_cb(void *pData, void *pParam)
@@ -52,9 +136,13 @@ int32_t luat_audio_play_cb(void *pData, void *pParam)
 	}
 	else
 	{
-
+		if (!prvAudioStream.IsStop)
+		{
+			prvAudioStream.waitRequire++;
+			Core_ServiceRunUserAPIWithFile(luat_audio_decode_run, &prvAudioStream, prvAudioStream.CoderParam);
+		}
 	}
-
+	return 0;
 }
 
 int luat_audio_start_raw(uint8_t multimedia_id, uint8_t audio_format, uint8_t num_channels, uint32_t sample_rate, uint8_t bits_per_sample, uint8_t is_signed)
@@ -99,6 +187,9 @@ int luat_audio_stop_raw(uint8_t multimedia_id)
 		luat_heap_free(prvAudioStream.CoderParam);
 		prvAudioStream.CoderParam = NULL;
 	}
+	prvAudioStream.IsStop = 0;
+	prvAudioStream.IsPlaying = 0;
+	prvAudioStream.waitRequire = 0;
 	return ERROR_NONE;
 }
 
@@ -115,14 +206,28 @@ int luat_audio_pause_raw(uint8_t multimedia_id, uint8_t is_pause)
 	return ERROR_NONE;
 }
 
-int luat_audio_play_file(uint8_t multimedia_id, FILE *fd)
+int luat_audio_play_stop(uint8_t multimedia_id)
 {
-	luat_audio_stop_raw(multimedia_id);
+	prvAudioStream.IsStop = 1;
+}
+
+uint8_t luat_audio_is_finish(uint8_t multimedia_id)
+{
+	return !prvAudioStream.waitRequire;
+}
+
+int luat_audio_play_file(uint8_t multimedia_id, const char *path)
+{
+	if (prvAudioStream.IsPlaying)
+	{
+		luat_audio_stop_raw(multimedia_id);
+	}
+
 	uint32_t jump, i;
-	uint16_t temp[16];
+	uint8_t temp[16];
 	mp3dec_t *mp3_decoder;
 	int result;
-	int audio_format;
+	int audio_format = MULTIMEDIA_DATA_TYPE_PCM;
 	int num_channels;
 	int sample_rate;
 	int bits_per_sample = 16;
@@ -130,6 +235,12 @@ int luat_audio_play_file(uint8_t multimedia_id, FILE *fd)
 	int is_signed = 1;
     size_t len;
 	mp3dec_frame_info_t info;
+	FILE *fd = luat_fs_fopen(path, "r");
+
+	if (!fd)
+	{
+		return -1;
+	}
 	luat_fs_fread(temp, 12, 1, fd);
 	if (!memcmp(temp, "ID3", 3))
 	{
@@ -139,20 +250,35 @@ int luat_audio_play_file(uint8_t multimedia_id, FILE *fd)
 			jump <<= 7;
 			jump |= temp[6 + i] & 0x7f;
 		}
-//				LLOGD("jump head %d", jump);
+//		LLOGD("jump head %d", jump);
 		luat_fs_fseek(fd, jump, SEEK_SET);
-		mp3_decoder = luat_heap_malloc(sizeof(mp3_decoder));
+		mp3_decoder = luat_heap_malloc(sizeof(mp3dec_t));
+		memset(mp3_decoder, 0, sizeof(mp3dec_t));
 		mp3dec_init(mp3_decoder);
 		OS_InitBuffer(&prvAudioStream.FileDataBuffer, MP3_FRAME_LEN);
 		prvAudioStream.FileDataBuffer.Pos = luat_fs_fread(prvAudioStream.FileDataBuffer.Data, MP3_FRAME_LEN, 1, fd);
 		result = mp3dec_decode_frame(mp3_decoder, prvAudioStream.FileDataBuffer.Data, prvAudioStream.FileDataBuffer.Pos, NULL, &info);
-		memset(mp3_decoder, 0, sizeof(mp3dec_t));
-		audio_format = MULTIMEDIA_DATA_TYPE_PCM;
-		num_channels = info.channels;
-		sample_rate = info.hz;
+		if (result)
+		{
+			prvAudioStream.CoderParam = mp3_decoder;
+
+			memset(mp3_decoder, 0, sizeof(mp3dec_t));
+			num_channels = info.channels;
+			sample_rate = info.hz;
+			len = (num_channels * sample_rate >> 2);	//一次时间为1/16秒
+			OS_ReInitBuffer(&prvAudioStream.AudioDataBuffer, len * 2);	//防止溢出，需要多一点空间
+			prvAudioStream.Decoder = luat_audio_mp3_decode;
+		}
+		else
+		{
+			luat_heap_free(mp3_decoder);
+		}
 	}
 	else if (!memcmp(temp, "RIFF", 4) || !memcmp(temp + 8, "WAVE", 4))
 	{
+		result = 0;
+		prvAudioStream.CoderParam = NULL;
+		OS_DeInitBuffer(&prvAudioStream.AudioDataBuffer);
 		luat_fs_fread(temp, 8, 1, fd);
 		if (!memcmp(temp, "fmt ", 4))
 		{
@@ -164,9 +290,8 @@ int luat_audio_play_file(uint8_t multimedia_id, FILE *fd)
 			memcpy(&sample_rate, prvAudioStream.FileDataBuffer.Data + 4, 4);
 			align = prvAudioStream.FileDataBuffer.Data[12];
 			bits_per_sample = prvAudioStream.FileDataBuffer.Data[14];
-			len = (align * sample_rate >> 3) & ~(3);
+			len = ((align * sample_rate) >> 3) & ~(3);	//一次时间为1/8秒
 			OS_ReInitBuffer(&prvAudioStream.FileDataBuffer, len);
-			prvAudioStream.FileDataBuffer.Data = NULL;
 			luat_fs_fread(temp, 8, 1, fd);
 			if (!memcmp(temp, "fact", 4))
 			{
@@ -174,29 +299,41 @@ int luat_audio_play_file(uint8_t multimedia_id, FILE *fd)
 				luat_fs_fseek(fd, len, SEEK_CUR);
 				luat_fs_fread(temp, 8, 1, fd);
 			}
-			if (memcmp(temp, "data", 4))
+			if (!memcmp(temp, "data", 4))
 			{
-				OS_DeInitBuffer(&prvAudioStream.FileDataBuffer);
-				return -1;
+				result = 1;
+				prvAudioStream.Decoder = luat_audio_wav_decode;
 			}
-		}
-		else
-		{
-			OS_DeInitBuffer(&prvAudioStream.FileDataBuffer);
-			return -1;
 		}
 	}
 	else
 	{
-		OS_DeInitBuffer(&prvAudioStream.FileDataBuffer);
-		return -1;
+		result = 0;
 	}
-	prvAudioStream.fd = fd;
-	result = luat_audio_start_raw(multimedia_id, audio_format, num_channels, sample_rate, bits_per_sample, is_signed);
 	if (result)
 	{
-		Audio_Stop(&prvAudioStream);
-		OS_DeInitBuffer(&prvAudioStream.FileDataBuffer);
-		return -1;
+		prvAudioStream.fd = fd;
+		result = luat_audio_start_raw(multimedia_id, audio_format, num_channels, sample_rate, bits_per_sample, is_signed);
+		if (!result)
+		{
+			LLOGD("decode %s ok,param,%d,%d,%d,%d,%d,%d,%u", path,multimedia_id, audio_format, num_channels, sample_rate, bits_per_sample, is_signed, prvAudioStream.FileDataBuffer.MaxLen);
+			prvAudioStream.IsPlaying = 1;
+			prvAudioStream.pParam = multimedia_id;
+			prvAudioStream.Decoder(&prvAudioStream, prvAudioStream.CoderParam);
+			return 0;
+		}
+		else
+		{
+			prvAudioStream.fd = 0;
+		}
 	}
+	luat_fs_fclose(fd);
+	OS_DeInitBuffer(&prvAudioStream.FileDataBuffer);
+	OS_DeInitBuffer(&prvAudioStream.AudioDataBuffer);
+	if (prvAudioStream.CoderParam)
+	{
+		luat_heap_free(prvAudioStream.CoderParam);
+		prvAudioStream.CoderParam = NULL;
+	}
+	return -1;
 }

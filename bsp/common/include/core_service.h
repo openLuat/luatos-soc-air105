@@ -90,4 +90,7 @@ int Core_OTAWrite(uint8_t *Data, uint32_t Len);
 uint8_t Core_OTACheckReadyStart(void);
 int Core_OTACheckDone(void);
 void Core_OTAEnd(uint8_t isOK);
+
+void Core_ServiceRunUserAPI(CBFuncEx_t CB, void *pData, void *pParam);
+void Core_ServiceRunUserAPIWithFile(CBFuncEx_t CB, void *pData, void *pParam);
 #endif

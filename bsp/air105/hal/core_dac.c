@@ -31,6 +31,7 @@ typedef struct
 	uint32_t Freq;
 	uint8_t DMATxStream;
 	uint8_t IsBusy;
+	uint8_t IsInit;
 }DAC_ResourceStruct;
 
 static DAC_ResourceStruct prvDAC;
@@ -73,6 +74,7 @@ void DAC_DMAInit(uint8_t DAC_ID, uint8_t Stream)
 	DMA_InitStruct.DMA_PeripheralDataSize = DMA_DataSize_HalfWord;
 	DMA_ConfigStream(Stream, &DMA_InitStruct);
 	prvDAC.DMATxStream = Stream;
+	prvDAC.IsInit = 1;
 }
 
 void DAC_Setup(uint8_t DAC_ID, uint32_t Freq, uint32_t OutRMode)
@@ -133,9 +135,18 @@ uint8_t DAC_CheckRun(uint8_t DAC_ID)
 
 void DAC_Stop(uint8_t DAC_ID)
 {
+	if (!prvDAC.IsInit) return;
 	DMA_StopStream(prvDAC.DMATxStream);
 	prvDAC.Callback = DAC_DummyCB;
-	while (DAC->DAC_CR1 & (1 << 29));
+	if (DAC->DAC_CR1 & (1 << 4))
+	{
+
+	}
+	else
+	{
+
+		while ( DAC->DAC_CR1 & (1 << 29) ){;}
+	}
 	DAC_ForceStop(DAC_ID);
 }
 

@@ -50,6 +50,7 @@ enum
 	SERVICE_ENCODE_JPEG_START,
 	SERVICE_ENCODE_JPEG_RUN,
 	SERVICE_ENCODE_JPEG_END,
+	SERVICE_RUN_USER_API,
 };
 
 
@@ -233,6 +234,7 @@ static void prvStorge_Task(void* params)
 	uint32_t *Param;
 	SDHC_SPICtrlStruct *pSDHC;
 	CommonFun_t CB;
+	CBFuncEx_t CB2;
 	HANDLE fd;
 	while(1)
 	{
@@ -289,6 +291,10 @@ static void prvStorge_Task(void* params)
 #endif
 			prvService.FotaDoneLen += Event.Param3;
 			free(Event.Param2);
+			break;
+		case SERVICE_RUN_USER_API:
+			CB2 = (CBFuncEx_t)Event.Param1;
+			CB2(Event.Param2, Event.Param3);
 			break;
 		}
 	}
@@ -428,6 +434,10 @@ static void prvService_Task(void* params)
 				CB = (CBFuncEx_t)Event.Param1;
 				CB(NULL, Event.Param2);
 			}
+			break;
+		case SERVICE_RUN_USER_API:
+			CB = (CBFuncEx_t)Event.Param1;
+			CB(Event.Param2, Event.Param3);
 			break;
 		}
 	}
@@ -938,7 +948,10 @@ void Core_OTAEnd(uint8_t isOK)
 	OS_DeInitBuffer(&prvService.FotaDataBuf);
 }
 
-
+void Core_ServiceRunUserAPIWithFile(CBFuncEx_t CB, void *pData, void *pParam)
+{
+	Task_SendEvent(prvService.StorgeHandle, SERVICE_RUN_USER_API, CB, pData, pParam);
+}
 
 
 void Core_LCDTaskInit(void)
