@@ -57,7 +57,7 @@ int sfd_onchip_write (void* userdata, const char* buff, size_t offset, size_t le
     sfd_onchip_t* onchip = (sfd_onchip_t*)userdata;
     if (onchip == NULL)
        return -1;
-    ret = Flash_ProgramData(offset + onchip->addr, (uint32_t *)buff, len, 0);
+    ret = Flash_Program(offset + onchip->addr, (uint32_t *)buff, len);
     if (ret != 0)
     {
         return -1;
@@ -69,7 +69,7 @@ int sfd_onchip_erase (void* userdata, size_t offset, size_t len) {
     sfd_onchip_t* onchip = (sfd_onchip_t*)userdata;
     if (onchip == NULL)
        return -1;
-    ret = Flash_EraseSector(offset + onchip->addr, 0);
+    ret = Flash_Erase(offset + onchip->addr, len);
     if (ret != 0)
     {
         return -1;

@@ -35,12 +35,14 @@ struct lfs LFS;
 // 根据头文件的定义, 算出脚本区和文件系统区的绝对地址
 const size_t script_luadb_start_addr = SCRIPT_LUADB_START_ADDR;
 const size_t lfs_fs_start_addr = SCRIPT_LUADB_START_ADDR + __SCRIPT_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__ ;
-
+static HANDLE lfs_locker;
 static int block_device_read(const struct lfs_config *cfg, lfs_block_t block,
         lfs_off_t off, void *buffer, lfs_size_t size)
 {
 	uint32_t start_address = block * __FLASH_SECTOR_SIZE__ + off + lfs_fs_start_addr;
+	OS_MutexLock(lfs_locker);
 	memcpy(buffer, start_address, size);
+	OS_MutexRelease(lfs_locker);
 //	DBG("%x, %u", start_address, size);
 //	DBG_HexPrintf(buffer, 16);
 	return LFS_ERR_OK;
@@ -51,11 +53,13 @@ static int block_device_prog(const struct lfs_config *cfg, lfs_block_t block,
 {
 	uint32_t start_address = block * __FLASH_SECTOR_SIZE__ + off + lfs_fs_start_addr;
 //	DBG("%x", start_address);
-	if (Flash_ProgramData(start_address, buffer, size, 0))
+	OS_MutexLock(lfs_locker);
+	if (Flash_Program(start_address, buffer, size))
 	{
+		OS_MutexRelease(lfs_locker);
 		return LFS_ERR_IO;
-
 	}
+	OS_MutexRelease(lfs_locker);
 	return LFS_ERR_OK;
 }
 
@@ -63,10 +67,13 @@ static int block_device_erase(const struct lfs_config *cfg, lfs_block_t block)
 {
 	uint32_t start_address = block * __FLASH_SECTOR_SIZE__ + lfs_fs_start_addr;
 //	DBG("%x", start_address);
-	if (Flash_EraseSector(start_address, 0))
+	OS_MutexLock(lfs_locker);
+	if (Flash_Erase(start_address, __FLASH_SECTOR_SIZE__))
 	{
+		OS_MutexRelease(lfs_locker);
 		return LFS_ERR_IO;
 	}
+	OS_MutexRelease(lfs_locker);
 	return LFS_ERR_OK;
 }
 
@@ -112,6 +119,11 @@ void FileSystem_Init(void)
 	config->read_buffer = (void*)lfs_read_buff;
 	config->prog_buffer = (void*)lfs_prog_buff;
 	config->lookahead_buffer = (void*)lfs_lookahead_buff;
+
+	if (!lfs_locker)
+	{
+		lfs_locker = OS_MutexCreateUnlock();
+	}
 /*
  * 正式加入luatos代码可以开启
  */
@@ -182,7 +194,7 @@ int luat_fs_init(void) {
 #ifdef LUAT_USE_OTA
 int luat_flash_write(uint32_t addr, uint8_t * buf, uint32_t len){
 	// DBG("addr %x %d", addr,len);
-	Flash_EraseSector(addr, 0);
-	return FLASH_ProgramPage( addr, len, buf);
+	Flash_Erase(addr, __FLASH_SECTOR_SIZE__);
+	return Flash_Program( addr, buf, len);
 }
 #endif
