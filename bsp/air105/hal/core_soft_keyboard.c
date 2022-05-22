@@ -32,6 +32,7 @@ static int32_t prvSoftKB_DummyCB(void *pData, void *pParam)
 static int32_t prvSoftKB_IOIrqCB(void *pData, void *pParam)
 {
 	int i;
+
 	for(i = 0; i < prvSoftKB.InIONum; i++)
 	{
 		GPIO_ExtiConfig(prvSoftKB.InIO[i], 0, 0, 0);
@@ -41,7 +42,6 @@ static int32_t prvSoftKB_IOIrqCB(void *pData, void *pParam)
 	{
 		GPIO_ODConfig(prvSoftKB.OutIO[i], !prvSoftKB.PressKeyIOLevel);
 	}
-
 	if (prvSoftKB.IsEnable)
 	{
 		Timer_StartUS(prvSoftKB.ScanTimer, prvSoftKB.ScanPeriod, 1);
@@ -184,18 +184,20 @@ void SoftKB_ScanOnce(void)
 	uint32_t KeySn;
 	if (!prvSoftKB.IsEnable || !prvSoftKB.IsScan)
 	{
-		return;
+		goto STOP;
 	}
+
 	for(i = 0; i < prvSoftKB.OutIONum; i++)
 	{
 		GPIO_Output(prvSoftKB.OutIO[i], prvSoftKB.PressKeyIOLevel);
 		for(j = 0; j < prvSoftKB.InIONum; j++)
 		{
-			//DBG("%d,%d,%d", i, j, GPIO_Input(prvSoftKB.InIO[j]));
+//			DBG("%d,%d,%d", i, j, GPIO_Input(prvSoftKB.InIO[j]));
 			prvSoftKB.KeyPress[(i << 4) + j] += (GPIO_Input(prvSoftKB.InIO[j]) == prvSoftKB.PressKeyIOLevel);
 		}
 		GPIO_Output(prvSoftKB.OutIO[i], !prvSoftKB.PressKeyIOLevel);
 	}
+
 	prvSoftKB.ScanCnt++;
 	if (prvSoftKB.ScanCnt >= prvSoftKB.ScanTimes)
 	{
@@ -231,6 +233,7 @@ void SoftKB_ScanOnce(void)
 				return;
 			}
 		}
+STOP:
 		Timer_Stop(prvSoftKB.ScanTimer);
 		prvSoftKB.IsScan = 0;
 		for(i = 0; i < prvSoftKB.OutIONum; i++)

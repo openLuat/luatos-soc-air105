@@ -39,7 +39,7 @@ static void l_softkeyboard_irq_cb(void *pData, void *pParam) {
 }
 
 int luat_softkeyboard_init(luat_softkeyboard_conf_t *conf){
-	SoftKB_Setup(6250, 4, 2, 0, l_softkeyboard_irq_cb, NULL);
+	SoftKB_Setup(6250, 4, 2, 1, l_softkeyboard_irq_cb, NULL);
 	SoftKB_IOConfig(conf->inio, conf->inio_num, conf->outio, conf->outio_num, 0);
     SoftKB_Start();
     return 0;
