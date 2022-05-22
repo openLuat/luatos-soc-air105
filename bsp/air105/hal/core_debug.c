@@ -102,7 +102,7 @@ void add_printf_data(uint8_t *data, uint32_t len)
 #ifdef __BUILD_APP__
 
 	uint32_t Critical = OS_EnterCritical();
-	configASSERT(prvDBGCtrl.InsertBusy == 0);
+	ASSERT(prvDBGCtrl.InsertBusy == 0);
 	prvDBGCtrl.InsertBusy = 1;
 	if ((prvDBGCtrl.LogBuffer.Pos + len) > prvDBGCtrl.LogBuffer.MaxLen)
 	{

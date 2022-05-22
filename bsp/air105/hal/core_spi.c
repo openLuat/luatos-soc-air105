@@ -70,7 +70,7 @@ typedef struct
 	const uint16_t DMARxChannel;
 	CBFuncEx_t Callback;
 	void *pParam;
-	HANDLE Sem;
+	volatile HANDLE Sem;
 	Buffer_Struct TxBuf;
 	Buffer_Struct RxBuf;
 	uint32_t Speed;

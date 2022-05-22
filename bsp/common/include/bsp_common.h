@@ -554,7 +554,7 @@ extern uint64_t GetSysTickMS();
 #define calloc OS_Calloc
 
 #ifndef ASSERT
-#if(defined(__DEBUG__) || defined(DEBUG))
+#if defined(__DEBUG__)
 #define ASSERT( x ) if( ( x ) == 0 ) { __disable_irq(); DBG_Trace("\r\nassert %s,%d", __FUNCTION__, __LINE__); for( ;; ); }
 #else
 #define ASSERT( x )

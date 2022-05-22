@@ -141,6 +141,7 @@ static void prvLCD_Task(void* params)
 	PV_Union uPV;
 	uint16_t uColor[256];
 	uint32_t i, j, Size;
+	uint8_t CSPin;
 	for(i = 0; i < 256; i++)
 	{
 		uColor[i] = RGB888toRGB565(i, i, i, 1);
@@ -174,14 +175,16 @@ static void prvLCD_Task(void* params)
 //			SPI_Transfer(Draw->SpiID, Draw->Data, Draw->Data, Draw->Size, 2);
 
 			SPI_BlockTransfer(Draw->SpiID, Draw->Data, Draw->Data, Draw->Size);
-//			if (Draw->Size > 38000)
+
 //			{
 //				DBG("%u, %u", Draw->Size, (uint32_t)(GetSysTickUS() - StartUS));
 //			}
 			prvService.LCDDrawDoneByte += Draw->Size;
 			free(Draw->Data);
-			GPIO_Output(Draw->CSPin, 1);
+			CSPin = Draw->CSPin;
 			free(Draw);
+			GPIO_Output(CSPin, 1);
+
 			SPI_SetTxOnlyFlag(Draw->SpiID, 0);
 			break;
 		case SERVICE_CAMERA_DRAW:

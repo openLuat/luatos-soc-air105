@@ -180,7 +180,8 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
 //#define configASSERT( x ) if( ( x ) == 0 ) { taskDISABLE_INTERRUPTS(); for( ;; ); }
-#if(defined(__DEBUG__) || defined(DEBUG))
+//#if(defined(__DEBUG__) || defined(DEBUG))
+#if 0
 #define configASSERT( x ) if( ( x ) == 0 ) { taskDISABLE_INTERRUPTS(); DBG_Trace("\r\nassert %s,%d", __FUNCTION__, __LINE__); for( ;; ); }
 #else
 #define configASSERT( x )
