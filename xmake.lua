@@ -203,7 +203,7 @@ if with_luatos then
         if LVGL_CONF == nil then target:add("deps", "lvgl") end
     end)
 
-    add_deps("tflm")
+    --add_deps("tflm")
 end
 
     -- add deps
