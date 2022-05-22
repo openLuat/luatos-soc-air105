@@ -364,7 +364,7 @@ int luat_lcd_draw(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint16_t x2, 
 
 
 static void *luat_fatfs_spi_ctrl;
-
+static HANDLE luat_fatfs_locker;
 static void sdhc_spi_check(luat_fatfs_spi_t* userdata)
 {
 	if (!luat_fatfs_spi_ctrl)
@@ -381,6 +381,11 @@ static void sdhc_spi_check(luat_fatfs_spi_t* userdata)
 static DSTATUS sdhc_spi_initialize(luat_fatfs_spi_t* userdata)
 {
 	int i;
+	if (!luat_fatfs_locker)
+	{
+		luat_fatfs_locker = OS_MutexCreateUnlock();
+	}
+	OS_MutexLock(luat_fatfs_locker);
 	if (luat_fatfs_spi_ctrl)
 	{
 		for(i = 0; i < USB_MAX; i++)
@@ -406,46 +411,57 @@ static DSTATUS sdhc_spi_initialize(luat_fatfs_spi_t* userdata)
 			Core_UDiskAttachSDHCRecovery(i, luat_fatfs_spi_ctrl);
 		}
 	}
-
+	OS_MutexRelease(luat_fatfs_locker);
 	return SDHC_IsReady(luat_fatfs_spi_ctrl)?0:STA_NOINIT;
 }
 
 static DSTATUS sdhc_spi_status(luat_fatfs_spi_t* userdata)
 {
+	OS_MutexLock(luat_fatfs_locker);
 	sdhc_spi_check(userdata);
+	OS_MutexRelease(luat_fatfs_locker);
 	return SDHC_IsReady(luat_fatfs_spi_ctrl)?0:STA_NOINIT;
 }
 
 static DRESULT sdhc_spi_read(luat_fatfs_spi_t* userdata, uint8_t* buff, uint32_t sector, uint32_t count)
 {
+	OS_MutexLock(luat_fatfs_locker);
 	sdhc_spi_check(userdata);
 	if (!SDHC_IsReady(luat_fatfs_spi_ctrl))
 	{
+		OS_MutexRelease(luat_fatfs_locker);
 		return RES_NOTRDY;
 	}
 	SDHC_SpiReadBlocks(luat_fatfs_spi_ctrl, buff, sector, count);
+	OS_MutexRelease(luat_fatfs_locker);
 	return SDHC_IsReady(luat_fatfs_spi_ctrl)?RES_OK:RES_ERROR;
 }
 
 static DRESULT sdhc_spi_write(luat_fatfs_spi_t* userdata, const uint8_t* buff, uint32_t sector, uint32_t count)
 {
+	OS_MutexLock(luat_fatfs_locker);
 	sdhc_spi_check(userdata);
 	if (!SDHC_IsReady(luat_fatfs_spi_ctrl))
 	{
+		OS_MutexRelease(luat_fatfs_locker);
 		return RES_NOTRDY;
 	}
 	SDHC_SpiWriteBlocks(luat_fatfs_spi_ctrl, buff, sector, count);
+	OS_MutexRelease(luat_fatfs_locker);
 	return SDHC_IsReady(luat_fatfs_spi_ctrl)?RES_OK:RES_ERROR;
 }
 
 static DRESULT sdhc_spi_ioctl(luat_fatfs_spi_t* userdata, uint8_t ctrl, void* buff)
 {
+	OS_MutexLock(luat_fatfs_locker);
 	sdhc_spi_check(userdata);
 	if (!SDHC_IsReady(luat_fatfs_spi_ctrl))
 	{
+		OS_MutexRelease(luat_fatfs_locker);
 		return RES_NOTRDY;
 	}
 	SDHC_SpiReadCardConfig(luat_fatfs_spi_ctrl);
+	OS_MutexRelease(luat_fatfs_locker);
 	switch (ctrl) {
 		case CTRL_SYNC :		/* Make sure that no pending write process */
 			return RES_OK;
