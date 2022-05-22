@@ -412,6 +412,7 @@ int32_t Flash_Program(uint32_t Address, const uint8_t *pBuf, uint32_t Len)
 	return ERROR_NONE;
 }
 
+#if 0
 int Flash_EraseSector(uint32_t address, uint8_t NeedCheck)
 {
 	uint8_t buf[__FLASH_PAGE_SIZE__];
@@ -472,3 +473,4 @@ int Flash_ProgramData(uint32_t address, uint32_t *Data, uint32_t Len, uint8_t Ne
 	}
 	return 0;
 }
+#endif

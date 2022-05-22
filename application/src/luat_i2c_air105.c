@@ -50,14 +50,21 @@ int luat_i2c_close(int id) {
 }
 
 int luat_i2c_send(int id, int addr, void* buff, size_t len, uint8_t stop) {
-	if (!stop) I2C_SetTxStopFlag(id);
 	return I2C_BlockWrite(id, addr, (const uint8_t *)buff, len, 100, NULL, NULL);
     // I2C_Prepare(id, addr, 1, NULL, NULL);
     // I2C_MasterXfer(id, I2C_OP_WRITE, 0, buff, len, 20);
 }
 
 int luat_i2c_recv(int id, int addr, void* buff, size_t len) {
-	return I2C_BlockRead(id, addr, 0, (uint8_t *)buff, len, 100, NULL, NULL);
+	return I2C_BlockRead(id, addr, 0, 0, (uint8_t *)buff, len, 100, NULL, NULL);
     // I2C_Prepare(id, addr, 1, NULL, NULL);
     // I2C_MasterXfer(id, I2C_OP_READ, 0, buff, len, 20);
+}
+
+int luat_i2c_xfer(int id, int addr, uint8_t *reg, size_t reg_len, uint8_t *buff, size_t len) {
+	if (reg && reg_len) {
+		return I2C_BlockRead(id, addr, reg, reg_len, (uint8_t *)buff, len, 100, NULL, NULL);
+	} else {
+		return I2C_BlockWrite(id, addr, (const uint8_t *)buff, len, 100, NULL, NULL);
+	}
 }

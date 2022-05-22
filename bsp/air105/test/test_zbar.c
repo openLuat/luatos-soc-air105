@@ -547,7 +547,7 @@ void DecodeQR_TestInit(void)
 	Data[1] = 0x10;
 
 	I2C_BlockWrite(I2C_ID0, GC032A_I2C_ADDRESS, Data, 2, 10, NULL, 0);
-	I2C_BlockRead(I2C_ID0, GC032A_I2C_ADDRESS, &Reg, Data, 2, 10, NULL, 0);
+	I2C_BlockRead(I2C_ID0, GC032A_I2C_ADDRESS, &Reg, 1, Data, 2, 10, NULL, 0);
 	if ((0x23 == Data[0]) && (0x2a == Data[1]))
 	{
 		DBG("识别到GC032A控制芯片");

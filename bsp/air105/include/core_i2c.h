@@ -53,12 +53,13 @@ void I2C_Prepare(uint8_t I2CID, uint16_t ChipAddress, uint8_t ChipAddressLen, CB
  *  I2C_OP_READ_REG = 0,	//i2c通用读寄存器，一写一读，自动带start信号
 	I2C_OP_READ,		//i2c通用读，只读
 	I2C_OP_WRITE,		//i2c通用写，只写
- * @param RegAddress 寄存器地址，在通用读写时忽略
+ * @param RegAddress 寄存器地址的数据缓存，在通用读写时忽略
+ * @param RegLen 寄存器地址长度，在通用读写时忽略
  * @param Data 读写数据缓存，直接使用用户的空间，在完成前不可以释放空间
  * @param Len 读写数据长度
  * @param Toms 传输单个字节超时时间，单位ms
  */
-void I2C_MasterXfer(uint8_t I2CID, uint8_t Operate, uint8_t RegAddress, uint8_t *Data, uint32_t Len, uint16_t Toms);
+void I2C_MasterXfer(uint8_t I2CID, uint8_t Operate, uint8_t *RegAddress, uint32_t RegLen, uint8_t *Data, uint32_t Len, uint16_t Toms);
 
 /**
  * @brief i2c主机传输，多个单一寄存器写入
@@ -83,5 +84,5 @@ int I2C_WaitResult(uint8_t I2CID, int32_t *Result);
 
 int32_t I2C_BlockWrite(uint8_t I2CID, uint8_t ChipAddress, const uint8_t *Data, uint32_t Len, uint16_t Toms, CBFuncEx_t CB, void *pParam);
 
-int32_t I2C_BlockRead(uint8_t I2CID, uint8_t ChipAddress, uint8_t *Reg, uint8_t *Data, uint32_t Len, uint16_t Toms, CBFuncEx_t CB, void *pParam);
+int32_t I2C_BlockRead(uint8_t I2CID, uint8_t ChipAddress, uint8_t *Reg, uint32_t RegLen, uint8_t *Data, uint32_t Len, uint16_t Toms, CBFuncEx_t CB, void *pParam);
 #endif

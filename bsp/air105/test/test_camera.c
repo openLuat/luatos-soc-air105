@@ -737,7 +737,7 @@ void GC032A_TestInit(void)
 	Data[1] = 0x10;
 
 	I2C_BlockWrite(I2C_ID0, GC032A_I2C_ADDRESS, Data, 2, 10, NULL, 0);
-	I2C_BlockRead(I2C_ID0, GC032A_I2C_ADDRESS, &Reg, Data, 2, 10, NULL, 0);
+	I2C_BlockRead(I2C_ID0, GC032A_I2C_ADDRESS, &Reg, 1, Data, 2, 10, NULL, 0);
 	if ((0x23 == Data[0]) && (0x2a == Data[1]))
 	{
 		DBG("识别到GC032A控制芯片");
@@ -751,7 +751,7 @@ void GC032A_TestInit(void)
 	Data[1] = 0x00;
 	Reg = 0x44;
 	I2C_BlockWrite(I2C_ID0, GC032A_I2C_ADDRESS, Data, 2, 10, NULL, 0);
-	I2C_BlockRead(I2C_ID0, GC032A_I2C_ADDRESS, &Reg, Data, 2, 10, NULL, 0);
+	I2C_BlockRead(I2C_ID0, GC032A_I2C_ADDRESS, &Reg, 1, Data, 2, 10, NULL, 0);
 	DBG("%x,%x", Data[0], Data[1]);
 	for(i = 0; i < sizeof(GC032A_InitRegQueue)/sizeof(I2C_CommonRegDataStruct); i++)
 	{
@@ -806,7 +806,7 @@ void OV2640_TestInit(void)
 	Data[1] = 0x01;
 
 	I2C_BlockWrite(I2C_ID0, OV2640_I2C_ADDRESS, Data, 2, 10, NULL, 0);
-	I2C_BlockRead(I2C_ID0, OV2640_I2C_ADDRESS, &Reg, Data, 2, 10, NULL, 0);
+	I2C_BlockRead(I2C_ID0, OV2640_I2C_ADDRESS, &Reg, 1, Data, 2, 10, NULL, 0);
 	if ((0x7F == Data[0]) && (0xA2 == Data[1]))
 	{
 		DBG("识别到OV2640控制芯片");

@@ -85,7 +85,7 @@ void SHT30_GetResult(CBFuncEx_t CB, void *pParam)
 	float vTemp = 0.00;
 
 	Reg[0] = 0;
-	if (!I2C_BlockRead(I2CID, SHT30_ADDR, Reg, Data, 6, 100, CB, pParam))
+	if (!I2C_BlockRead(I2CID, SHT30_ADDR, Reg, 1, Data, 6, 100, CB, pParam))
 	{
 		T = BytesGetBe16(Data);
 		H = BytesGetBe16(Data + 3);

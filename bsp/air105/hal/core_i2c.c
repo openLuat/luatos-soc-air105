@@ -43,22 +43,18 @@ typedef struct
 	const I2C_TypeDef *RegBase;
 	const int IrqLine;
 	Buffer_Struct DataBuf;
+	Buffer_Struct RegBuf;
 	Timer_t *ToTimer;
 	CBFuncEx_t Callback;
 	void *pParam;
 	HANDLE Sem;
-	I2C_CommonRegDataStruct *RegQueue;
-	uint32_t TotalQueueNum;
-	uint32_t CurQueuePos;
 	int32_t Result;
 	uint16_t TimeoutMs;
 	uint16_t ChipAddress;
 	uint8_t ChipAddressLen;
-	uint8_t RegAddress;
 	uint8_t State;
 	uint8_t IsBusy;
 	uint8_t IsBlockMode;
-	uint8_t no_stop_end;
 }I2C_CtrlStruct;
 static I2C_CtrlStruct prvI2C = {
 		I2C0,
@@ -71,7 +67,6 @@ static void prvI2C_Done(uint8_t I2CID, int32_t Result)
 	prvI2C.State = I2C_STATE_FREE;
 	prvI2C.Result = Result;
 	prvI2C.IsBusy = 0;
-	prvI2C.no_stop_end = 0;
 #ifdef __BUILD_OS__
 	if (prvI2C.IsBlockMode) OS_MutexRelease(prvI2C.Sem);
 #endif
@@ -128,14 +123,8 @@ static void I2C_IrqHandle(int32_t IrqLine, void *pData)
 			}
 			else
 			{
-				if (!prvI2C.no_stop_end)
-				{
-					I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[prvI2C.DataBuf.Pos]|I2C_IC_DATA_CMD_STOP;
-				}
-				else
-				{
-					I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[prvI2C.DataBuf.Pos];
-				}
+
+				I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[prvI2C.DataBuf.Pos]|I2C_IC_DATA_CMD_STOP;
 			}
 			prvI2C.DataBuf.Pos++;
 		}
@@ -144,16 +133,33 @@ static void I2C_IrqHandle(int32_t IrqLine, void *pData)
 		if (State & I2C_IT_TXE)
 		{
 			Timer_StartMS(prvI2C.ToTimer, prvI2C.TimeoutMs, 0);
-			prvI2C.State = I2C_STATE_READ_ADDRESS_RD;
-			if ((prvI2C.DataBuf.MaxLen - prvI2C.DataBuf.Pos) > 1)
+			if (prvI2C.RegBuf.Pos >= prvI2C.RegBuf.MaxLen)
 			{
-				I2C->IC_DATA_CMD = I2C_IC_DATA_CMD_CMD;
+				prvI2C.State = I2C_STATE_READ_ADDRESS_RD;
+				if ((prvI2C.DataBuf.MaxLen - prvI2C.DataBuf.Pos) > 1)
+				{
+					I2C->IC_DATA_CMD = I2C_IC_DATA_CMD_CMD;
+				}
+				else
+				{
+					I2C->IC_DATA_CMD = I2C_IC_DATA_CMD_CMD|I2C_IC_DATA_CMD_STOP;
+				}
+				I2C->IC_INTR_MASK = I2C_IC_INTR_MASK_M_RX_FULL|I2C_IC_INTR_MASK_M_STOP_DET|I2C_IC_INTR_MASK_M_TX_ABRT;
 			}
 			else
 			{
-				I2C->IC_DATA_CMD = I2C_IC_DATA_CMD_CMD|I2C_IC_DATA_CMD_STOP;
+				if ((prvI2C.RegBuf.MaxLen - prvI2C.RegBuf.Pos) > 1)
+				{
+					I2C->IC_DATA_CMD = prvI2C.RegBuf.Data[prvI2C.RegBuf.Pos];
+
+				}
+				else
+				{
+
+					I2C->IC_DATA_CMD = prvI2C.RegBuf.Data[prvI2C.RegBuf.Pos]|I2C_IC_DATA_CMD_RESTART;
+				}
+				prvI2C.RegBuf.Pos++;
 			}
-			I2C->IC_INTR_MASK = I2C_IC_INTR_MASK_M_RX_FULL|I2C_IC_INTR_MASK_M_STOP_DET|I2C_IC_INTR_MASK_M_TX_ABRT;
 		}
 		break;
 	case I2C_STATE_READ_ADDRESS_RD:
@@ -181,57 +187,6 @@ static void I2C_IrqHandle(int32_t IrqLine, void *pData)
 	default:
 //		IIC_DBG("%x, %u", State, prvI2C.State);
 		break;
-	}
-	return;
-I2C_DONE:
-	Timer_Stop(prvI2C.ToTimer);
-	I2C->IC_INTR_MASK = 0;
-	prvI2C_Done(0, result);
-}
-
-static void I2C_IrqHandleRegQueue(int32_t IrqLine, void *pData)
-{
-	int32_t result = ERROR_NONE;
-	I2C_TypeDef *I2C = prvI2C.RegBase;
-	uint32_t Source = I2C->IC_TX_ABRT_SOURCE;
-	uint32_t State = I2C->IC_RAW_INTR_STAT;
-	uint32_t RegValue = I2C->IC_CLR_INTR;
-
-	if (Source & 0x0000ffff)
-	{
-//		DBG("error stop state %d, result 0x%x", prvI2C.State, Source);
-		result = -ERROR_OPERATION_FAILED;
-		goto I2C_DONE;
-	}
-
-	if (State & I2C_IT_TXE)
-	{
-		Timer_StartMS(prvI2C.ToTimer, prvI2C.TimeoutMs, 0);
-		if (prvI2C.DataBuf.Pos >= prvI2C.DataBuf.MaxLen)
-		{
-			prvI2C.CurQueuePos++;
-			if (prvI2C.CurQueuePos >= prvI2C.TotalQueueNum)
-			{
-				goto I2C_DONE;
-			}
-			else
-			{
-				Buffer_StaticInit(&prvI2C.DataBuf, prvI2C.RegQueue[prvI2C.CurQueuePos].Data, 2);
-				I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[0];
-				prvI2C.DataBuf.Pos++;
-				I2C->IC_INTR_MASK = I2C_IC_INTR_MASK_M_TX_EMPTY|I2C_IC_INTR_MASK_M_STOP_DET;
-			}
-
-		}
-		else if ((prvI2C.DataBuf.MaxLen - prvI2C.DataBuf.Pos) > 1)
-		{
-			I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[prvI2C.DataBuf.Pos];
-		}
-		else
-		{
-			I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[prvI2C.DataBuf.Pos]|I2C_IC_DATA_CMD_STOP;
-		}
-		prvI2C.DataBuf.Pos++;
 	}
 	return;
 I2C_DONE:
@@ -310,7 +265,7 @@ void I2C_Prepare(uint8_t I2CID, uint16_t ChipAddress, uint8_t ChipAddressLen, CB
 	prvI2C.pParam = pParam;
 }
 
-void I2C_MasterXfer(uint8_t I2CID, uint8_t Operate, uint8_t RegAddress, uint8_t *Data, uint32_t Len, uint16_t Toms)
+void I2C_MasterXfer(uint8_t I2CID, uint8_t Operate, uint8_t *RegAddress, uint32_t RegLen, uint8_t *Data, uint32_t Len, uint16_t Toms)
 {
 	I2C_TypeDef *I2C = prvI2C.RegBase;
 	uint32_t RegValue;
@@ -337,15 +292,22 @@ void I2C_MasterXfer(uint8_t I2CID, uint8_t Operate, uint8_t RegAddress, uint8_t 
 		prvI2C.TimeoutMs = 50;
 	}
 	Buffer_StaticInit(&prvI2C.DataBuf, Data, Len);
-	prvI2C.RegQueue = NULL;
+	Buffer_StaticInit(&prvI2C.RegBuf, RegAddress, RegLen);
 	RegValue = I2C->IC_CLR_INTR;
 	Timer_StartMS(prvI2C.ToTimer, prvI2C.TimeoutMs, 0);
 	switch(Operate)
 	{
 	case I2C_OP_READ_REG:
-
 		prvI2C.State = I2C_STATE_READ_ADDRESS_WR;
-		I2C->IC_DATA_CMD = I2C_IC_DATA_CMD_RESTART|RegAddress;
+		if (RegLen > 1)
+		{
+			I2C->IC_DATA_CMD = prvI2C.RegBuf.Data[0];
+		}
+		else
+		{
+			I2C->IC_DATA_CMD = I2C_IC_DATA_CMD_RESTART|prvI2C.RegBuf.Data[0];
+		}
+		prvI2C.RegBuf.Pos = 1;
 		I2C->IC_INTR_MASK = I2C_IC_INTR_MASK_M_TX_EMPTY|I2C_IC_INTR_MASK_M_STOP_DET|I2C_IC_INTR_MASK_M_TX_ABRT;
 		break;
 	case I2C_OP_READ:
@@ -368,14 +330,8 @@ void I2C_MasterXfer(uint8_t I2CID, uint8_t Operate, uint8_t RegAddress, uint8_t 
 		}
 		else
 		{
-			if (!prvI2C.no_stop_end)
-			{
-				I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[0]|I2C_IC_DATA_CMD_STOP;
-			}
-			else
-			{
-				I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[0];
-			}
+
+			I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[0]|I2C_IC_DATA_CMD_STOP;
 		}
 		prvI2C.DataBuf.Pos++;
 		I2C->IC_INTR_MASK = I2C_IC_INTR_MASK_M_TX_EMPTY|I2C_IC_INTR_MASK_M_STOP_DET|I2C_IC_INTR_MASK_M_TX_ABRT;
@@ -389,53 +345,6 @@ void I2C_MasterXfer(uint8_t I2CID, uint8_t Operate, uint8_t RegAddress, uint8_t 
 	}
 
 	ISR_OnOff(prvI2C.IrqLine, 1);
-}
-
-int32_t I2C_MasterWriteRegQueue(uint8_t I2CID, I2C_CommonRegDataStruct *RegQueue, uint32_t TotalNum, uint16_t Toms, uint8_t IsBlock)
-{
-	I2C_TypeDef *I2C = prvI2C.RegBase;
-	uint32_t RegValue;
-	int32_t Result;
-	I2C->IC_INTR_MASK = 0;
-	ISR_OnOff(prvI2C.IrqLine, 0);
-	if (prvI2C.IsBusy)
-	{
-		Timer_Stop(prvI2C.ToTimer);
-		I2C->IC_ENABLE |= I2C_IC_ENABLE_ABORT;
-		prvI2C.IsBusy = 0;
-		prvI2C.Result = -ERROR_OPERATION_FAILED;
-		prvI2C.Callback(I2C_ID0, prvI2C.pParam);
-		while(I2C->IC_ENABLE & I2C_IC_ENABLE_ABORT){;}
-	}
-    ISR_SetHandler(prvI2C.IrqLine, I2C_IrqHandleRegQueue, NULL);
-	prvI2C.IsBusy = 1;
-	if (Toms)
-	{
-		prvI2C.TimeoutMs = Toms;
-	}
-	else
-	{
-		prvI2C.TimeoutMs = 50;
-	}
-	prvI2C.RegQueue = RegQueue;
-	prvI2C.TotalQueueNum = TotalNum;
-	prvI2C.CurQueuePos = 0;
-	RegValue = I2C->IC_CLR_INTR;
-	Timer_StartMS(prvI2C.ToTimer, prvI2C.TimeoutMs, 0);
-	Buffer_StaticInit(&prvI2C.DataBuf, prvI2C.RegQueue[prvI2C.CurQueuePos].Data, 2);
-	I2C->IC_DATA_CMD = prvI2C.DataBuf.Data[0];
-	prvI2C.DataBuf.Pos++;
-	I2C->IC_INTR_MASK = I2C_IC_INTR_MASK_M_TX_EMPTY|I2C_IC_INTR_MASK_M_STOP_DET;
-	ISR_OnOff(prvI2C.IrqLine, 1);
-	if (IsBlock)
-	{
-		while(!I2C_WaitResult(I2CID, &Result)) {;}
-		return Result;
-	}
-	else
-	{
-		return 0;
-	}
 }
 
 
@@ -452,7 +361,7 @@ int32_t I2C_BlockWrite(uint8_t I2CID, uint8_t ChipAddress, const uint8_t *Data, 
 	while(!I2C_WaitResult(I2CID, &Result)) {;}
 	prvI2C.IsBlockMode = !OS_CheckInIrq();
 	I2C_Prepare(I2CID, ChipAddress, 1, CB, pParam);
-	I2C_MasterXfer(I2CID, I2C_OP_WRITE, 0, Data, Len, Toms);
+	I2C_MasterXfer(I2CID, I2C_OP_WRITE, NULL, 0, Data, Len, Toms);
 #ifdef __BUILD_OS__
 	if (!OS_CheckInIrq())
 	{
@@ -463,19 +372,19 @@ int32_t I2C_BlockWrite(uint8_t I2CID, uint8_t ChipAddress, const uint8_t *Data, 
 	return Result;
 }
 
-int32_t I2C_BlockRead(uint8_t I2CID, uint8_t ChipAddress, uint8_t *Reg, uint8_t *Data, uint32_t Len, uint16_t Toms, CBFuncEx_t CB, void *pParam)
+int32_t I2C_BlockRead(uint8_t I2CID, uint8_t ChipAddress, uint8_t *Reg, uint32_t RegLen, uint8_t *Data, uint32_t Len, uint16_t Toms, CBFuncEx_t CB, void *pParam)
 {
 	int32_t Result;
 	while(!I2C_WaitResult(I2CID, &Result)) {;}
 	prvI2C.IsBlockMode = !OS_CheckInIrq();
 	I2C_Prepare(I2CID, ChipAddress, 1, CB, pParam);
-	if (Reg)
+	if (Reg && RegLen)
 	{
-		I2C_MasterXfer(I2CID, I2C_OP_READ_REG, *Reg, Data, Len, Toms);
+		I2C_MasterXfer(I2CID, I2C_OP_READ_REG, Reg, RegLen, Data, Len, Toms);
 	}
 	else
 	{
-		I2C_MasterXfer(I2CID, I2C_OP_READ, 0, Data, Len, Toms);
+		I2C_MasterXfer(I2CID, I2C_OP_READ, NULL, 0, Data, Len, Toms);
 	}
 #ifdef __BUILD_OS__
 	if (!OS_CheckInIrq())
@@ -487,12 +396,6 @@ int32_t I2C_BlockRead(uint8_t I2CID, uint8_t ChipAddress, uint8_t *Reg, uint8_t 
 	return Result;
 }
 
-void I2C_SetTxStopFlag(uint8_t I2CID)
-{
-	int32_t Result;
-	while(!I2C_WaitResult(I2CID, &Result)) {;}
-	prvI2C.no_stop_end = 1;
-}
 #ifdef __BUILD_APP__
 INIT_HW_EXPORT(I2C_GlobalInit, "1");
 #endif
