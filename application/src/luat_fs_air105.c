@@ -40,9 +40,7 @@ static int block_device_read(const struct lfs_config *cfg, lfs_block_t block,
         lfs_off_t off, void *buffer, lfs_size_t size)
 {
 	uint32_t start_address = block * __FLASH_SECTOR_SIZE__ + off + lfs_fs_start_addr;
-	OS_MutexLock(lfs_locker);
 	memcpy(buffer, start_address, size);
-	OS_MutexRelease(lfs_locker);
 //	DBG("%x, %u", start_address, size);
 //	DBG_HexPrintf(buffer, 16);
 	return LFS_ERR_OK;

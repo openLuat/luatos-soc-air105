@@ -21,7 +21,13 @@ typedef enum
 typedef struct
 {
 	CBFuncEx_t CB;	//pData是自身Audio_StreamStruct指针
+	CBFuncEx_t Decoder;
+	CBFuncEx_t Encoder;
 	void *pParam;
+	void *fd;
+	void *CoderParam;
+	Buffer_Struct FileDataBuffer;
+	Buffer_Struct AudioDataBuffer;
 	llist_head DataHead;
 	uint32_t SampleRate;
 	uint8_t BitDepth;
