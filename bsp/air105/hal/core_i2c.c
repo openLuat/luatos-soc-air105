@@ -148,16 +148,7 @@ static void I2C_IrqHandle(int32_t IrqLine, void *pData)
 			}
 			else
 			{
-				if ((prvI2C.RegBuf.MaxLen - prvI2C.RegBuf.Pos) > 1)
-				{
-					I2C->IC_DATA_CMD = prvI2C.RegBuf.Data[prvI2C.RegBuf.Pos];
-
-				}
-				else
-				{
-
-					I2C->IC_DATA_CMD = prvI2C.RegBuf.Data[prvI2C.RegBuf.Pos]|I2C_IC_DATA_CMD_RESTART;
-				}
+				I2C->IC_DATA_CMD = prvI2C.RegBuf.Data[prvI2C.RegBuf.Pos];
 				prvI2C.RegBuf.Pos++;
 			}
 		}

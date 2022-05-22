@@ -61,7 +61,7 @@ int luat_i2c_recv(int id, int addr, void* buff, size_t len) {
     // I2C_MasterXfer(id, I2C_OP_READ, 0, buff, len, 20);
 }
 
-int luat_i2c_xfer(int id, int addr, uint8_t *reg, size_t reg_len, uint8_t *buff, size_t len) {
+int luat_i2c_transfer(int id, int addr, uint8_t *reg, size_t reg_len, uint8_t *buff, size_t len) {
 	if (reg && reg_len) {
 		return I2C_BlockRead(id, addr, reg, reg_len, (uint8_t *)buff, len, 100, NULL, NULL);
 	} else {
