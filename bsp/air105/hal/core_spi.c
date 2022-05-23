@@ -54,8 +54,8 @@
 
 #define HSPIM_SR_PUSH_FULL_TX								(1 << 4)
 #define HSPIM_SR_POP_EMPTY_RX								(1 << 10)
-#define HSPIM_FIFO_TX_NUM									(64)
-#define HSPIM_FIFO_RX_NUM									(64)
+#define HSPIM_FIFO_TX_NUM									(63)
+#define HSPIM_FIFO_RX_NUM									(63)
 #define HSPIM_FIFO_LEVEL									(48)
 
 #define SPIM_FIFO_TX_NUM									(16)
@@ -381,7 +381,7 @@ static void HSPI_MasterInit(uint8_t SpiID, uint8_t Mode, uint32_t Speed)
 		ctrl |= (1 << HSPIM_CR0_PARAM_CPOL_POS)|(1 << HSPIM_CR0_PARAM_CPHA_POS);
 		break;
 	}
-	SPI->CR1 = (div << HSPIM_CR1_PARAM_BAUDRATE_POS) + 1;
+	SPI->CR1 = (div << HSPIM_CR1_PARAM_BAUDRATE_POS);
 	SPI->CR0 = ctrl;
 	SPI->DCR = 30|(1 << 7);
 	prvSPI[SpiID].Speed = (SystemCoreClock >> 1) / div;
@@ -779,8 +779,15 @@ static int32_t prvSPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_
 
 int32_t SPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData, uint32_t Len)
 {
+	uint32_t times = 192000000;
+	if (prvSPI[SpiID].Speed >= 48000000)
+	{
+		times = Len * 100000;
+	}
+
 #ifdef __BUILD_OS__
-	if (  (Len <= 16) || OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= (Len * 100000)))
+	//if ( OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= (Len * 50000 * ((SpiID==HSPI_ID0)?2:1))))
+	if ( OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= times))
 	{
 		prvSPI[SpiID].IsBlockMode = 0;
 #endif
@@ -813,9 +820,9 @@ int32_t SPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData,
 		DBG("!");
 		return Result;
 	}
-	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 10))
+	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 20))
 	{
-		DBG("!!!");
+		DBG("spi id %d timeout",SpiID);
 		SPI_TransferStop(SpiID);
 		prvSPI[SpiID].IsBlockMode = 0;
 		return -1;
@@ -961,8 +968,14 @@ static int32_t prvSPI_FlashBlockTransfer(uint8_t SpiID, const uint8_t *TxData, u
 
 int32_t SPI_FlashBlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint32_t WLen, uint8_t *RxData, uint32_t RLen)
 {
+	uint32_t times = 192000000;
+	if (prvSPI[SpiID].Speed >= 48000000)
+	{
+		times = (WLen + RLen) * 100000;
+	}
 #ifdef __BUILD_OS__
-	if ( (prvSPI[SpiID].DMARxStream == 0xff) || (prvSPI[SpiID].DMATxStream == 0xff) || OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= ((WLen + RLen) * 100000)))
+//	if ( OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= ((WLen + RLen) * 50000 * ((SpiID==HSPI_ID0)?2:1) )))
+	if ( OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= times))
 	{
 		prvSPI[SpiID].IsBlockMode = 0;
 #endif
@@ -993,7 +1006,7 @@ int32_t SPI_FlashBlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint32_t WL
 		free(Temp);
 		return Result;
 	}
-	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 10))
+	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 20))
 	{
 		free(Temp);
 		DBG("!!!");
@@ -1139,7 +1152,7 @@ void SPI_SetNewConfig(uint8_t SpiID, uint32_t Speed, uint8_t NewMode)
 	case HSPI_ID0:
 		HSPI = (HSPIM_TypeDef *)prvSPI[SpiID].RegBase;
 		div = (SystemCoreClock / Speed) >> 1;
-		HSPI->CR1 = (div << HSPIM_CR1_PARAM_BAUDRATE_POS) + 1;
+		HSPI->CR1 = (div << HSPIM_CR1_PARAM_BAUDRATE_POS);
 		prvSPI[SpiID].Speed = (SystemCoreClock >> 1) / div;
 		HSPI->CR0 &= ~((1 << HSPIM_CR0_PARAM_CPOL_POS)|(1 << HSPIM_CR0_PARAM_CPHA_POS));
 		switch(NewMode)
