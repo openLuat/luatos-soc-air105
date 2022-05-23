@@ -107,7 +107,14 @@ static int32_t luat_audio_mp3_decode(void *pData, void *pParam)
 
 int32_t luat_audio_decode_run(void *pData, void *pParam)
 {
-	prvAudioStream.Decoder(pData, pParam);
+	if (!prvAudioStream.IsStop)
+	{
+		prvAudioStream.Decoder(pData, pParam);
+	}
+	else
+	{
+		DBG("%d", prvAudioStream.waitRequire);
+	}
 	if (prvAudioStream.waitRequire)
 	{
 		prvAudioStream.waitRequire--;
@@ -140,6 +147,10 @@ int32_t luat_audio_play_cb(void *pData, void *pParam)
 		{
 			prvAudioStream.waitRequire++;
 			Core_ServiceRunUserAPIWithFile(luat_audio_decode_run, &prvAudioStream, prvAudioStream.CoderParam);
+		}
+		else
+		{
+			DBG("%d", prvAudioStream.waitRequire);
 		}
 	}
 	return 0;
@@ -213,6 +224,7 @@ int luat_audio_play_stop(uint8_t multimedia_id)
 
 uint8_t luat_audio_is_finish(uint8_t multimedia_id)
 {
+	DBG("%d", prvAudioStream.waitRequire);
 	return !prvAudioStream.waitRequire;
 }
 
@@ -316,7 +328,7 @@ int luat_audio_play_file(uint8_t multimedia_id, const char *path)
 		result = luat_audio_start_raw(multimedia_id, audio_format, num_channels, sample_rate, bits_per_sample, is_signed);
 		if (!result)
 		{
-			LLOGD("decode %s ok,param,%d,%d,%d,%d,%d,%d,%u", path,multimedia_id, audio_format, num_channels, sample_rate, bits_per_sample, is_signed, prvAudioStream.FileDataBuffer.MaxLen);
+			LLOGD("decode %s ok,param,%d,%d,%d,%d,%d,%d,%u,%u", path,multimedia_id, audio_format, num_channels, sample_rate, bits_per_sample, is_signed, prvAudioStream.FileDataBuffer.MaxLen, prvAudioStream.AudioDataBuffer.MaxLen);
 			prvAudioStream.IsPlaying = 1;
 			prvAudioStream.pParam = multimedia_id;
 			prvAudioStream.Decoder(&prvAudioStream, prvAudioStream.CoderParam);

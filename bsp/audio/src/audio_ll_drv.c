@@ -126,7 +126,7 @@ static int32_t prvAudio_WriteDACRaw(Audio_StreamStruct *pStream, uint8_t *pByteD
 		if (!Block->uPV.pu8)
 		{
 			free(Block);
-			DBG("no mem!");
+			DBG("no mem!, %u,%u", ByteLen, VaildLen);
 			return -ERROR_NO_MEMORY;
 		}
 		Block->Len = VaildLen >> 1;
@@ -174,7 +174,7 @@ static int32_t prvAudio_WriteDACRaw(Audio_StreamStruct *pStream, uint8_t *pByteD
 		if (!Block->uPV.pu8)
 		{
 			free(Block);
-			DBG("no mem!");
+			DBG("no mem!, %u,%u", ByteLen, VaildLen);
 			return -ERROR_NO_MEMORY;
 		}
 		Block->Len = VaildLen;
@@ -209,6 +209,7 @@ static int32_t prvAudio_WriteDACRaw(Audio_StreamStruct *pStream, uint8_t *pByteD
 
 int32_t Audio_WriteRaw(Audio_StreamStruct *pStream, uint8_t *pByteData, uint32_t ByteLen)
 {
+	if (!ByteLen) {return -ERROR_PARAM_INVALID;}
 	switch(pStream->BusType)
 	{
 	case AUSTREAM_BUS_DAC:
