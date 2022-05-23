@@ -41,7 +41,8 @@ typedef struct
 	uint8_t IsPause;
 	uint8_t IsStop;
 	uint8_t IsPlaying;
-
+	uint8_t IsFileNotEnd;
+	uint8_t DecodeStep;
 }Audio_StreamStruct;
 
 void Audio_GlobalInit(void);

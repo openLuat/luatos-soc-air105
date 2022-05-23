@@ -385,7 +385,6 @@ static void HSPI_MasterInit(uint8_t SpiID, uint8_t Mode, uint32_t Speed)
 	SPI->CR0 = ctrl;
 	SPI->DCR = 30|(1 << 7);
 	prvSPI[SpiID].Speed = (SystemCoreClock >> 1) / div;
-
 	ISR_SetHandler(prvSPI[SpiID].IrqLine, HSPI_IrqHandle, (uint32_t)SpiID);
 #ifdef __BUILD_OS__
 	ISR_SetPriority(prvSPI[SpiID].IrqLine, IRQ_MAX_PRIORITY + 1);
@@ -781,7 +780,7 @@ static int32_t prvSPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_
 int32_t SPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData, uint32_t Len)
 {
 #ifdef __BUILD_OS__
-	if (  OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= (Len * 100000)))
+	if (  (Len <= 16) || OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= (Len * 100000)))
 	{
 		prvSPI[SpiID].IsBlockMode = 0;
 #endif
