@@ -65,6 +65,7 @@ static int32_t luat_audio_mp3_decode(void *pData, void *pParam)
 	mp3dec_t *mp3_decoder = (mp3dec_t *)pParam;
 	Audio_StreamStruct *Stream = (Audio_StreamStruct *)pData;
 	Stream->AudioDataBuffer.Pos = 0;
+
 	while ((llist_num(&Stream->DataHead) < 3) && is_not_end && !Stream->IsStop)
 	{
 		while (( Stream->AudioDataBuffer.Pos < (Stream->AudioDataBuffer.MaxLen >> 1) ) && is_not_end && !Stream->IsStop)
@@ -85,9 +86,18 @@ static int32_t luat_audio_mp3_decode(void *pData, void *pParam)
 			do
 			{
 				memset(&info, 0, sizeof(info));
+
 				result = mp3dec_decode_frame(mp3_decoder, Stream->FileDataBuffer.Data + pos, Stream->FileDataBuffer.Pos - pos,
 						Stream->AudioDataBuffer.Data + Stream->AudioDataBuffer.Pos, &info);
-				Stream->AudioDataBuffer.Pos += (result * info.channels * 2);
+
+				if (result > 0)
+				{
+					Stream->AudioDataBuffer.Pos += (result * info.channels * 2);
+				}
+				else
+				{
+					DBG("no mp3!");
+				}
 				pos += info.frame_bytes;
 				if (Stream->AudioDataBuffer.Pos >= (Stream->AudioDataBuffer.MaxLen >> 1))
 				{
@@ -102,6 +112,7 @@ static int32_t luat_audio_mp3_decode(void *pData, void *pParam)
 		}
 		Stream->AudioDataBuffer.Pos = 0;
 	}
+
 	return 0;
 }
 
@@ -110,10 +121,6 @@ int32_t luat_audio_decode_run(void *pData, void *pParam)
 	if (!prvAudioStream.IsStop)
 	{
 		prvAudioStream.Decoder(pData, pParam);
-	}
-	else
-	{
-		DBG("%d", prvAudioStream.waitRequire);
 	}
 	if (prvAudioStream.waitRequire)
 	{
@@ -146,11 +153,8 @@ int32_t luat_audio_play_cb(void *pData, void *pParam)
 		if (!prvAudioStream.IsStop)
 		{
 			prvAudioStream.waitRequire++;
+			ASSERT(prvAudioStream.waitRequire < 3);
 			Core_ServiceRunUserAPIWithFile(luat_audio_decode_run, &prvAudioStream, prvAudioStream.CoderParam);
-		}
-		else
-		{
-			DBG("%d", prvAudioStream.waitRequire);
 		}
 	}
 	return 0;
@@ -224,7 +228,7 @@ int luat_audio_play_stop(uint8_t multimedia_id)
 
 uint8_t luat_audio_is_finish(uint8_t multimedia_id)
 {
-	DBG("%d", prvAudioStream.waitRequire);
+	ASSERT(prvAudioStream.waitRequire < 4);
 	return !prvAudioStream.waitRequire;
 }
 
@@ -332,7 +336,15 @@ int luat_audio_play_file(uint8_t multimedia_id, const char *path)
 			prvAudioStream.IsPlaying = 1;
 			prvAudioStream.pParam = multimedia_id;
 			prvAudioStream.Decoder(&prvAudioStream, prvAudioStream.CoderParam);
-			return 0;
+			if (!llist_num(&prvAudioStream.DataHead))
+			{
+				prvAudioStream.fd = NULL;
+			}
+			else
+			{
+				return 0;
+			}
+
 		}
 		else
 		{

@@ -633,6 +633,7 @@ void Core_PrintServiceStack(void)
 	prvCore_PrintTaskStack(prvService.LCDHandle);
 	prvCore_PrintTaskStack(prvService.UserHandle);
 	prvCore_PrintTaskStack(prvService.ServiceHandle);
+	prvCore_PrintTaskStack(prvService.StorgeHandle);
 }
 
 void Core_DebugMem(uint8_t HeapID, const char *FuncName, uint32_t Line)
@@ -978,7 +979,7 @@ void Core_UserTaskInit(void)
 
 void Core_StorgeTaskInit(void)
 {
-	prvService.StorgeHandle = Task_Create(prvStorge_Task, NULL, 1024, SERVICE_TASK_PRO, "storge task");
+	prvService.StorgeHandle = Task_Create(prvStorge_Task, NULL, 2 * 1024, SERVICE_TASK_PRO, "storge task");
 }
 
 
