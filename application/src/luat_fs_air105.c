@@ -45,20 +45,27 @@ static int block_device_read(const struct lfs_config *cfg, lfs_block_t block,
 //	DBG_HexPrintf(buffer, 16);
 	return LFS_ERR_OK;
 }
-
+static uint8_t program_cache[256];
 static int block_device_prog(const struct lfs_config *cfg, lfs_block_t block,
         lfs_off_t off, const void *buffer, lfs_size_t size)
 {
+	int result;
 	uint32_t start_address = block * __FLASH_SECTOR_SIZE__ + off + lfs_fs_start_addr;
 //	DBG("%x", start_address);
 	OS_MutexLock(lfs_locker);
-	if (Flash_Program(start_address, buffer, size))
+	if (size & 0x03)
 	{
-		OS_MutexRelease(lfs_locker);
-		return LFS_ERR_IO;
+		DBG("%u not align to 4", size);
+		memset(program_cache, 0xff, (size & 0xfc) + 4);
+		memcpy(program_cache, buffer, size);
+		result = Flash_Program(start_address, program_cache, size);
+	}
+	else
+	{
+		result = Flash_Program(start_address, buffer, size);
 	}
 	OS_MutexRelease(lfs_locker);
-	return LFS_ERR_OK;
+	return result?LFS_ERR_IO:LFS_ERR_OK;
 }
 
 static int block_device_erase(const struct lfs_config *cfg, lfs_block_t block)
