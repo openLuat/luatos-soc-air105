@@ -45,7 +45,6 @@ static int block_device_read(const struct lfs_config *cfg, lfs_block_t block,
 //	DBG_HexPrintf(buffer, 16);
 	return LFS_ERR_OK;
 }
-static uint8_t program_cache[256];
 static int block_device_prog(const struct lfs_config *cfg, lfs_block_t block,
         lfs_off_t off, const void *buffer, lfs_size_t size)
 {
@@ -55,10 +54,13 @@ static int block_device_prog(const struct lfs_config *cfg, lfs_block_t block,
 	OS_MutexLock(lfs_locker);
 	if (size & 0x03)
 	{
-		DBG("%u not align to 4", size);
-		memset(program_cache, 0xff, (size & 0xfc) + 4);
+		uint32_t len = (size & 0xfc) + 4;
+		DBG("%u not align to 4, change to ", size, len);
+		uint8_t *program_cache = malloc(len);
+		memset(program_cache, 0xff, len);
 		memcpy(program_cache, buffer, size);
 		result = Flash_Program(start_address, program_cache, size);
+		free(program_cache);
 	}
 	else
 	{
