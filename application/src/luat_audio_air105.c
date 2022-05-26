@@ -353,8 +353,9 @@ int luat_audio_play_file(uint8_t multimedia_id, const char *path)
 			LLOGD("decode %s ok,param,%d,%d,%d,%d,%d,%d,%u,%u", path,multimedia_id, audio_format, num_channels, sample_rate, bits_per_sample, is_signed, prvAudioStream.FileDataBuffer.MaxLen, prvAudioStream.AudioDataBuffer.MaxLen);
 			prvAudioStream.IsPlaying = 1;
 			prvAudioStream.pParam = multimedia_id;
-			prvAudioStream.Decoder(&prvAudioStream, prvAudioStream.CoderParam);
 			prvAudioStream.IsFileNotEnd = 1;
+			prvAudioStream.Decoder(&prvAudioStream, prvAudioStream.CoderParam);
+
 			if (!llist_num(&prvAudioStream.DataHead))
 			{
 				prvAudioStream.fd = NULL;
