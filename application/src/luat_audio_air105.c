@@ -269,16 +269,23 @@ int luat_audio_play_file(uint8_t multimedia_id, const char *path)
 		return -1;
 	}
 	luat_fs_fread(temp, 12, 1, fd);
-	if (!memcmp(temp, "ID3", 3))
+	if (!memcmp(temp, "ID3", 3) || (temp[0] == 0xff))
 	{
-		jump = 0;
-		for(i = 0; i < 4; i++)
+		if (temp[0] != 0xff)
 		{
-			jump <<= 7;
-			jump |= temp[6 + i] & 0x7f;
+			jump = 0;
+			for(i = 0; i < 4; i++)
+			{
+				jump <<= 7;
+				jump |= temp[6 + i] & 0x7f;
+			}
+	//		LLOGD("jump head %d", jump);
+			luat_fs_fseek(fd, jump, SEEK_SET);
 		}
-//		LLOGD("jump head %d", jump);
-		luat_fs_fseek(fd, jump, SEEK_SET);
+		else
+		{
+			luat_fs_fseek(fd, 0, SEEK_SET);
+		}
 		mp3_decoder = luat_heap_malloc(sizeof(mp3dec_t));
 		memset(mp3_decoder, 0, sizeof(mp3dec_t));
 		mp3dec_init(mp3_decoder);
