@@ -75,13 +75,14 @@
 //----------------------------
 // 高通字体, 需配合芯片使用
 #define LUAT_USE_GTFONT 1
-#define LUAT_USE_GTFONT_UTF8
+#define LUAT_USE_GTFONT_UTF8 1
 
 //----------------------------
 // 高级功能, 其中shell是推荐启用, 除非你打算uart0也读数据
-#define LUAT_USE_SHELL 
-#define LUAT_USE_DBG
-#define LUAT_USE_OTA
+#define LUAT_USE_SHELL 1 
+#define LUAT_USE_DBG 1
+#define LUAT_USE_OTA 1
+#define LUAT_USE_FOTA 1
 
 // 多虚拟机支持,实验性,一般不启用
 // #define LUAT_USE_VMX 1 
@@ -89,17 +90,15 @@
 
 //---------------------
 // UI
-#define LUAT_USE_LCD
+#define LUAT_USE_LCD 1
 #define LUAT_LCD_CMD_DELAY_US 7
-#define LUAT_USE_TJPGD
-#define LUAT_USE_EINK
+#define LUAT_USE_TJPGD 1
+#define LUAT_USE_EINK 1
 
 //---------------------
 // U8G2
-#define LUAT_USE_DISP 
-#define LUAT_USE_U8G2
-#define U8G2_USE_SH1106
-#define U8G2_USE_ST7567
+#define LUAT_USE_DISP  1
+#define LUAT_USE_U8G2  1
 
 /**************FONT*****************/
 /**********U8G2&LCD FONT*************/
