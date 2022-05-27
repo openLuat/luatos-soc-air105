@@ -83,7 +83,6 @@ int32_t Audio_StartRaw(Audio_StreamStruct *pStream)
 	switch(pStream->BusType)
 	{
 	case AUSTREAM_BUS_DAC:
-		GPIO_Iomux(GPIOC_00, 2);
 		DAC_ForceStop(pStream->BusID);
 		DAC_DMAInit(0, DAC_TX_DMA_STREAM);
 		DAC_Setup(pStream->BusID, pStream->SampleRate, prvAudio.DACOutRMode);

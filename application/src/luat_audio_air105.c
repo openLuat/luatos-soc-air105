@@ -187,6 +187,7 @@ int luat_audio_start_raw(uint8_t multimedia_id, uint8_t audio_format, uint8_t nu
 	prvAudioStream.ChannelCount = num_channels;
 	prvAudioStream.SampleRate = sample_rate;
 	prvAudioStream.IsDataSigned = is_signed;
+	GPIO_Iomux(GPIOC_01, 2);
 	return Audio_StartRaw(&prvAudioStream);
 }
 
