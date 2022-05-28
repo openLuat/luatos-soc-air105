@@ -89,7 +89,15 @@ int luat_timer_start(luat_timer_t* timer) {
     timers[timerIndex] = timer;
     
     timer->os_timer = os_timer;
-    return Timer_StartMS(os_timer, timer->timeout, timer->repeat);
+    if (timer->type)
+    {
+    	return Timer_StartUS(os_timer, timer->timeout, timer->repeat);
+    }
+    else
+    {
+    	return Timer_StartMS(os_timer, timer->timeout, timer->repeat);
+    }
+
 }
 
 int luat_timer_stop(luat_timer_t* timer) {
