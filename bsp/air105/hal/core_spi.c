@@ -820,7 +820,7 @@ int32_t SPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData,
 		DBG("!");
 		return Result;
 	}
-	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 20))
+	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 1000))
 	{
 		DBG("spi id %d timeout",SpiID);
 		SPI_TransferStop(SpiID);
@@ -1006,7 +1006,7 @@ int32_t SPI_FlashBlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint32_t WL
 		free(Temp);
 		return Result;
 	}
-	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 20))
+	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 1000))
 	{
 		free(Temp);
 		DBG("!!!");
