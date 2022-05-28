@@ -226,7 +226,7 @@ void Uart_BaseInit(uint8_t UartID, uint32_t BaudRate, uint8_t IsRxCacheEnable, u
 	/* LCR = 0 */
 	Uart->LCR &= ~UART_LCR_DLAB;
 	LCR = UART_WordLength_5b + DataBits - UART_DATA_BIT5;
-	switch(Parity)
+	switch(StopBits)
 	{
 	case UART_STOP_BIT1:
 		LCR |= UART_StopBits_1;
