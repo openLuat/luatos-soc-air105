@@ -82,6 +82,7 @@ typedef struct
 	uint8_t IsBusy;
 	uint8_t IsBlockMode;
 	uint8_t SpiMode;
+	uint8_t timeout;
 }SPI_ResourceStruct;
 
 static SPI_ResourceStruct prvSPI[SPI_MAX] = {
@@ -796,7 +797,7 @@ int32_t SPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData,
 	}
 	int32_t Result;
 	uint8_t DMAMode;
-	uint32_t Time = (Len * 1000) / (prvSPI[SpiID].Speed >> 3);
+	uint32_t Time = (Len * 1000) / (prvSPI[SpiID].Speed >> 3) + prvSPI[SpiID].timeout + 100;
 	prvSPI[SpiID].IsBlockMode = 1;
 	if ( (prvSPI[SpiID].DMARxStream == 0xff) || (prvSPI[SpiID].DMATxStream == 0xff) )
 	{
@@ -820,7 +821,7 @@ int32_t SPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData,
 		DBG("!");
 		return Result;
 	}
-	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 1000))
+	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time))
 	{
 		DBG("spi id %d timeout",SpiID);
 		SPI_TransferStop(SpiID);
@@ -984,7 +985,7 @@ int32_t SPI_FlashBlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint32_t WL
 	}
 	int32_t Result;
 	uint8_t DMAMode;
-	uint32_t Time = ((WLen + RLen) * 1000) / (prvSPI[SpiID].Speed >> 3);
+	uint32_t Time = ((WLen + RLen) * 1000) / (prvSPI[SpiID].Speed >> 3) + prvSPI[SpiID].timeout + 100;
 	uint8_t *Temp = malloc(WLen + RLen);
 	if (TxData)
 	{
@@ -1006,7 +1007,7 @@ int32_t SPI_FlashBlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint32_t WL
 		free(Temp);
 		return Result;
 	}
-	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time + 1000))
+	if (OS_MutexLockWtihTime(prvSPI[SpiID].Sem, Time))
 	{
 		free(Temp);
 		DBG("!!!");
