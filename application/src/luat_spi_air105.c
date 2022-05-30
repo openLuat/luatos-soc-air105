@@ -159,10 +159,10 @@ int luat_spi_setup(luat_spi_t* spi) {
 
 int luat_spi_config_dma(int spi_id, uint32_t tx_channel, uint32_t rx_channel)
 {
-	if (luat_spi[spi_id].id != HSPI_ID0) {
-		SPI_DMATxInit(luat_spi[spi_id].id, (tx_channel >= 8)?ETH_SPI_TX_DMA_STREAM:tx_channel, 0);
-		SPI_DMARxInit(luat_spi[spi_id].id, (rx_channel >= 8)?ETH_SPI_RX_DMA_STREAM:rx_channel, 0);
-	}
+//	if (luat_spi[spi_id].id != HSPI_ID0) {
+//		SPI_DMATxInit(luat_spi[spi_id].id, (tx_channel >= 8)?ETH_SPI_TX_DMA_STREAM:tx_channel, 0);
+//		SPI_DMARxInit(luat_spi[spi_id].id, (rx_channel >= 8)?ETH_SPI_RX_DMA_STREAM:rx_channel, 0);
+//	}
 //	else
 //	{
 //		SPI_DMATxInit(luat_spi[spi_id].id, (tx_channel >= 8)?LCD_SPI_TX_DMA_STREAM:tx_channel, 0);
