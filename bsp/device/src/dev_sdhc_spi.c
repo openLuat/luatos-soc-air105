@@ -592,12 +592,27 @@ SDHC_SPIREADBLOCKDATA_DONE:
 	return Result;
 }
 
+static void SDHC_Recovery(SDHC_SPICtrlStruct *Ctrl)
+{
+	memset(Ctrl->TempData, 0xfd, 512);
+	SPI_SetNewConfig(Ctrl->SpiID, 2400000, 0xff);
+	GPIO_Output(Ctrl->CSPin, 0);
+	SDHC_SpiXfer(Ctrl, Ctrl->TempData, 512);
+	GPIO_Output(Ctrl->CSPin, 1);
+
+	memset(Ctrl->TempData, 0xff, 512);
+	GPIO_Output(Ctrl->CSPin, 0);
+	SDHC_SpiXfer(Ctrl, Ctrl->TempData, 512);
+	GPIO_Output(Ctrl->CSPin, 1);
+	SDHC_SpiCmd(Ctrl, CMD12, 0, 1);
+}
+
 void SDHC_SpiInitCard(void *pSDHC)
 {
 	uint8_t i;
 	uint64_t OpEndTick;
 	SDHC_SPICtrlStruct *Ctrl = (SDHC_SPICtrlStruct *)pSDHC;
-	memset(Ctrl->TempData, 0xff, 20);
+	SDHC_Recovery(Ctrl);
 	Ctrl->IsInitDone = 0;
 	Ctrl->SDHCState = 0xff;
 	Ctrl->Info.CardCapacity = 0;
@@ -642,7 +657,7 @@ WAIT_INIT_DONE:
 	}
 	Ctrl->OCR = BytesGetBe32(Ctrl->ExternResult);
 	SPI_SetNewConfig(Ctrl->SpiID, Ctrl->SpiSpeed, 0xff);
-//	SD_DBG("sdcard init OK OCR:0x%08x!", Ctrl->OCR);
+	SD_DBG("sdcard init OK OCR:0x%08x!", Ctrl->OCR);
 	return;
 INIT_DONE:
 	if (!Ctrl->IsInitDone)
@@ -899,7 +914,7 @@ SDHC_SPIREADBLOCKS_CHECK:
 #endif
 	return;
 SDHC_SPIREADBLOCKS_ERROR:
-	DBG("!");
+	DBG("read error!");
 	Ctrl->IsInitDone = 0;
 	Ctrl->SDHCError = 1;
 #ifdef __BUILD_OS__
@@ -945,7 +960,7 @@ SDHC_SPIREADBLOCKS_START:
 #endif
 	return;
 SDHC_SPIREADBLOCKS_ERROR:
-	DBG("!");
+	DBG("write error!");
 	Ctrl->IsInitDone = 0;
 	Ctrl->SDHCError = 1;
 #ifdef __BUILD_OS__
@@ -976,7 +991,7 @@ void SDHC_SpiRelease(void *pSDHC)
 #ifdef __BUILD_OS__
 	OS_MutexRelease(Ctrl->RWMutex);
 	Ctrl->WaitFree = 1;
-	Task_DelayMS(100);
+	Task_DelayMS(10);
 #endif
 	DBG("free %x", pSDHC);
 }
@@ -996,7 +1011,7 @@ uint8_t SDHC_IsReady(void *pSDHC)
 	}
 	else
 	{
-		DBG("!");
+		DBG("SDHC error, please reboot tf card");
 		return 0;
 	}
 }
