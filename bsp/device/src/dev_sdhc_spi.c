@@ -61,6 +61,8 @@ enum
 	SDCARD_STATE_WRITE,
 };
 
+static HANDLE prvRWMutex;
+
 static const uint8_t prvSDHC_StandardInquiryData[STANDARD_INQUIRY_DATA_LEN] =
 {
 		0x00, //磁盘设备
@@ -595,7 +597,7 @@ SDHC_SPIREADBLOCKDATA_DONE:
 static void SDHC_Recovery(SDHC_SPICtrlStruct *Ctrl)
 {
 	memset(Ctrl->TempData, 0xfd, 512);
-	SPI_SetNewConfig(Ctrl->SpiID, 2400000, 0xff);
+	SPI_SetNewConfig(Ctrl->SpiID, 12000000, 0xff);
 	GPIO_Output(Ctrl->CSPin, 0);
 	SDHC_SpiXfer(Ctrl, Ctrl->TempData, 512);
 	GPIO_Output(Ctrl->CSPin, 1);
@@ -612,7 +614,6 @@ void SDHC_SpiInitCard(void *pSDHC)
 	uint8_t i;
 	uint64_t OpEndTick;
 	SDHC_SPICtrlStruct *Ctrl = (SDHC_SPICtrlStruct *)pSDHC;
-	SDHC_Recovery(Ctrl);
 	Ctrl->IsInitDone = 0;
 	Ctrl->SDHCState = 0xff;
 	Ctrl->Info.CardCapacity = 0;
@@ -856,7 +857,7 @@ void SDHC_SpiReadBlocks(void *pSDHC, uint8_t *Buf, uint32_t StartLBA, uint32_t B
 	uint8_t error = 1;
 	SDHC_SPICtrlStruct *Ctrl = (SDHC_SPICtrlStruct *)pSDHC;
 #ifdef __BUILD_OS__
-	if (OS_MutexLockWtihTime(Ctrl->RWMutex, 1000))
+	if (OS_MutexLockWtihTime(prvRWMutex, 1000))
 	{
 		DBG("mutex wait timeout!");
 		return;
@@ -910,7 +911,7 @@ SDHC_SPIREADBLOCKS_CHECK:
 		goto SDHC_SPIREADBLOCKS_START;
 	}
 #ifdef __BUILD_OS__
-	OS_MutexRelease(Ctrl->RWMutex);
+	OS_MutexRelease(prvRWMutex);
 #endif
 	return;
 SDHC_SPIREADBLOCKS_ERROR:
@@ -918,7 +919,7 @@ SDHC_SPIREADBLOCKS_ERROR:
 	Ctrl->IsInitDone = 0;
 	Ctrl->SDHCError = 1;
 #ifdef __BUILD_OS__
-	OS_MutexRelease(Ctrl->RWMutex);
+	OS_MutexRelease(prvRWMutex);
 #endif
 	return;
 }
@@ -928,7 +929,7 @@ void SDHC_SpiWriteBlocks(void *pSDHC, const uint8_t *Buf, uint32_t StartLBA, uin
 	uint8_t Retry = 0;
 	SDHC_SPICtrlStruct *Ctrl = (SDHC_SPICtrlStruct *)pSDHC;
 #ifdef __BUILD_OS__
-	if (OS_MutexLockWtihTime(Ctrl->RWMutex, 1000))
+	if (OS_MutexLockWtihTime(prvRWMutex, 1000))
 	{
 		DBG("mutex wait timeout!");
 		return;
@@ -956,7 +957,7 @@ SDHC_SPIREADBLOCKS_START:
 		goto SDHC_SPIREADBLOCKS_START;
 	}
 #ifdef __BUILD_OS__
-	OS_MutexRelease(Ctrl->RWMutex);
+	OS_MutexRelease(prvRWMutex);
 #endif
 	return;
 SDHC_SPIREADBLOCKS_ERROR:
@@ -964,7 +965,7 @@ SDHC_SPIREADBLOCKS_ERROR:
 	Ctrl->IsInitDone = 0;
 	Ctrl->SDHCError = 1;
 #ifdef __BUILD_OS__
-	OS_MutexRelease(Ctrl->RWMutex);
+	OS_MutexRelease(prvRWMutex);
 #endif
 	return;
 }
@@ -977,7 +978,10 @@ void *SDHC_SpiCreate(uint8_t SpiID, uint8_t CSPin)
 	Ctrl->SDHCReadBlockTo = 50 * CORE_TICK_1MS;
 	Ctrl->SDHCWriteBlockTo = 50 * CORE_TICK_1MS;
 #ifdef __BUILD_OS__
-	Ctrl->RWMutex = OS_MutexCreateUnlock();
+	if (!prvRWMutex)
+	{
+		prvRWMutex = OS_MutexCreateUnlock();
+	}
 #endif
 //	Ctrl->IsPrintData = 1;
 	Ctrl->SpiSpeed = 24000000;
@@ -987,11 +991,13 @@ void *SDHC_SpiCreate(uint8_t SpiID, uint8_t CSPin)
 void SDHC_SpiRelease(void *pSDHC)
 {
 	SDHC_SPICtrlStruct *Ctrl = (SDHC_SPICtrlStruct *)pSDHC;
+
+	SDHC_Recovery(Ctrl);
 	OS_DeInitBuffer(&Ctrl->CacheBuf);
 #ifdef __BUILD_OS__
-	OS_MutexRelease(Ctrl->RWMutex);
+	OS_MutexRelease(prvRWMutex);
 	Ctrl->WaitFree = 1;
-	Task_DelayMS(10);
+	Task_DelayMS(50);
 #endif
 	DBG("free %x", pSDHC);
 }

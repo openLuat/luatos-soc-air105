@@ -105,7 +105,6 @@ typedef struct
 	Buffer_Struct CacheBuf;
 	HANDLE NotifyTask;						//设置了NotifyTask，则会在大量传输SPI数据时，休眠任务但是仍然能接收Event并在CB中处理
 	CBFuncEx_t TaskCB;
-	HANDLE RWMutex;
 	uint32_t Size;							//flash的大小KB
 	uint32_t OCR;
 	DBuffer_Struct *SCSIDataBuf;
