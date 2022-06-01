@@ -29,9 +29,9 @@
  * @param HWTimerID 硬件定时器ID
  * @param Period 周期，最大24M，
  * @param Duty 占空比，0.1%，只有50KHz以下才能达到这个精度，500KHz到1%
- * @param IsOnePulse 只触发一次脉冲
+ * @param PulseNum 总共需要的脉冲，0表示一直运行
  */
-void HWTimer_SetPWM(uint8_t HWTimerID, uint32_t Period, uint16_t Duty, uint8_t IsOnePulse);
+void HWTimer_SetPWM(uint8_t HWTimerID, uint32_t Period, uint16_t Duty, uint32_t PulseNum);
 
 /**
  * @brief 硬件定时器按照高低电平分辨率设置成PWM并启动，时钟48M

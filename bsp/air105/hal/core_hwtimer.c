@@ -457,7 +457,35 @@ START_HWTIMER:
 	return ;
 }
 
+static void __FUNC_IN_RAM__ prvHWTimer_IrqHandlerPWM( int32_t Line, void *pData)
+{
+	uint32_t HWTimerID = (uint32_t)pData;
+	volatile uint32_t clr;
 
+	clr = TIMM0->TIM[HWTimerID].EOI;
+	if (prvHWTimer[HWTimerID].ContinueDelay)
+	{
+		if ((++prvHWTimer[HWTimerID].CurCount) >= prvHWTimer[HWTimerID].TotalCount)
+		{
+			TIMM0->TIM[HWTimerID].ControlReg = 0;
+			ISR_OnOff(prvHWTimer[HWTimerID].IrqLine, 0);
+			ISR_Clear(prvHWTimer[HWTimerID].IrqLine);
+			prvHWTimer[HWTimerID].IsQueueRunning = 0;
+			prvHWTimer[HWTimerID].TotalCount = 0;
+			PM_SetHardwareRunFlag(PM_HW_TIMER_0 + HWTimerID, 0);
+		}
+		else
+		{
+			prvHWTimer[HWTimerID].ContinueDelay = 0;
+		}
+	}
+	else
+	{
+		prvHWTimer[HWTimerID].ContinueDelay = 1;
+	}
+
+
+}
 
 static void __FUNC_IN_RAM__ prvHWTimer_IrqHandlerOperationQueue( int32_t Line, void *pData)
 {
@@ -484,12 +512,24 @@ void HWTimer_StartPWM(uint8_t HWTimerID, uint32_t HighCnt, uint32_t LowCnt, uint
 	}
 	else
 	{
-		TIMM0->TIM[HWTimerID].ControlReg = TIMER_CONTROL_REG_TIMER_PWM|TIMER_CONTROL_REG_TIMER_MODE|TIMER_CONTROL_REG_TIMER_ENABLE|TIMER_CONTROL_REG_TIMER_INTERRUPT;
+		if (prvHWTimer[HWTimerID].TotalCount)
+		{
+//			DBG("start %u,%u,%u",TIMM0->TIM[HWTimerID].LoadCount, TIMM0->TIM_ReloadCount[HWTimerID], prvHWTimer[HWTimerID].TotalCount);
+			ISR_SetHandler(prvHWTimer[HWTimerID].IrqLine, prvHWTimer_IrqHandlerPWM, HWTimerID);
+			ISR_SetPriority(prvHWTimer[HWTimerID].IrqLine, HWTIMER_IRQ_LEVEL);
+			ISR_OnOff(prvHWTimer[HWTimerID].IrqLine, 1);
+			TIMM0->TIM[HWTimerID].ControlReg = TIMER_CONTROL_REG_TIMER_PWM|TIMER_CONTROL_REG_TIMER_MODE|TIMER_CONTROL_REG_TIMER_ENABLE;
+		}
+		else
+		{
+			TIMM0->TIM[HWTimerID].ControlReg = TIMER_CONTROL_REG_TIMER_PWM|TIMER_CONTROL_REG_TIMER_MODE|TIMER_CONTROL_REG_TIMER_ENABLE|TIMER_CONTROL_REG_TIMER_INTERRUPT;
+		}
+
 	}
 	PM_SetHardwareRunFlag(PM_HW_TIMER_0 + HWTimerID, 1);
 }
 
-void HWTimer_SetPWM(uint8_t HWTimerID, uint32_t Period, uint16_t Duty, uint8_t IsOnePulse)
+void HWTimer_SetPWM(uint8_t HWTimerID, uint32_t Period, uint16_t Duty, uint32_t PulseNum)
 {
 	uint32_t TotalCnt;
 	uint32_t LowCnt, HighCnt;
@@ -523,7 +563,10 @@ void HWTimer_SetPWM(uint8_t HWTimerID, uint32_t Period, uint16_t Duty, uint8_t I
 		}
 		break;
 	}
-	HWTimer_StartPWM(HWTimerID, HighCnt, LowCnt, IsOnePulse);
+	prvHWTimer[HWTimerID].TotalCount = PulseNum;
+	prvHWTimer[HWTimerID].CurCount = 0;
+	prvHWTimer[HWTimerID].ContinueDelay = 0;
+	HWTimer_StartPWM(HWTimerID, HighCnt, LowCnt, 0);
 //	DBG("L %u, H %u", LowCnt, HighCnt);
 //	TIMM0->TIM[HWTimerID].LoadCount = LowCnt - 1;
 //	TIMM0->TIM_ReloadCount[HWTimerID] = HighCnt - 1;
