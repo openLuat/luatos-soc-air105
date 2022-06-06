@@ -40,6 +40,7 @@ typedef struct
 {
 	uint64_t StartTick;
 	Buffer_Struct FileBuffer;
+	Buffer_Struct RawBuffer;
 	Buffer_Struct JPEGSavePath;
 	Timer_t *CheckTimer;
 	uint8_t *DataCache;
@@ -539,6 +540,77 @@ int luat_camera_video(int id, int w, int h, uint8_t uart_id)
 	prvCamera.Width = w;
 	prvCamera.Height = h;
     Timer_StartMS(prvCamera.CheckTimer, 1000, 1);
+}
+
+static int luat_camera_get_raw_cb(void *pdata ,void *param)
+{
+    Buffer_Struct *RxBuf = (Buffer_Struct *)pdata;
+    prvCamera.NewDataFlag = 1;
+
+	if (!pdata){
+		if (prvCamera.RawBuffer.Pos)
+		{
+			if (!prvCamera.CaptureWait)
+			{
+				prvCamera.CaptureWait = 1;//阻塞住,等到用户层处理完成
+				rtos_msg_t msg = {0};
+			    {
+			        msg.handler = l_camera_handler;
+			        msg.ptr = NULL;
+			        msg.arg1 = 0;
+			        msg.arg2 = prvCamera.RawBuffer.Pos;
+			        luat_msgbus_put(&msg, 1);
+				}
+			}
+		}
+		else
+		{
+			prvCamera.CaptureWait = 0;
+		}
+		prvCamera.VLen = 0;
+	}
+	else
+	{
+		if (!prvCamera.CaptureWait)
+		{
+			Buffer_StaticWrite(&prvCamera.RawBuffer, RxBuf->Data, RxBuf->MaxLen * 4);
+		}
+		prvCamera.VLen += prvCamera.drawVLen;
+	}
+	return 0;
+}
+
+int luat_camera_get_raw_start(int id, int w, int h, uint8_t *buf, uint32_t max_len)
+{
+	uint8_t data_byte = camera_conf.zbar_scan?1:2;
+	Timer_Stop(prvCamera.CheckTimer);
+	OS_DeInitBuffer(&prvCamera.FileBuffer);
+	DCMI_SetCallback(luat_camera_get_raw_cb, 0);
+	if (prvCamera.DataCache)
+	{
+		DCMI_CaptureSwitch(0, 0, 0, 0, 0, NULL);
+		free(prvCamera.DataCache);
+		prvCamera.DataCache = NULL;
+	}
+	if (prvCamera.VideoCache)
+	{
+		luat_vm_free(prvCamera.VideoCache);
+	}
+	Buffer_StaticInit(&prvCamera.RawBuffer, buf, max_len);
+	DCMI_SetCROPConfig(1, (camera_conf.sensor_height-h) >> 1, ((camera_conf.sensor_width-w) >> 1)*data_byte, h - 1, data_byte*w- 1);
+	DCMI_CaptureSwitch(1, w * data_byte * 4, 0, 0, 0, &prvCamera.drawVLen);
+	prvCamera.drawVLen = 16;
+	prvCamera.CaptureWait = 0;
+	prvCamera.VLen = 0;
+	prvCamera.Width = w;
+	prvCamera.Height = h;
+    Timer_StartMS(prvCamera.CheckTimer, 1000, 1);
+}
+
+
+int luat_camera_get_raw_again(int id)
+{
+	prvCamera.RawBuffer.Pos = 0;
 }
 
 int luat_camera_stop(int id)
