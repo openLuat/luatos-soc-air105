@@ -827,90 +827,6 @@ int Core_OTACheckDone(void)
 	return 1;
 }
 
-//static void Core_OTACheckSpiFlash(void)
-//{
-//	CoreUpgrade_SectorStruct Sector;
-//	Buffer_Struct ReadBuffer;
-//	Buffer_Struct DataBuffer;
-//	int result;
-//	uint32_t Check;
-//	uint32_t DoneLen, ReadLen;
-//	volatile uint32_t ProgramPos, FlashPos;
-//	uint32_t LzmaDataLen;
-//	uint8_t LzmaHead[LZMA_PROPS_SIZE + 8];
-//	uint8_t LzmaHeadLen;
-//
-//	DoneLen = 0;
-//	OS_InitBuffer(&DataBuffer, SPI_FLASH_BLOCK_SIZE);
-//	OS_InitBuffer(&ReadBuffer, SPI_FLASH_BLOCK_SIZE);
-//	while(DoneLen < prvService.pFotaHead->DataLen)
-//	{
-//		ReadBuffer.Pos = sizeof(CoreUpgrade_SectorStruct);
-//		SPIFlash_Read(prvService.pSpiFlash, prvService.pFotaHead->DataStartAddress + DoneLen, ReadBuffer.Data, ReadBuffer.Pos, 1);
-//		DoneLen += sizeof(CoreUpgrade_SectorStruct);
-//		memcpy(&Sector, ReadBuffer.Data, sizeof(CoreUpgrade_SectorStruct));
-//		DBG("%x,%x,%x,%x,%x", Sector.MaigcNum, Sector.StartAddress, Sector.TotalLen, Sector.DataLen, Sector.DataCRC32);
-//		if (Sector.MaigcNum != __APP_START_MAGIC__)
-//		{
-//			DBG("ota sector info error %x", Sector.MaigcNum);
-//			return;
-//		}
-//		ProgramPos = Sector.StartAddress;
-//		FlashPos = DoneLen + prvService.pFotaHead->DataStartAddress;
-//		DoneLen += Sector.TotalLen;
-//
-//		Check = 0xffffffff;
-//		ReadLen = 0;
-//		while(ReadLen < Sector.TotalLen)
-//		{
-//			DBG("ota %x,%x,%u,%u", ProgramPos, FlashPos, ReadLen, Sector.TotalLen);
-//			ReadBuffer.Pos = 1;
-//			SPIFlash_Read(prvService.pSpiFlash, FlashPos, ReadBuffer.Data, ReadBuffer.Pos, 1);
-//			FlashPos += ReadBuffer.Pos;
-//			ReadLen += ReadBuffer.Pos;
-//			LzmaHeadLen = ReadBuffer.Data[0];
-//			if (LzmaHeadLen > sizeof(LzmaHead))
-//			{
-//				DBG("ota zip head error");
-//				return;
-//			}
-//			ReadBuffer.Pos = LzmaHeadLen + 4;
-//			SPIFlash_Read(prvService.pSpiFlash, FlashPos, ReadBuffer.Data, ReadBuffer.Pos, 1);
-//			FlashPos += ReadBuffer.Pos;
-//			ReadLen += ReadBuffer.Pos;
-//			memcpy(LzmaHead, ReadBuffer.Data, LzmaHeadLen);
-//			memcpy(&LzmaDataLen, ReadBuffer.Data + LzmaHeadLen, 4);
-//			ReadBuffer.Pos = LzmaDataLen;
-//			SPIFlash_Read(prvService.pSpiFlash, FlashPos, ReadBuffer.Data, ReadBuffer.Pos, 1);
-//			FlashPos += ReadBuffer.Pos;
-//			ReadLen += ReadBuffer.Pos;
-//
-//			DataBuffer.Pos = __FLASH_BLOCK_SIZE__;
-//			result = LzmaUncompress(DataBuffer.Data, &DataBuffer.Pos, ReadBuffer.Data, &LzmaDataLen, LzmaHead, LzmaHeadLen);
-//			if (DataBuffer.Pos != __FLASH_BLOCK_SIZE__)
-//			{
-//				DataBuffer.Pos = Sector.DataLen - (ProgramPos - Sector.StartAddress);
-//			}
-//			Check = CRC32_Cal(prvService.CRC32_Table, DataBuffer.Data, DataBuffer.Pos, Check);
-//			ProgramPos += DataBuffer.Pos;
-//
-//		}
-//		DBG("%u, %u", ProgramPos - Sector.StartAddress, Sector.DataLen);
-//		if (Sector.DataCRC32 != Check)
-//		{
-////				Reboot = 1;
-//			DBG("ota %x check crc32 fail %x %x", Sector.StartAddress, Check, Sector.DataCRC32);
-//			return;
-//		}
-//		else
-//		{
-//			DBG("ota %x check ok", Sector.StartAddress);
-//		}
-//	}
-//	OS_DeInitBuffer(&DataBuffer);
-//	OS_DeInitBuffer(&ReadBuffer);
-//}
-
 void Core_OTAEnd(uint8_t isOK)
 {
 	PV_Union uPV;
@@ -957,6 +873,10 @@ void Core_ServiceRunUserAPIWithFile(CBFuncEx_t CB, void *pData, void *pParam)
 	Task_SendEvent(prvService.StorgeHandle, SERVICE_RUN_USER_API, CB, pData, pParam);
 }
 
+void Core_ServiceRunUserAPI(CBFuncEx_t CB, void *pData, void *pParam)
+{
+	Task_SendEvent(prvService.ServiceHandle, SERVICE_RUN_USER_API, CB, pData, pParam);
+}
 
 void Core_LCDTaskInit(void)
 {

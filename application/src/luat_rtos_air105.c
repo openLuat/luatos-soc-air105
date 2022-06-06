@@ -82,3 +82,13 @@ void luat_release_rtos_timer(void *timer)
 {
 	Timer_Release(timer);
 }
+
+void luat_task_suspend_all(void)
+{
+	OS_SuspendTask(NULL);
+}
+
+void luat_task_resume_all(void)
+{
+	OS_ResumeTask(NULL);
+}

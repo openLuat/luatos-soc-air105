@@ -117,7 +117,7 @@
 #define LV_DISP_DEF_REFR_PERIOD gLVFlashTime
 extern unsigned int gLVFlashTime;
 #define LUAT_LV_DEBUG 0
-#define LV_USE_LOG 0
+#define LV_USE_LOG 1
 #define LV_MEM_CUSTOM 1
 
 #define LUAT_USE_LVGL_INDEV 1

@@ -54,7 +54,7 @@ set_arch("arm")
 --add macro defination
 local luatos_define = "__LUATOS__"
 if not with_luatos then luatos_define = nil end
-add_defines("__AIR105_BSP__","__USE_XTL__","CMB_CPU_PLATFORM_TYPE=CMB_CPU_ARM_CORTEX_M4","HSE_VALUE=12000000","CORTEX_M4","__FLASH_APP_START_ADDR__=0x01010000",luatos_define)
+add_defines("__AIR105_BSP__","__USE_XTL__","CMB_CPU_PLATFORM_TYPE=CMB_CPU_ARM_CORTEX_M4","HSE_VALUE=12000000","CORTEX_M4","__FLASH_APP_START_ADDR__=0x01010000")
 add_defines("__FLASH_OTA_INFO_ADDR__=0x0100F000")
 add_defines("_7ZIP_ST")
 add_defines("MBEDTLS_CONFIG_FILE=\"mbedtls_config.h\"")
@@ -193,7 +193,7 @@ target("app.elf")
     -- set kind
     set_kind("binary")
     set_targetdir("$(buildir)/out")
-    add_defines("__BUILD_APP__","__BUILD_OS__","CMB_USING_OS_PLATFORM","CMB_OS_PLATFORM_TYPE=CMB_OS_PLATFORM_FREERTOS")
+    add_defines("__BUILD_APP__","__BUILD_OS__","CMB_USING_OS_PLATFORM","CMB_OS_PLATFORM_TYPE=CMB_OS_PLATFORM_FREERTOS",luatos_define)
 
 if with_luatos then
     on_load(function (target)
@@ -260,7 +260,7 @@ if with_luatos then
     add_files(luatos.."luat/modules/*.c")
     add_files(luatos.."luat/vfs/*.c")
     remove_files(luatos.."luat/vfs/luat_fs_posix.c")
-
+    add_files(luatos.."components/common/*.c")
     add_files(luatos.."components/lcd/*.c")
     add_files(luatos.."components/sfd/*.c")
     add_files(luatos.."components/sfud/*.c")
@@ -282,6 +282,7 @@ if with_luatos then
     add_includedirs("application/include",{public = true})
     add_includedirs(luatos.."lua/include",{public = true})
     add_includedirs(luatos.."luat/include",{public = true})
+    add_includedirs(luatos.."components/common",{public = true})
     add_includedirs(luatos.."components/lcd",{public = true})
     add_includedirs(luatos.."components/sfud",{public = true})
     add_includedirs(luatos.."components/statem",{public = true})

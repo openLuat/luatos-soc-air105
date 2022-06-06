@@ -66,6 +66,16 @@ void luat_vm_pool_init(void)
 	luat_bpool(&luavm_pool, luavm_pool_data, sizeof(luavm_pool_data));
 }
 //------------------------------------------------
+
+void *luat_vm_malloc(size_t nsize)
+{
+	return luat_bget(&luavm_pool, nsize);
+}
+
+void luat_vm_free(void *ptr)
+{
+	return luat_brel(&luavm_pool, ptr);
+}
 // ---------- 管理 LuaVM所使用的内存----------------
 void* luat_heap_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
 //    if (0) {

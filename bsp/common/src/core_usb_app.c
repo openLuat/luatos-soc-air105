@@ -591,6 +591,7 @@ static const USB_StorageSCSITypeDef prvCore_SCSIFun =
 static void prvCore_VUartOpen(Virtual_UartCtrlStruct *pVUart, uint8_t UartID)
 {
 	pVUart->USBOnOff = 1;
+	OS_DeInitBuffer(&pVUart->TxBuf);
 	if (pVUart->TxBuf.Data)
 	{
 		DBG("send last data %ubyte", pVUart->TxBuf.MaxLen);
@@ -658,6 +659,7 @@ static int32_t prvCore_USBEp0CB(void *pData, void *pParam)
 				case 0:
 					//close serial
 					pVUart->USBOnOff = 0;
+					OS_DeInitBuffer(&pVUart->TxCacheBuf);
 					pVUart->CB(pEpData->pLastRequest->wIndex[0] - DEVICE_INTERFACE_SERIAL_SN, UART_CB_ERROR);
 					break;
 				case 1:
@@ -806,6 +808,8 @@ static int32_t prvCore_USBStateCB(void *pData, void *pParam)
 		for(i = 0; i < VIRTUAL_UART_MAX; i++)
 		{
 			prvLuatOS_VirtualUart[i].USBOnOff = 0;
+			OS_DeInitBuffer(&prvLuatOS_VirtualUart[i].TxBuf);
+			OS_DeInitBuffer(&prvLuatOS_VirtualUart[i].TxCacheBuf);
 			prvLuatOS_VirtualUart[i].CB(i, UART_CB_ERROR);
 		}
 		break;

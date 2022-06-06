@@ -18,7 +18,7 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
+#include "zlib.h"
 #include "app_interface.h"
 #include "luat_base.h"
 
@@ -38,10 +38,12 @@
 
 typedef struct
 {
+	uint64_t StartTick;
 	Buffer_Struct FileBuffer;
 	Buffer_Struct JPEGSavePath;
 	Timer_t *CheckTimer;
 	uint8_t *DataCache;
+	uint8_t *VideoCache;
 	uint32_t TotalSize;
 	uint32_t CurSize;
 	uint32_t VLen;
@@ -57,6 +59,7 @@ typedef struct
 	uint8_t PWMID;
 	uint8_t I2CID;
 	uint8_t NewDataFlag;
+	uint8_t DrawLCD;
 }Camera_CtrlStruct;
 
 static Camera_CtrlStruct prvCamera;
@@ -64,7 +67,6 @@ static Camera_CtrlStruct prvCamera;
 static struct luat_camera_conf camera_conf;
 
 static luat_lcd_conf_t* lcd_conf;
-static uint8_t draw_lcd = 0;
 
 static int32_t prvCamera_DataTimeout(void *pData, void *pParam)
 {
@@ -220,7 +222,7 @@ static int32_t prvCamera_DCMICB(void *pData, void *pParam){
             prvCamera.VLen = 0;
             return 0;
         }
-        if (draw_lcd)
+        if (prvCamera.DrawLCD)
         {
             Camera_DrawLcd(RxBuf->Data, zbar_scan);
         }
@@ -236,7 +238,7 @@ static int32_t prvCamera_DCMICB(void *pData, void *pParam){
             }
             else if (prvCamera.DataCache)
             {
-            	if (draw_lcd) {
+            	if (prvCamera.DrawLCD) {
             	    Camera_DrawLcd(prvCamera.DataCache, zbar_scan);
             	}
             	Core_DecodeQR(prvCamera.DataCache, prvCamera.Width, prvCamera.Height,  DecodeQR_CBDataFun);
@@ -284,7 +286,7 @@ int luat_camera_init(luat_camera_conf_t *conf){
 	}
     memcpy(&camera_conf, conf, sizeof(luat_camera_conf_t));
     lcd_conf = conf->lcd_conf;
-    draw_lcd = conf->draw_lcd;
+    prvCamera.DrawLCD = conf->draw_lcd;
     if (lcd_conf)
     {
         prvCamera.Width = lcd_conf->w;
@@ -294,7 +296,7 @@ int luat_camera_init(luat_camera_conf_t *conf){
     {
         prvCamera.Width = camera_conf.sensor_width;
         prvCamera.Height = camera_conf.sensor_height;
-        draw_lcd = 0;
+        prvCamera.DrawLCD = 0;
     }
 
     if (conf->zbar_scan == 1){
@@ -332,6 +334,7 @@ int luat_camera_init(luat_camera_conf_t *conf){
 
 int luat_camera_start(int id)
 {
+	DCMI_SetCallback(prvCamera_DCMICB, camera_conf.zbar_scan);
 	if (prvCamera.DataCache)
 	{
 		DCMI_CaptureSwitch(0, 0, 0, 0, 0, NULL);
@@ -392,6 +395,152 @@ int luat_camera_capture(int id, uint8_t quality, const char *path)
     return 0;
 }
 
+static voidpf luat_zip_zalloc(    voidpf opaque, uint32_t items, uint32_t size)
+{
+	voidpf *p = malloc(items * size);
+	return p;
+}
+
+static void luat_zip_free (voidpf opaque, voidpf ptr)
+{
+	free(ptr);
+}
+
+static int luat_camera_video_zip(void *data ,void *param)
+{
+	PV_Union uPV;
+	uPV.p = param;
+    int ret;
+    unsigned have;
+    z_stream strm;
+    prvCamera.VideoCache[0] = 'V';
+    prvCamera.VideoCache[1] = 'C';
+    prvCamera.VideoCache[2] = 'A';
+    prvCamera.VideoCache[3] = 'M';
+    BytesPutLe16(prvCamera.VideoCache + 4, prvCamera.Width);
+    BytesPutLe16(prvCamera.VideoCache + 6, prvCamera.Height);
+    BytesPutLe32(prvCamera.VideoCache + 8, uPV.u16[1]);
+    {
+		if ((prvCamera.CurSize + (prvCamera.Height - uPV.u16[1]) * prvCamera.Width * 2) < (800 * (GetSysTickMS() - prvCamera.StartTick)))
+		{
+			BytesPutLe16(prvCamera.VideoCache + 12, uPV.u16[0]);
+			BytesPutLe16(prvCamera.VideoCache + 14, uPV.u16[0]);
+			memcpy(prvCamera.VideoCache + 16, data, uPV.u16[0]);
+			free(data);
+			Core_VUartBufferTx(VIRTUAL_UART0, prvCamera.VideoCache, uPV.u16[0] + 16);
+			prvCamera.CurSize += uPV.u16[0];
+			return 0;
+		}
+    }
+
+#undef zalloc
+    strm.zalloc = luat_zip_zalloc;
+    strm.zfree = luat_zip_free;
+#define zalloc OS_Zalloc
+    ret = deflateInit2_(&strm, 1, Z_DEFLATED, 12, 6,
+    		Z_DEFAULT_STRATEGY, ZLIB_VERSION, (int)sizeof(z_stream));
+    if (Z_OK == ret)
+    {
+    	strm.next_in = data;
+    	strm.avail_in = uPV.u16[0];
+    	strm.avail_out = 10240;
+		strm.next_out = prvCamera.VideoCache + 16;
+		ret = deflate(&strm, Z_FINISH);    /* no bad return value */
+		have = 10240 - strm.avail_out;
+		deflateEnd(&strm);
+    	BytesPutLe16(prvCamera.VideoCache + 12, uPV.u16[0]);
+    	BytesPutLe16(prvCamera.VideoCache + 14, have);
+    	free(data);
+		Core_VUartBufferTx(VIRTUAL_UART0, prvCamera.VideoCache, have + 16);
+		prvCamera.CurSize += have;
+    }
+    else
+    {
+    	DBG("%d", ret);
+    	free(data);
+    }
+
+}
+
+static int luat_camera_video_zip_done(void *data ,void *param)
+{
+	prvCamera.CaptureWait = 0;
+//	DBG("%u", prvCamera.CurSize);
+	prvCamera.CurSize = 0;
+}
+
+static int luat_camera_video_cb(void *pdata ,void *param)
+{
+    Buffer_Struct *RxBuf = (Buffer_Struct *)pdata;
+    prvCamera.NewDataFlag = 1;
+
+	if (!pdata){
+		if (prvCamera.JPEGEncodeDone)
+		{
+			prvCamera.JPEGEncodeDone = 0;
+			prvCamera.CaptureWait = 1;
+			Core_ServiceRunUserAPI(luat_camera_video_zip_done, NULL, NULL);
+
+		}
+		prvCamera.VLen = 0;
+	}
+	else
+	{
+		if ((!prvCamera.VLen || prvCamera.JPEGEncodeDone) && !prvCamera.CaptureWait)
+		{
+			if (!prvCamera.VLen)
+			{
+				prvCamera.StartTick = GetSysTickMS();
+			}
+			prvCamera.JPEGEncodeDone = 1;
+			uint8_t *data = malloc(RxBuf->MaxLen * 4);
+			if (data)
+			{
+				memcpy(data, RxBuf->Data, RxBuf->MaxLen * 4);
+				PV_Union uPV;
+				uPV.u16[0] = RxBuf->MaxLen * 4;
+				uPV.u16[1] = prvCamera.VLen;
+				Core_ServiceRunUserAPI(luat_camera_video_zip, data, uPV.u32);
+			}
+			else
+			{
+				DBG("no mem");
+				Core_PrintMemInfo();
+			}
+		}
+		prvCamera.VLen += prvCamera.drawVLen;
+	}
+	return 0;
+
+}
+
+int luat_camera_video(int id, int w, int h, uint8_t uart_id)
+{
+	uint8_t data_byte = camera_conf.zbar_scan?1:2;
+	Timer_Stop(prvCamera.CheckTimer);
+	OS_DeInitBuffer(&prvCamera.FileBuffer);
+	DCMI_SetCallback(luat_camera_video_cb, 0);
+	if (prvCamera.DataCache)
+	{
+		DCMI_CaptureSwitch(0, 0, 0, 0, 0, NULL);
+		free(prvCamera.DataCache);
+		prvCamera.DataCache = NULL;
+	}
+	if (prvCamera.VideoCache)
+	{
+		luat_vm_free(prvCamera.VideoCache);
+	}
+	prvCamera.VideoCache = luat_vm_malloc(10240 + 96);
+	DCMI_SetCROPConfig(1, (camera_conf.sensor_height-h) >> 1, ((camera_conf.sensor_width-w) >> 1)*data_byte, h - 1, data_byte*w- 1);
+	DCMI_CaptureSwitch(1, w * data_byte * 4, 0, 0, 0, &prvCamera.drawVLen);
+	prvCamera.drawVLen = 16;
+	prvCamera.CaptureWait = 0;
+	prvCamera.VLen = 0;
+	prvCamera.Width = w;
+	prvCamera.Height = h;
+    Timer_StartMS(prvCamera.CheckTimer, 1000, 1);
+}
+
 int luat_camera_stop(int id)
 {
 	Timer_Stop(prvCamera.CheckTimer);
@@ -402,6 +551,11 @@ int luat_camera_stop(int id)
 		prvCamera.DataCache = NULL;
 	}
 	OS_DeInitBuffer(&prvCamera.FileBuffer);
+	if (prvCamera.VideoCache)
+	{
+		luat_vm_free(prvCamera.VideoCache);
+		prvCamera.VideoCache = NULL;
+	}
     return 0;
 }
 

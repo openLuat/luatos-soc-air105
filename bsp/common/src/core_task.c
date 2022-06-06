@@ -333,4 +333,9 @@ void Task_Debug(HANDLE TaskHandle)
 	volatile llist_head *Head = (llist_head *)vTaskGetPoint(TaskHandle, TASK_POINT_LIST_HEAD);
 	DBG("%x,%x,%x", Head, Head->next, Head->prev);
 }
+#else
+void Task_SendEvent(HANDLE TaskHandle, uint32_t ID, uint32_t P1, uint32_t P2, uint32_t P3)
+{
+
+}
 #endif
