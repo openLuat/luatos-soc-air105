@@ -1,7 +1,7 @@
 # Air105 USB虚拟串口摄像头的上位机程序
 
-C#  + WPF + VS2022 , 水平有限, 就能用的级别
+需要使用VS2022
 
-需要配合 core-air105 和 camera_usb demo来使用
+需要配合105最新固件与`LuatOS/demo/camera/Air105/raw_mode`脚本工程来使用
 
-
+编译好的exe：https://chenxuuu.lanzout.com/if8sM060hfji

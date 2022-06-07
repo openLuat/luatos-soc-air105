@@ -1,0 +1,28 @@
+﻿<Window x:Class="Air105Camera.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Air105Camera"
+        mc:Ignorable="d"
+        Title="Air105 Camera Preview" Height="450" Width="500" Loaded="Window_Loaded" Closing="Window_Closing">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal">
+            <Button x:Name="ConnectButton" Content="Connect" Click="ConnectButton_Click" IsEnabled="{Binding connectEnable}"/>
+            <ComboBox Name="SerialComboBox" MinWidth="100" Margin="5,0"/>
+            <Button x:Name="DisconnectButton" Content="Disconnect" Click="DisconnectButton_Click" IsEnabled="{Binding disconnectEnable}"/>
+            <Button x:Name="RefreshButton" Content="Refresh port list" Click="RefreshButton_Click"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Grid.Row="1">
+            <TextBlock Text="{Binding totalPack,StringFormat={}packs:{0}}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+            <TextBlock Text="{Binding totalPic,StringFormat={}picture:{0}}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+            <TextBlock Text="{Binding fpsNow,StringFormat={}FPS:{0:F2}}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+        </StackPanel>
+        <Image x:Name="CameraImage"  Canvas.Left="0" Canvas.Top="0" Grid.Row="2"/>
+    </Grid>
+</Window>
