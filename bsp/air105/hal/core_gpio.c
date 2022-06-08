@@ -300,6 +300,13 @@ uint8_t __FUNC_IN_RAM__ GPIO_Input(uint32_t Pin)
 	return (prvGPIO_Resource[Port].RegBase->IODR & (Pin << 16))?1:0;
 }
 
+void __FUNC_IN_RAM__ GPIO_Toggle(uint32_t Pin)
+{
+	uint8_t Port = (Pin >> 4);
+	Pin = 1 << (Pin & 0x0000000f);
+	prvGPIO_Resource[Port].RegBase->IODR ^= Pin;
+}
+
 void __FUNC_IN_RAM__ GPIO_OutputMulti(uint32_t Port, uint32_t Pins, uint32_t Level)
 {
 	prvGPIO_Resource[Port].RegBase->BSRR |= Level?Pins:(Pins << 16);
@@ -308,4 +315,9 @@ void __FUNC_IN_RAM__ GPIO_OutputMulti(uint32_t Port, uint32_t Pins, uint32_t Lev
 uint32_t __FUNC_IN_RAM__ GPIO_InputMulti(uint32_t Port)
 {
 	return (prvGPIO_Resource[Port].RegBase->IODR >> 16);
+}
+
+void __FUNC_IN_RAM__ GPIO_ToggleMulti(uint32_t Port, uint32_t Pins)
+{
+	prvGPIO_Resource[Port].RegBase->IODR ^= (Pins);
 }

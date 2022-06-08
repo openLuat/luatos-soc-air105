@@ -43,6 +43,9 @@ typedef struct
 	uint8_t IsPlaying;
 	uint8_t IsFileNotEnd;
 	uint8_t DecodeStep;
+	uint8_t UseOutPA;
+	uint8_t PAPin;
+	uint8_t PAOnLevel;
 }Audio_StreamStruct;
 
 void Audio_GlobalInit(void);

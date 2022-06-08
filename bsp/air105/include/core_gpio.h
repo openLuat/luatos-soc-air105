@@ -66,7 +66,14 @@ void GPIO_ExtiConfig(uint32_t Pin, uint8_t IsLevel, uint8_t IsRiseHigh, uint8_t 
  * @param Function 复用功能，这个需要根据芯片实际情况决定，当前是0~3，注意GPIO功能是1
  */
 void GPIO_Iomux(uint32_t Pin, uint32_t Function);
-
+/**
+ * @brief GPIO复用功能扩展，目前只有106需要
+ *
+ * @param Pin Pin序号
+ * @param Function 复用功能，这个需要根据芯片实际情况决定，当前是0~15，注意GPIO功能是0
+ * @IsInput 是否是输入功能
+ */
+void GPIO_IomuxEx(uint32_t Pin, uint32_t Function, uint8_t IsInput);
 /**
  * @brief GPIO输出电平
  *
@@ -84,6 +91,13 @@ void GPIO_Output(uint32_t Pin, uint8_t Level);
 uint8_t GPIO_Input(uint32_t Pin);
 
 /**
+ * @brief 翻转GPIO输出电平
+ *
+ * @param Pin Pin序号
+ * @return 无
+ */
+void GPIO_Toggle(uint32_t Pin);
+/**
  * @brief GPIO同一端口多个pin输出电平，针对类似STM32GPIO分布有效
  *
  * @param Port 端口号
@@ -99,6 +113,15 @@ void GPIO_OutputMulti(uint32_t Port, uint32_t Pins, uint32_t Level);
  * @return
  */
 uint32_t GPIO_InputMulti(uint32_t Port);
+
+/**
+ * @brief 翻转GPIO同一端口多个pin输出电平
+ * @param Port 端口号
+ * @param Pins Pin序号组合
+ * @return 无
+ */
+void GPIO_ToggleMulti(uint32_t Port, uint32_t Pins);
+
 
 void GPIO_ExtiSetCB(uint32_t Pin, CBFuncEx_t CB, void *pParam);
 void GPIO_ODConfig(uint32_t Pin, uint8_t InitValue);

@@ -201,6 +201,10 @@ int luat_audio_write_raw(uint8_t multimedia_id, uint8_t *data, uint32_t len)
 
 int luat_audio_stop_raw(uint8_t multimedia_id)
 {
+	if (prvAudioStream.UseOutPA)
+	{
+		GPIO_Output(prvAudioStream.PAPin, !prvAudioStream.PAOnLevel);
+	}
 	Audio_Stop(&prvAudioStream);
 	OS_DeInitBuffer(&prvAudioStream.FileDataBuffer);
 	OS_DeInitBuffer(&prvAudioStream.AudioDataBuffer);
@@ -217,6 +221,7 @@ int luat_audio_stop_raw(uint8_t multimedia_id)
 	prvAudioStream.IsStop = 0;
 	prvAudioStream.IsPlaying = 0;
 	prvAudioStream.waitRequire = 0;
+
 	return ERROR_NONE;
 }
 
@@ -355,6 +360,10 @@ int luat_audio_play_file(uint8_t multimedia_id, const char *path)
 			prvAudioStream.IsPlaying = 1;
 			prvAudioStream.pParam = multimedia_id;
 			prvAudioStream.IsFileNotEnd = 1;
+			if (prvAudioStream.UseOutPA)
+			{
+				GPIO_Output(prvAudioStream.PAPin, prvAudioStream.PAOnLevel);
+			}
 			prvAudioStream.Decoder(&prvAudioStream, prvAudioStream.CoderParam);
 
 			if (!llist_num(&prvAudioStream.DataHead))
@@ -381,4 +390,19 @@ int luat_audio_play_file(uint8_t multimedia_id, const char *path)
 		prvAudioStream.CoderParam = NULL;
 	}
 	return -1;
+}
+
+void luat_audio_config_pa(int8_t multimedia_id, uint32_t pin, int level)
+{
+	if (pin < GPIO_NONE)
+	{
+		prvAudioStream.PAPin = pin;
+		prvAudioStream.PAOnLevel = level;
+		prvAudioStream.UseOutPA = 1;
+		GPIO_Config(prvAudioStream.PAPin, 0, !prvAudioStream.PAOnLevel);
+	}
+	else
+	{
+		prvAudioStream.UseOutPA = 0;
+	}
 }
