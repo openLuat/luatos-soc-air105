@@ -22,6 +22,9 @@
             <TextBlock Text="{Binding totalPack,StringFormat={}packs:{0}}" VerticalAlignment="Center" Margin="10,0,0,0"/>
             <TextBlock Text="{Binding totalPic,StringFormat={}picture:{0}}" VerticalAlignment="Center" Margin="10,0,0,0"/>
             <TextBlock Text="{Binding fpsNow,StringFormat={}FPS:{0:F2}}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+            <TextBlock Text="{Binding imageWidth}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+            <TextBlock Text="x" VerticalAlignment="Center" Margin="0"/>
+            <TextBlock Text="{Binding imageHeight}" VerticalAlignment="Center" Margin="0"/>
         </StackPanel>
         <Image x:Name="CameraImage"  Canvas.Left="0" Canvas.Top="0" Grid.Row="2"/>
     </Grid>
