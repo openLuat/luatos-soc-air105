@@ -63,8 +63,7 @@ namespace Air105Camera
         }
 
         //缓存图片数据
-        Bitmap image = new Bitmap(320, 240, PixelFormat.Format16bppRgb565);
-        Graphics imageGraphic = null;
+        Bitmap image = new Bitmap(1, 1, PixelFormat.Format16bppRgb565);
         //串口对象
         private SerialPort Uart = new SerialPort();
         //总共收到多少包
@@ -76,13 +75,14 @@ namespace Air105Camera
         public bool connectEnable { get; set; } = true;
         public bool disconnectEnable { get; set; } = true;
 
+        //当前宽高，给ui显示用
+        public int imageWidth { get; set; } = 0;
+        public int imageHeight { get; set; } = 0;
+
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             this.DataContext = this;
-
-            imageGraphic = Graphics.FromImage(image);
-            //刷白
-            imageGraphic.FillRectangle(new SolidBrush(Color.White), 0, 0, image.Width, image.Height);
 
             //图片显示一下
             ShowImage();
@@ -270,6 +270,13 @@ namespace Air105Camera
                                         data = new byte[rawLen];
                                         for (int n = i + 13; n < i + 13 + rawLen; n++)
                                             data[n - (i + 13)] = temp[n];
+                                    }
+
+                                    //自适应当前图片大小
+                                    if(image.Width != width || image.Height != height)
+                                    {
+                                        image = new Bitmap(width, height, PixelFormat.Format16bppRgb565);
+                                        (imageWidth, imageHeight) = (width, height);
                                     }
 
                                     //直接把rgb565数据写入bitmap，这样快
