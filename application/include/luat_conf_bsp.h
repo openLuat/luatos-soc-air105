@@ -102,7 +102,7 @@
 
 /**************FONT*****************/
 /**********U8G2&LCD FONT*************/
-// #define USE_U8G2_UNIFONT_SYMBOLS
+#define USE_U8G2_OPPOSANSM_EN 1
 #define USE_U8G2_OPPOSANSM12_CHINESE
 //#define USE_U8G2_OPPOSANSM16_CHINESE
 // #define USE_U8G2_OPPOSANSM24_CHINESE
