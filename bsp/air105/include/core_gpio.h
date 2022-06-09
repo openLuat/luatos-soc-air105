@@ -122,6 +122,7 @@ uint32_t GPIO_InputMulti(uint32_t Port);
  */
 void GPIO_ToggleMulti(uint32_t Port, uint32_t Pins);
 
+void GPIO_OutPulse(uint32_t Pin, uint8_t *Data, uint16_t BitLen, uint16_t Delay);
 
 void GPIO_ExtiSetCB(uint32_t Pin, CBFuncEx_t CB, void *pParam);
 void GPIO_ODConfig(uint32_t Pin, uint8_t InitValue);

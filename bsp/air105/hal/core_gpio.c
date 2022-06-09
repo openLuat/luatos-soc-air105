@@ -321,3 +321,29 @@ void __FUNC_IN_RAM__ GPIO_ToggleMulti(uint32_t Port, uint32_t Pins)
 {
 	prvGPIO_Resource[Port].RegBase->IODR ^= (Pins);
 }
+
+void __FUNC_IN_RAM__ GPIO_OutPulse(uint32_t Pin, uint8_t *Data, uint16_t BitLen, uint16_t Delay)
+{
+	int i, j;
+	uint8_t table[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+	uint8_t Port = (Pin >> 4);
+	Pin = 1 << (Pin & 0x0000000f);
+	__disable_irq();
+	if (Delay)
+	{
+		for(i = 0;i < BitLen; i++)
+		{
+			j = Delay;
+			prvGPIO_Resource[Port].RegBase->BSRR |= (Data[i >> 3] & (table[i & 0x07]))?Pin:(Pin << 16);
+			while(j > 0) {j--;}
+		}
+	}
+	else
+	{
+		for(i = 0;i < BitLen; i++)
+		{
+			prvGPIO_Resource[Port].RegBase->BSRR |= (Data[i >> 3] & (table[i & 0x07]))?Pin:(Pin << 16);
+		}
+	}
+	__enable_irq();
+}

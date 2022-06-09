@@ -127,3 +127,7 @@ int luat_gpio_set_irq_cb(int pin, luat_gpio_irq_cb cb, void* args) {
     }
     return 0;
 }
+
+void luat_gpio_pulse(int pin, uint8_t *level, uint16_t len, uint16_t delay_ns) {
+	GPIO_OutPulse(pin, level, len, delay_ns);
+}
