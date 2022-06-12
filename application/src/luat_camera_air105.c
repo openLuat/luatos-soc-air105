@@ -386,7 +386,7 @@ int luat_camera_capture(int id, uint8_t quality, const char *path)
 		memcpy(prvCamera.JPEGSavePath.Data, path, strlen(path));
 	}
 	OS_ReInitBuffer(&prvCamera.FileBuffer, 16 * 1024);
-	Core_EncodeJPEGSetup(Camera_SaveJPEGData, &prvCamera);
+	Core_EncodeJPEGSetup(Camera_SaveJPEGData, &prvCamera.FileBuffer);
 	luat_camera_start(id);
 	prvCamera.JPEGQuality = quality;
 	prvCamera.CaptureMode = 1;
