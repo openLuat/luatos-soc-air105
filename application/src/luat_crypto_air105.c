@@ -88,32 +88,29 @@ int l_crypto_cipher_xxx(lua_State *L, uint8_t flags) {
     mbedtls_cipher_context_t ctx;
     mbedtls_cipher_init(&ctx);
 
-
-
     const mbedtls_cipher_info_t * _cipher = mbedtls_cipher_info_from_string(cipher);
     if (_cipher == NULL) {
-        lua_pushstring(L, "bad cipher name");
-        lua_error(L);
-        return 0;
+    	LLOGE("mbedtls_cipher_info fail %s not support", cipher);
+        goto _error_exit;
     }
 
 
 	ret = mbedtls_cipher_setup(&ctx, _cipher);
     if (ret) {
-        LLOGE("mbedtls_cipher_setup fail %ld", ret);
-        goto _exit;
+        LLOGE("mbedtls_cipher_setup fail %d", ret);
+        goto _error_exit;
     }
     ret = mbedtls_cipher_setkey(&ctx, key, key_size * 8, flags & 0x1);
     if (ret) {
-        LLOGE("mbedtls_cipher_setkey fail %ld", ret);
-        goto _exit;
+        LLOGE("mbedtls_cipher_setkey fail %d", ret);
+        goto _error_exit;
     }
 
     if (iv_size) {
         ret = mbedtls_cipher_set_iv(&ctx, iv, iv_size);
         if (ret) {
-            LLOGE("mbedtls_cipher_set_iv fail %ld", ret);
-            goto _exit;
+            LLOGE("mbedtls_cipher_set_iv fail %d", ret);
+            goto _error_exit;
         }
     }
 
@@ -165,6 +162,10 @@ _exit:
     mbedtls_cipher_free(&ctx);
     luaL_pushresult(&buff);
     return 1;
+_error_exit:
+	mbedtls_cipher_free(&ctx);
+	lua_pushboolean(L, 0);
+	return 1;
 #else
     return 0;
 #endif
