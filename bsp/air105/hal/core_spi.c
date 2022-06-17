@@ -1147,7 +1147,7 @@ void SPI_SetNewConfig(uint8_t SpiID, uint32_t Speed, uint8_t NewMode)
 	}
 //	DBG("speed %u->%u mode %u->%u", prvSPI[SpiID].TargetSpeed, Speed, prvSPI[SpiID].SpiMode, NewMode);
 	prvSPI[SpiID].TargetSpeed = Speed;
-	prvSPI[SpiID].SpiMode == NewMode;
+	prvSPI[SpiID].SpiMode = NewMode;
 	switch(SpiID)
 	{
 	case HSPI_ID0:
