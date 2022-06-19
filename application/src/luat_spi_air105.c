@@ -202,6 +202,14 @@ int luat_spi_send(int spi_id, const char* send_buf, size_t length) {
     return length;
 }
 
+int luat_spi_no_block_transfer(int spi_id, uint8_t *tx_buff, uint8_t *rx_buff, size_t len, void *CB, void *pParam)
+{
+	if (SPI_IsTransferBusy(luat_spi[spi_id].id)) return -1;
+	SPI_SetCallbackFun(luat_spi[spi_id].id, CB, pParam);
+	return SPI_Transfer(luat_spi[spi_id].id, tx_buff, rx_buff, len, 0);
+
+}
+
 int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, luat_color_t* color, uint8_t last_flush)
 {
 	uint32_t retry_cnt = 0;

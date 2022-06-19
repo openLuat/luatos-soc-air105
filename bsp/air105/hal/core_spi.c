@@ -579,7 +579,7 @@ int32_t SPI_Transfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData, uint
 		return -ERROR_DEVICE_BUSY;
 	}
 	prvSPI[SpiID].IsBusy = 1;
-
+	prvSPI[SpiID].IsBlockMode = 0;
 	uint32_t RxLevel, i, TxLen;
 	Buffer_StaticInit(&prvSPI[SpiID].TxBuf, TxData, Len);
 	Buffer_StaticInit(&prvSPI[SpiID].RxBuf, RxData, Len);

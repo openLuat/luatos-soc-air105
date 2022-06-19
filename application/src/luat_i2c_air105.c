@@ -68,3 +68,24 @@ int luat_i2c_transfer(int id, int addr, uint8_t *reg, size_t reg_len, uint8_t *b
 		return I2C_BlockWrite(id, addr, (const uint8_t *)buff, len, 100, NULL, NULL);
 	}
 }
+
+int luat_i2c_no_block_transfer(int id, int addr, uint8_t is_read, uint8_t *reg, size_t reg_len, uint8_t *buff, size_t len, uint16_t Toms, void *CB, void *pParam) {
+	int32_t Result;
+	if (!I2C_WaitResult(id, &Result)) {
+		return -1;
+	}
+	I2C_Prepare(id, addr, 1, CB, pParam);
+	if (reg && reg_len)
+	{
+		I2C_MasterXfer(id, I2C_OP_READ_REG, reg, reg_len, buff, len, Toms);
+	}
+	else if (is_read)
+	{
+		I2C_MasterXfer(id, I2C_OP_READ, NULL, 0, buff, len, Toms);
+	}
+	else
+	{
+		I2C_MasterXfer(id, I2C_OP_WRITE, NULL, 0, buff, len, Toms);
+	}
+	return 0;
+}

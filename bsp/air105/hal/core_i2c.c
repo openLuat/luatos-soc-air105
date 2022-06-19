@@ -70,7 +70,7 @@ static void prvI2C_Done(uint8_t I2CID, int32_t Result)
 #ifdef __BUILD_OS__
 	if (prvI2C.IsBlockMode) OS_MutexRelease(prvI2C.Sem);
 #endif
-	prvI2C.Callback(I2C_ID0, prvI2C.pParam);
+	prvI2C.Callback(((-prvI2C.Result) << 16) | I2C_ID0, prvI2C.pParam);
 
 }
 
@@ -269,7 +269,7 @@ void I2C_MasterXfer(uint8_t I2CID, uint8_t Operate, uint8_t *RegAddress, uint32_
 		I2C->IC_ENABLE |= I2C_IC_ENABLE_ABORT;
 		prvI2C.IsBusy = 0;
 		prvI2C.Result = -ERROR_OPERATION_FAILED;
-		prvI2C.Callback(I2C_ID0, prvI2C.pParam);
+		prvI2C.Callback(((-prvI2C.Result) << 16) | I2C_ID0, prvI2C.pParam);
 		while(I2C->IC_ENABLE & I2C_IC_ENABLE_ABORT){;}
 	}
     ISR_SetHandler(prvI2C.IrqLine, I2C_IrqHandle, NULL);
@@ -331,7 +331,7 @@ void I2C_MasterXfer(uint8_t I2CID, uint8_t Operate, uint8_t *RegAddress, uint32_
 		Timer_Stop(prvI2C.ToTimer);
 		prvI2C.IsBusy = 0;
 		prvI2C.Result = -ERROR_PARAM_INVALID;
-		prvI2C.Callback(I2C_ID0, prvI2C.pParam);
+		prvI2C.Callback(((-prvI2C.Result) << 16) | I2C_ID0, prvI2C.pParam);
 		return;
 	}
 
