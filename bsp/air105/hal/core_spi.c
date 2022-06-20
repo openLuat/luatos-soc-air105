@@ -498,6 +498,11 @@ void SPI_SetCallbackFun(uint8_t SpiID, CBFuncEx_t CB, void *pUserData)
 }
 
 
+void SPI_SetNoBlock(uint8_t SpiID)
+{
+	prvSPI[SpiID].IsBlockMode = 1;
+}
+
 static void SPI_DMATransfer(uint8_t SpiID, uint8_t UseDMA)
 {
 	uint32_t RxLevel;
@@ -579,7 +584,6 @@ int32_t SPI_Transfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData, uint
 		return -ERROR_DEVICE_BUSY;
 	}
 	prvSPI[SpiID].IsBusy = 1;
-	prvSPI[SpiID].IsBlockMode = 0;
 	uint32_t RxLevel, i, TxLen;
 	Buffer_StaticInit(&prvSPI[SpiID].TxBuf, TxData, Len);
 	Buffer_StaticInit(&prvSPI[SpiID].RxBuf, RxData, Len);

@@ -346,6 +346,11 @@ int I2C_WaitResult(uint8_t I2CID, int32_t *Result)
 	return 1;
 }
 
+void I2C_SetNoBlock(uint8_t I2CID)
+{
+	prvI2C.IsBlockMode = 0;
+}
+
 int32_t I2C_BlockWrite(uint8_t I2CID, uint8_t ChipAddress, const uint8_t *Data, uint32_t Len, uint16_t Toms, CBFuncEx_t CB, void *pParam)
 {
 	int32_t Result;

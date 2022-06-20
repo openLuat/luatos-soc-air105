@@ -206,6 +206,7 @@ int luat_spi_no_block_transfer(int spi_id, uint8_t *tx_buff, uint8_t *rx_buff, s
 {
 	if (SPI_IsTransferBusy(luat_spi[spi_id].id)) return -1;
 	SPI_SetCallbackFun(luat_spi[spi_id].id, CB, pParam);
+	SPI_SetNoBlock(luat_spi[spi_id].id);
 	return SPI_Transfer(luat_spi[spi_id].id, tx_buff, rx_buff, len, 0);
 
 }

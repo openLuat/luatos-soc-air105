@@ -75,6 +75,7 @@ int luat_i2c_no_block_transfer(int id, int addr, uint8_t is_read, uint8_t *reg, 
 		return -1;
 	}
 	I2C_Prepare(id, addr, 1, CB, pParam);
+	I2C_SetNoBlock(id);
 	if (reg && reg_len)
 	{
 		I2C_MasterXfer(id, I2C_OP_READ_REG, reg, reg_len, buff, len, Toms);
