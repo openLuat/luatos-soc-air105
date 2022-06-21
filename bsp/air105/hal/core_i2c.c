@@ -112,7 +112,6 @@ static void I2C_IrqHandle(int32_t IrqLine, void *pData)
 	case I2C_STATE_WRITE_DATA:
 		if (State & I2C_IT_TXE)
 		{
-			Timer_StartMS(prvI2C.ToTimer, prvI2C.TimeoutMs, 0);
 			if (prvI2C.DataBuf.Pos >= prvI2C.DataBuf.MaxLen)
 			{
 				goto I2C_DONE;
@@ -132,7 +131,6 @@ static void I2C_IrqHandle(int32_t IrqLine, void *pData)
 	case I2C_STATE_READ_ADDRESS_WR:
 		if (State & I2C_IT_TXE)
 		{
-			Timer_StartMS(prvI2C.ToTimer, prvI2C.TimeoutMs, 0);
 			if (prvI2C.RegBuf.Pos >= prvI2C.RegBuf.MaxLen)
 			{
 				prvI2C.State = I2C_STATE_READ_ADDRESS_RD;
@@ -158,7 +156,6 @@ static void I2C_IrqHandle(int32_t IrqLine, void *pData)
 	case I2C_STATE_READ_DATA_RD:
 		if (State & I2C_IT_RXF)
 		{
-			Timer_StartMS(prvI2C.ToTimer, prvI2C.TimeoutMs, 0);
 			prvI2C.DataBuf.Data[prvI2C.DataBuf.Pos] = I2C->IC_DATA_CMD & 0x00ff;
 			prvI2C.DataBuf.Pos++;
 			if (prvI2C.DataBuf.Pos >= prvI2C.DataBuf.MaxLen)
