@@ -53,12 +53,13 @@ void* luat_heap_realloc(void* ptr, size_t len) {
 }
 
 void* luat_heap_calloc(size_t count, size_t _size) {
-    void *ptr = luat_heap_malloc(count * _size);
-    if (ptr) {
-        memset(ptr, 0, _size);
-    }
-    return ptr;
+    return OS_Calloc(count,_size);
 }
+
+void* luat_heap_zalloc(size_t _size) {
+    return OS_Zalloc(_size);
+}
+
 //------------------------------------------------
 void luat_vm_pool_init(void)
 {

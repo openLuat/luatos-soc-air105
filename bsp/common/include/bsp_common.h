@@ -211,6 +211,7 @@ enum
 #ifndef MIN
 #define MIN(X,Y)	(((X) < (Y))?(X):(Y))
 #endif
+typedef void (*IrqHandler)(int32_t IrqLine, void *pData);
 typedef void (* TaskFun_t)( void * );
 typedef void (* CommonFun_t)(void);
 typedef void(* CBDataFun_t)(uint8_t *Data, uint32_t Len);
@@ -327,6 +328,7 @@ uint8_t OS_IsSchedulerRun(void);
 uint32_t OS_EnterCritical(void);
 void OS_ExitCritical(uint32_t Critical);
 void *OS_Malloc(uint32_t Size);
+void *OS_Calloc(uint32_t count, uint32_t eltsize);
 void *OS_Zalloc(uint32_t Size);
 void OS_Free(void *p);
 void *OS_Realloc(void *buf, uint32_t size);
