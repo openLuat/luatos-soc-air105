@@ -658,6 +658,7 @@ WAIT_INIT_DONE:
 	}
 	Ctrl->OCR = BytesGetBe32(Ctrl->ExternResult);
 	SPI_SetNewConfig(Ctrl->SpiID, Ctrl->SpiSpeed, 0xff);
+	SDHC_SpiReadCardConfig(pSDHC);
 	SD_DBG("sdcard init OK OCR:0x%08x!", Ctrl->OCR);
 	return;
 INIT_DONE:
