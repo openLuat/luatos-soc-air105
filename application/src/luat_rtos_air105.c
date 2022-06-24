@@ -46,23 +46,6 @@ int luat_wait_event_from_task(void* task_handle, uint32_t wait_event_id, void *o
 	return Task_GetEventByMS(task_handle, wait_event_id, out_event, call_back, ms);
 }
 
-int luat_sem_create(luat_sem_t* semaphore){
-    semaphore->userdata = xSemaphoreCreateBinary();
-    return 0;
-}
-int luat_sem_delete(luat_sem_t* semaphore){
-    vSemaphoreDelete(semaphore->userdata);
-    return 0;
-}
-
-int luat_sem_take(luat_sem_t* semaphore,uint32_t timeout){
-    return (xSemaphoreTake(semaphore->userdata, timeout)==pdFALSE?-1:0);
-}
-
-int luat_sem_release(luat_sem_t* semaphore){
-    OS_MutexRelease(semaphore->userdata);
-    return 0;
-}
 
 void *luat_create_rtos_timer(void *cb, void *param, void *task_handle)
 {

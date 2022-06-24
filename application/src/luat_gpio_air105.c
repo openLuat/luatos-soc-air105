@@ -37,15 +37,11 @@
 //
 //static wm_gpio_conf_t confs[HAL_GPIO_MAX];
 
-//static void luat_gpio_irq_callback(void *ptr, void *pParam)
-//{
-//    int pin = (int)ptr;
-//    luat_gpio_irq_cb cb = confs[pin].cb;
-//    if (cb == NULL)
-//        luat_irq_gpio_cb(pin, confs[pin].args);
-//    else
-//        cb(pin, confs[pin].args);
-//}
+static void luat_gpio_irq_callback(void *ptr, void *pParam)
+{
+    int pin = (int)ptr;
+    luat_gpio_irq_default(pin, (void*)luat_gpio_get(pin));
+}
 
 int luat_gpio_setup(luat_gpio_t *gpio){
     if (gpio->pin < HAL_GPIO_2 || gpio->pin > HAL_GPIO_MAX) return 0;
@@ -75,7 +71,7 @@ int luat_gpio_setup(luat_gpio_t *gpio){
             }
             else
             {
-            	GPIO_ExtiSetCB(gpio->pin, luat_irq_gpio_cb, gpio->irq_args);
+            	GPIO_ExtiSetCB(gpio->pin, luat_gpio_irq_callback, gpio->irq_args);
             }
 
         }break;
@@ -120,13 +116,13 @@ void luat_gpio_init(void){
 //    GPIO_GlobalInit(luat_gpio_irq_callback);
 }
 
-int luat_gpio_set_irq_cb(int pin, luat_gpio_irq_cb cb, void* args) {
-    if (pin < HAL_GPIO_2 || pin >= HAL_GPIO_MAX) return -1;
-    if (cb) {
-    	GPIO_ExtiSetCB(pin, cb, args);
-    }
-    return 0;
-}
+// int luat_gpio_set_irq_cb(int pin, luat_gpio_irq_cb cb, void* args) {
+//     if (pin < HAL_GPIO_2 || pin >= HAL_GPIO_MAX) return -1;
+//     if (cb) {
+//     	GPIO_ExtiSetCB(pin, cb, args);
+//     }
+//     return 0;
+// }
 
 void luat_gpio_pulse(int pin, uint8_t *level, uint16_t len, uint16_t delay_ns) {
 	GPIO_OutPulse(pin, level, len, delay_ns);
