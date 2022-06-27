@@ -257,11 +257,11 @@ static int32_t SPI_DMADoneCB(void *pData, void *pParam)
 #endif
 		if (SpiID)
 		{
-			PM_SetHardwareRunFlag(PM_HW_HSPI, 0);
+			PM_SetHardwareRunFlag(PM_HW_SPI_0 + SpiID - 1, 0);
 		}
 		else
 		{
-			PM_SetHardwareRunFlag(PM_HW_SPI_0 + SpiID - 1, 0);
+			PM_SetHardwareRunFlag(PM_HW_HSPI, 0);
 		}
 		prvSPI[SpiID].Callback((void *)SpiID, prvSPI[SpiID].pParam);
 	}

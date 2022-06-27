@@ -36,6 +36,7 @@ void PM_SetHardwareRunFlag(uint32_t PmHWSn, uint32_t OnOff)
 	{
 		prvPM.HWFlagBit &= ~(1 << PmHWSn);
 	}
+//	PM_Print();
 }
 
 void PM_SetDriverRunFlag(uint32_t PmDrvSn, uint32_t OnOff)
@@ -48,6 +49,7 @@ void PM_SetDriverRunFlag(uint32_t PmDrvSn, uint32_t OnOff)
 	{
 		prvPM.DrvFlagBit &= ~(1 << PmDrvSn);
 	}
+//	PM_Print();
 }
 
 void PM_Print(void)
