@@ -357,6 +357,11 @@ if with_luatos then
     -- qrcode
     add_includedirs(luatos.."components/qrcode",{public = true})
     add_files(luatos.."components/qrcode/*.c")
+    
+    -- lora
+    add_includedirs(luatos.."components/lora",{public = true})
+    add_files(luatos.."components/lora/**.c")
+    
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})
