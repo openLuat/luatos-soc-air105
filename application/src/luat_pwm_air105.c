@@ -183,12 +183,12 @@ int luat_pwm_open(int channel, size_t period, size_t pulse,int pnum) {
 		case 5:
 			GPIO_Iomux(GPIOC_07, 2);
 			break;
-		case 6:
-			GPIO_Iomux(GPIOC_08, 2);
-			break;
-		case 7:
-			GPIO_Iomux(GPIOC_09, 2);
-			break;
+//		case 6:
+//			GPIO_Iomux(GPIOC_08, 2);
+//			break;
+//		case 7:
+//			GPIO_Iomux(GPIOC_09, 2);
+//			break;
 		default:
 			break;
 	}
