@@ -104,17 +104,20 @@ void* luat_heap_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
     	void* ptmp = luat_bget(&luavm_pool, nsize);
     	if (ptmp)
     	{
-    		if (osize > nsize)
+    		if (ptr)
     		{
-    			memcpy(ptmp, ptr, nsize);
-    		}
-    		else
-    		{
-    			memcpy(ptmp, ptr, osize);
-    		}
-    		if (((uint32_t)ptr & __SRAM_BASE_ADDR__) == __SRAM_BASE_ADDR__)
-    		{
-    			luat_brel(&luavm_pool, ptr);
+        		if (osize > nsize)
+        		{
+        			memcpy(ptmp, ptr, nsize);
+        		}
+        		else
+        		{
+        			memcpy(ptmp, ptr, osize);
+        		}
+        		if (((uint32_t)ptr & __SRAM_BASE_ADDR__) == __SRAM_BASE_ADDR__)
+        		{
+        			luat_brel(&luavm_pool, ptr);
+        		}
     		}
     		return ptmp;
     	}
