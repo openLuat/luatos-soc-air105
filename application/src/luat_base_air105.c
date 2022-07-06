@@ -301,8 +301,6 @@ void luat_shell_poweron(int _drv);
 
 void luat_base_init(void)
 {
-	luat_gpio_init();
-
 	luat_vm_pool_init();
 
 #ifdef LUAT_USE_SHELL

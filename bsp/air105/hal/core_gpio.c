@@ -214,7 +214,7 @@ void GPIO_ExtiConfig(uint32_t Pin, uint8_t IsLevel, uint8_t IsRiseHigh, uint8_t 
 	GPIO->INTP_TYPE_STA[Port].INTP_TYPE = (GPIO->INTP_TYPE_STA[Port].INTP_TYPE & Mask) | Type;
 	uint32_t Sn = Pin / 32;
 	uint32_t Pos = 1 << (Pin % 32);
-	if (!IsLevel)
+	if (!IsLevel && (IsRiseHigh || IsFallLow))
 	{
 		switch(Sn)
 		{

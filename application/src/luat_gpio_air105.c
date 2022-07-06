@@ -28,14 +28,8 @@
 #include "platform_define.h"
 #include "luat_irq.h"
 
-//typedef struct wm_gpio_conf
-//{
-//    luat_gpio_irq_cb cb;
-//    void* args;
-//}wm_gpio_conf_t;
-//
-//
-//static wm_gpio_conf_t confs[HAL_GPIO_MAX];
+#define LUAT_LOG_TAG "luat.gpio"
+#include "luat_log.h"
 
 static void luat_gpio_irq_callback(void *ptr, void *pParam)
 {
@@ -83,6 +77,7 @@ int luat_gpio_setup(luat_gpio_t *gpio){
             GPIO_PullConfig(gpio->pin, 1, 1);
             break;
         case Luat_GPIO_PULLDOWN:
+            LLOGE("air105 can't config pulldown");
             GPIO_PullConfig(gpio->pin, 1, 0);
             break;
         case Luat_GPIO_DEFAULT:
@@ -111,18 +106,6 @@ void luat_gpio_close(int pin){
     GPIO_ExtiConfig(pin, 0,0,0);
     return ;
 }
-
-void luat_gpio_init(void){
-//    GPIO_GlobalInit(luat_gpio_irq_callback);
-}
-
-// int luat_gpio_set_irq_cb(int pin, luat_gpio_irq_cb cb, void* args) {
-//     if (pin < HAL_GPIO_2 || pin >= HAL_GPIO_MAX) return -1;
-//     if (cb) {
-//     	GPIO_ExtiSetCB(pin, cb, args);
-//     }
-//     return 0;
-// }
 
 void luat_gpio_pulse(int pin, uint8_t *level, uint16_t len, uint16_t delay_ns) {
 	GPIO_OutPulse(pin, level, len, delay_ns);
