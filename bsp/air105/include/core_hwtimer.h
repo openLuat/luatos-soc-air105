@@ -50,6 +50,14 @@ void HWTimer_StartPWM(uint8_t HWTimerID, uint32_t HighCnt, uint32_t LowCnt, uint
  */
 void HWTimer_Stop(uint8_t HWTimerID);
 /**
+ * @brief 获取上次被停止的IOqueue的信息
+ *
+ * @param HWTimerID 硬件定时器ID
+ * @param Repeat 已经重复次数
+ * @param Count 一次循环中已经操作步骤，可能为0
+ */
+void HWTimer_GetResultOperationInfo(uint8_t HWTimerID, uint32_t *Repeat, uint32_t *Count);
+/**
  * @brief 初始化IO操作序列，会完全清除之前保留的操作序列
  *
  * @param HWTimerID 硬件定时器ID

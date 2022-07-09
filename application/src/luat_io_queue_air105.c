@@ -64,10 +64,11 @@ void luat_io_queue_start(uint8_t hw_timer_id)
 	HWTimer_StartOperationQueue(hw_timer_id);
 }
 
-void luat_io_queue_stop(uint8_t hw_timer_id)
+void luat_io_queue_stop(uint8_t hw_timer_id, uint32_t *repeat_cnt, uint32_t *cmd_cnt)
 {
 	if (hw_timer_id >= HW_TIMER_MAX) return;
 	HWTimer_Stop(hw_timer_id);
+	HWTimer_GetResultOperationInfo(hw_timer_id, repeat_cnt, cmd_cnt);
 }
 
 

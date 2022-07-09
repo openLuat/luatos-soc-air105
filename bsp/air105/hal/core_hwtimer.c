@@ -32,6 +32,8 @@ typedef struct
 	uint32_t CurCount;
 	uint32_t RepeatCnt;
 	uint32_t CmdQueuePos;
+	uint32_t LastRepeatCnt;
+	uint32_t LastCount;
 	uint8_t IsQueueRunning;
 	uint8_t ContinueDelay;
 }HWTimer_CtrlStruct;
@@ -119,6 +121,8 @@ static int __FUNC_IN_RAM__ prvHWTimer_OperationEnd(uint8_t HWTimerID, HWTimer_Ct
 	HWTimer->RepeatCnt++;
 	if (HWTimer->TotalRepeat && (HWTimer->RepeatCnt >= HWTimer->TotalRepeat))
 	{
+		prvHWTimer[HWTimerID].LastCount = prvHWTimer[HWTimerID].CurCount;
+		prvHWTimer[HWTimerID].LastRepeatCnt = prvHWTimer[HWTimerID].RepeatCnt;
 		TIMM0->TIM[HWTimerID].ControlReg = 0;
 		TIMM0->TIM[HWTimerID].LoadCount = 24;
 
@@ -590,6 +594,14 @@ void HWTimer_Stop(uint8_t HWTimerID)
 	prvHWTimer[HWTimerID].IsQueueRunning = 0;
 	prvHWTimer[HWTimerID].ContinueDelay = 0;
 	PM_SetHardwareRunFlag(PM_HW_TIMER_0 + HWTimerID, 0);
+	prvHWTimer[HWTimerID].LastCount = prvHWTimer[HWTimerID].CurCount;
+	prvHWTimer[HWTimerID].LastRepeatCnt = prvHWTimer[HWTimerID].RepeatCnt;
+}
+
+void HWTimer_GetResultOperationInfo(uint8_t HWTimerID, uint32_t *Repeat, uint32_t *Count)
+{
+	*Repeat = prvHWTimer[HWTimerID].LastRepeatCnt;
+	*Count = prvHWTimer[HWTimerID].LastCount;
 }
 
 void HWTimer_InitOperationQueue(uint8_t HWTimerID, uint32_t nCount, uint32_t Repeat, CBFuncEx_t CmdDoneCB, void *pCmdDoneParam)

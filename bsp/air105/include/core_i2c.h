@@ -62,18 +62,6 @@ void I2C_Prepare(uint8_t I2CID, uint16_t ChipAddress, uint8_t ChipAddressLen, CB
 void I2C_MasterXfer(uint8_t I2CID, uint8_t Operate, uint8_t *RegAddress, uint32_t RegLen, uint8_t *Data, uint32_t Len, uint16_t Toms);
 
 /**
- * @brief i2c主机传输，多个单一寄存器写入
- *
- * @param I2CID I2C通道号
- * @param RegQueue 寄存器序列
- * @param TotalNum 序列长度
- * @param Toms 传输单个字节超时时间，单位ms
- * @param IsBlock 是否要阻塞
- * @return =0 传输成功，其他失败 IsBlock=1才有效，IsBlock=0直接返回0
- */
-int32_t I2C_MasterWriteRegQueue(uint8_t I2CID, I2C_CommonRegDataStruct *RegQueue, uint32_t TotalNum, uint16_t Toms, uint8_t IsBlock);
-
-/**
  * @brief i2c主机传输结果查询
  *
  * @param I2CID I2C通道号
