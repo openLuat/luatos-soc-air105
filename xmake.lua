@@ -361,6 +361,10 @@ if with_luatos then
     -- lora
     add_includedirs(luatos.."components/lora",{public = true})
     add_files(luatos.."components/lora/**.c")
+
+    -- fonts
+    add_includedirs(luatos.."components/luatfonts",{public = true})
+    add_files(luatos.."components/luatfonts/**.c")
     
 else
 
