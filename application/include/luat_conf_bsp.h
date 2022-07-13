@@ -180,4 +180,8 @@ extern unsigned int gLVFlashTime;
 
 #define LUAT_GPIO_NUMS	32
 #define LUAT__UART_TX_NEED_WAIT_DONE
+
+#define LUAT_RT_RET_TYPE int
+#define LUAT_RT_RET	0
+#define LUAT_RT_CB_PARAM void *pdata, void *param
 #endif
