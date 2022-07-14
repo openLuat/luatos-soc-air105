@@ -130,7 +130,12 @@ int luat_timer_mdelay(size_t ms) {
     return 0;
 }
 
-
+extern uint8_t cri_flag;
 void luat_timer_us_delay(size_t time){
+	if (cri_flag)
+	{
+		SysTickDelay(time * SYS_TIMER_1US);
+		return;
+	}
 	Task_DelayUS(time);
 }

@@ -331,7 +331,7 @@ time_t luat_time(time_t *_Time) {
 
 
 static uint32_t cri;
-static uint8_t cri_flag;
+uint8_t cri_flag;
 static uint8_t disable_all;	//如果设置成1，将关闭总中断，非常危险，谨慎使用
 
 void luat_os_set_cri_all(uint8_t onoff)
