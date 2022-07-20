@@ -130,7 +130,7 @@ target_end()
 
 target("lvgl")
     set_kind("static")
-    
+    add_defines("__BUILD_APP__","__BUILD_OS__","CMB_USING_OS_PLATFORM","CMB_OS_PLATFORM_TYPE=CMB_OS_PLATFORM_FREERTOS",luatos_define)
     on_load(function (target)
         local conf_data = io.readfile("$(projectdir)/application/include/luat_conf_bsp.h")
         local LVGL_CONF = conf_data:find("// #define LUAT_USE_LVGL\n")
