@@ -215,6 +215,9 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_FONTS
   {"fonts", luaopen_fonts},
 #endif
+#ifdef LUAT_USE_MLX90640
+  {"mlx90640", luaopen_mlx90640},
+#endif
   {"usbapp", luaopen_usbapp},
   {"audio", luaopen_multimedia_audio},
   {"codec", luaopen_multimedia_codec},

@@ -240,6 +240,9 @@ int luat_uart_setup(luat_uart_t *uart){
         	serials[uart->id].rs485_timer = Timer_Create(luat_uart_wait_timer_cb, uart->id, NULL);
         }
         GPIO_Config(serials[uart->id].rs485_pin, 0, serials[uart->id].rs485_param_bit.rx_level);
+#ifndef UART_RX_USE_DMA
+        Uart_EnableRxIrq(uart->id);
+#endif
     }
 
     return 0;
@@ -272,7 +275,7 @@ int luat_uart_read(int uartid, void *buffer, size_t length){
         ret = Core_VUartRxBufferRead(VIRTUAL_UART0, (uint8_t *)buffer,length);
     else
         ret = Uart_RxBufferRead(uartid, (uint8_t *)buffer,length);
-    // LLOGD("uartid:%d buffer:%s ",uartid,buffer);
+//    LLOGD("uartid:%d buffer:%s ret:%d ",uartid,buffer, ret);
     return ret;
 }
 
@@ -298,9 +301,9 @@ int luat_setup_cb(int uartid, int received, int sent){
         Core_VUartSetCb(VIRTUAL_UART0, luat_uart_usb_cb);
     else {
         Uart_SetCb(uartid, luat_uart_cb);
-#ifndef UART_RX_USE_DMA
-        Uart_EnableRxIrq(uartid);
-#endif
+//#ifndef UART_RX_USE_DMA
+//        Uart_EnableRxIrq(uartid);
+//#endif
     }
     return 0;
 }
