@@ -162,31 +162,31 @@ target("lvgl")
 target_end()
 
 ---//-----------------------------
-target("tflm")
-    tfroot = "Third_Party/tflm-cmsis/"
-    set_kind("static")
-    set_languages("c99", "c++11")
+-- target("tflm")
+--     tfroot = "Third_Party/tflm-cmsis/"
+--     set_kind("static")
+--     set_languages("c99", "c++11")
 
-    add_defines("CMSIS_NN=1")
+--     add_defines("CMSIS_NN=1")
 
-    add_files(tfroot .. "tensorflow/**.c")
-    add_files(tfroot .. "tensorflow/**.cc")
-    add_files(tfroot .. "apps/person_detection/**.cc")
+--     add_files(tfroot .. "tensorflow/**.c")
+--     add_files(tfroot .. "tensorflow/**.cc")
+--     add_files(tfroot .. "apps/person_detection/**.cc")
     
-    add_files(tfroot .. "third_party/**.c")
+--     add_files(tfroot .. "third_party/**.c")
 
-    add_includedirs(tfroot .. ".", 
-    tfroot .. "third_party/ruy", 
-    tfroot .. "third_party/kissfft", 
-    tfroot .. "third_party/gemmlowp", 
-    tfroot .. "third_party/flatbuffers/include",
-    tfroot .. "third_party/cmsis/CMSIS/Core/Include",
-    tfroot .. "third_party/cmsis/CMSIS/DSP/Include",
-    tfroot .. "third_party/cmsis/CMSIS/NN/Include",
-    tfroot .. "third_party/cmsis"
-                        )
+--     add_includedirs(tfroot .. ".", 
+--     tfroot .. "third_party/ruy", 
+--     tfroot .. "third_party/kissfft", 
+--     tfroot .. "third_party/gemmlowp", 
+--     tfroot .. "third_party/flatbuffers/include",
+--     tfroot .. "third_party/cmsis/CMSIS/Core/Include",
+--     tfroot .. "third_party/cmsis/CMSIS/DSP/Include",
+--     tfroot .. "third_party/cmsis/CMSIS/NN/Include",
+--     tfroot .. "third_party/cmsis"
+--                         )
 
-target_end()
+-- target_end()
 ---//-----------------------------
 
 target("app.elf")
@@ -366,6 +366,8 @@ if with_luatos then
     add_includedirs(luatos.."components/luatfonts",{public = true})
     add_files(luatos.."components/luatfonts/**.c")
     
+    -- crypto
+    add_files(luatos.."components/crypto/**.c")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})
