@@ -20,7 +20,7 @@
  */
 
 #include "user.h"
-#define SAMPLE_PER_CH	(10)
+#define SAMPLE_PER_CH	(12)
 #if 0
 typedef struct
 {
@@ -217,10 +217,11 @@ uint32_t ADC_GetChannelValue(uint8_t Channel, uint32_t *Vol)
 	ISR_OnOff(ADC0_IRQn, 1);
 	ADC0->ADC_CR1 = 0x060 | Channel;
 	while(!prvADC.Done){;}
-	for (i = 5; i < SAMPLE_PER_CH; i++)
+	for (i = 6; i < SAMPLE_PER_CH; i++)
 	{
-//		DBG("%d,%d", i, prvADC.Data[i]);
-		value = prvADC.Data[i];
+
+		value = (prvADC.Data[i] & 0x3F) * 0.33 + prvADC.Data[i];
+//		DBG("%d,%d,%d", i, prvADC.Data[i], value);
 		if(max < value)
 			max = value;
 		if(min > value)
@@ -228,14 +229,14 @@ uint32_t ADC_GetChannelValue(uint8_t Channel, uint32_t *Vol)
 		total += value;
 	}
 	ADC0->ADC_CR1 = 0;
-	value = ((total - max) -min)/(SAMPLE_PER_CH-7);
+	value = ((total - max) -min)/(SAMPLE_PER_CH-8);
 	if (!Channel)
 	{
-		*Vol = (value * 5000 / 4095);
+		*Vol = (value * 5264 / 4095);
 	}
 	else
 	{
-		*Vol = (value * 1800 / 4095);
+		*Vol = (value * 1880 / 4095);
 	}
 	return value;
 }
