@@ -365,6 +365,7 @@ if with_luatos then
     -- fonts
     add_includedirs(luatos.."components/luatfonts",{public = true})
     add_files(luatos.."components/luatfonts/**.c")
+    add_includedirs(luatos.."components/lvgl/src/lv_font",{public = true})
     
     -- crypto
     add_files(luatos.."components/crypto/**.c")
