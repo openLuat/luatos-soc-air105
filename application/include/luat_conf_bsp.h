@@ -72,6 +72,7 @@
 #define LUAT_USE_NETWORK 1
 #define LUAT_USE_TLS 1
 #define LUAT_USE_LORA 1
+#define LUAT_USE_MINIZ 1
 
 //----------------------------
 // 高通字体, 需配合芯片使用
