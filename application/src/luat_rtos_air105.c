@@ -75,3 +75,23 @@ void luat_task_resume_all(void)
 {
 	OS_ResumeTask(NULL);
 }
+
+
+void *luat_mutex_create(void)
+{
+	return OS_MutexCreateUnlock();
+}
+LUAT_RET luat_mutex_lock(void *mutex)
+{
+	OS_MutexLock(mutex);
+	return 0;
+}
+LUAT_RET luat_mutex_unlock(void *mutex)
+{
+	OS_MutexRelease(mutex);
+	return 0;
+}
+void luat_mutex_release(void *mutex)
+{
+	OS_MutexDelete(mutex);
+}

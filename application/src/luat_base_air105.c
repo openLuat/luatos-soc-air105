@@ -205,6 +205,7 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_W5500
   {"w5500", luaopen_w5500},
   {"network", luaopen_network_adapter},
+  {"mqtt", luaopen_mqtt},
 #endif
 // #ifdef LUAT_USE_FOTA
   {"fota", luaopen_fota},
@@ -217,6 +218,9 @@ static const luaL_Reg loadedlibs[] = {
 #endif
 #ifdef LUAT_USE_MLX90640
   {"mlx90640", luaopen_mlx90640},
+#endif
+#ifdef LUAT_USE_MINIZ
+  {"miniz", luaopen_miniz},
 #endif
   {"usbapp", luaopen_usbapp},
   {"audio", luaopen_multimedia_audio},

@@ -60,7 +60,7 @@
 // #define LUAT_USE_STATEM 1
 // #define LUAT_USE_COREMARK 1
 #define LUAT_USE_FDB 1
-#define LUAT_USE_ZLIB 
+//#define LUAT_USE_ZLIB
 #define LUAT_USE_CAMERA  1
 #define LUAT_USE_FATFS 1
 #define LUAT_USE_I2CTOOLS 1
@@ -72,6 +72,8 @@
 #define LUAT_USE_NETWORK 1
 #define LUAT_USE_TLS 1
 #define LUAT_USE_LORA 1
+// #define LUAT_USE_MLX90640 1
+#define LUAT_USE_MINIZ 1
 
 //----------------------------
 // 高通字体, 需配合芯片使用
@@ -102,7 +104,7 @@
 #define LUAT_USE_U8G2  1
 
 /**************FONT*****************/
-#define LUAT_USE_FONTS
+#define LUAT_USE_FONTS  1
 /**********U8G2&LCD&EINK FONT*************/
 #define USE_U8G2_OPPOSANSM_ENGLISH 1
 #define USE_U8G2_OPPOSANSM12_CHINESE
