@@ -366,8 +366,12 @@ if with_luatos then
     add_includedirs(luatos.."components/ethernet/common",{public = true})
     add_includedirs(luatos.."components/ethernet/w5500",{public = true})
     add_includedirs(luatos.."components/network/adapter",{public = true})
-    add_files(luatos.."components/ethernet/*/*.c")
+    add_files(luatos.."components/ethernet/**.c")
     add_files(luatos.."components/network/adapter/*.c")
+
+    -- mqtt
+    add_includedirs(luatos.."components/network/libemqtt",{public = true})
+    add_files(luatos.."components/network/libemqtt/*.c")
 
     -- qrcode
     add_includedirs(luatos.."components/qrcode",{public = true})
