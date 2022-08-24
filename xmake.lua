@@ -161,6 +161,20 @@ target("lvgl")
     set_targetdir("$(buildir)/lib")
 target_end()
 
+target("miniz")
+    set_kind("static")
+    set_plat("cross")
+    set_arch("c-sky")
+
+    add_files(luatos.."components/miniz/*.c")
+    add_includedirs("application/include")
+    add_includedirs("bsp/air105/include",{public = true})
+    add_includedirs(luatos.."lua/include")
+    add_includedirs(luatos.."luat/include")
+    add_includedirs(luatos.."components/miniz")
+    set_targetdir("$(buildir)/lib")
+target_end()
+
 ---//-----------------------------
 -- target("tflm")
 --     tfroot = "Third_Party/tflm-cmsis/"
@@ -201,6 +215,7 @@ if with_luatos then
         AIR105_VERSION = conf_data:match("#define LUAT_BSP_VERSION \"(%w+)\"")
         local LVGL_CONF = conf_data:find("// #define LUAT_USE_LVGL\n")
         if LVGL_CONF == nil then target:add("deps", "lvgl") end
+        target:add("deps", "miniz")
     end)
 
     --add_deps("tflm")
