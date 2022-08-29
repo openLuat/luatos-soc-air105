@@ -789,7 +789,10 @@ int32_t SPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData,
 	{
 		times = Len * 100000;
 	}
-
+	else if (prvSPI[SpiID].Speed >= 8000000)
+	{
+		times = Len * 1000000;
+	}
 #ifdef __BUILD_OS__
 	//if ( OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= (Len * 50000 * ((SpiID==HSPI_ID0)?2:1))))
 	if ( OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= times))
@@ -977,6 +980,10 @@ int32_t SPI_FlashBlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint32_t WL
 	if (prvSPI[SpiID].Speed >= 48000000)
 	{
 		times = (WLen + RLen) * 100000;
+	}
+	else if (prvSPI[SpiID].Speed >= 8000000)
+	{
+		times = (WLen + RLen)  * 1000000;
 	}
 #ifdef __BUILD_OS__
 //	if ( OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= ((WLen + RLen) * 50000 * ((SpiID==HSPI_ID0)?2:1) )))

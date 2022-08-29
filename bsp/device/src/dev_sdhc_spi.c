@@ -380,6 +380,7 @@ static int32_t SDHC_SpiCmd(SDHC_SPICtrlStruct *Ctrl, uint8_t Cmd, uint32_t Arg, 
 	{
 		SDHC_SpiCS(Ctrl, 0);
 	}
+//	DBG("cmd %x arg %x result %d", Cmd, Arg, Result);
 	return Result;
 }
 
@@ -388,21 +389,30 @@ static int32_t SDHC_SpiReadRegData(SDHC_SPICtrlStruct *Ctrl, uint8_t *RegDataBuf
 	uint64_t OpEndTick;
 	int Result = ERROR_NONE;
 	uint16_t DummyLen;
-	uint16_t i,findResult;
+	uint16_t i,findResult,offset;
 	Ctrl->SPIError = 0;
 	Ctrl->SDHCError = 0;
-	OpEndTick = GetSysTick() + Ctrl->SDHCReadBlockTo;
+	OpEndTick = GetSysTick() + Ctrl->SDHCReadBlockTo * 4;
 	findResult = 0;
+	offset = 0;
 	for(i = 0; i < Ctrl->ExternLen; i++)
 	{
-		if (0xfe == Ctrl->ExternResult[i])
+		if (Ctrl->ExternResult[i] != 0xff)
 		{
-			DummyLen = Ctrl->ExternLen - i - 1;
+			if (0xfe == Ctrl->ExternResult[i])
+			{
+				offset = 1;
+			}
+			else
+			{
+				DBG("no 0xfe find %d,%x",i,Ctrl->ExternResult[i]);
+			}
+			DummyLen = Ctrl->ExternLen - i - offset;
 			if (Ctrl->IsPrintData)
 			{
-				DBG_HexPrintf(&Ctrl->ExternResult[i], DummyLen + 1);
+				DBG_HexPrintf(&Ctrl->ExternResult[i], DummyLen + offset);
 			}
-			memcpy(RegDataBuf, &Ctrl->ExternResult[i + 1], DummyLen);
+			memcpy(RegDataBuf, &Ctrl->ExternResult[i + offset], DummyLen);
 			memset(RegDataBuf + DummyLen, 0xff, DataLen - DummyLen);
 			SDHC_SpiXfer(Ctrl, RegDataBuf + DummyLen, DataLen - DummyLen);
 			if (Ctrl->IsPrintData)
@@ -411,35 +421,47 @@ static int32_t SDHC_SpiReadRegData(SDHC_SPICtrlStruct *Ctrl, uint8_t *RegDataBuf
 			}
 			goto SDHC_SPIREADREGDATA_DONE;
 		}
+
 	}
 	while((GetSysTick() < OpEndTick) && !Ctrl->SDHCError)
 	{
 		memset(Ctrl->TempData, 0xff, 40);
 		SDHC_SpiXfer(Ctrl, Ctrl->TempData, 40);
-		if (Ctrl->IsPrintData)
-		{
-			DBG_HexPrintf(Ctrl->TempData, 40);
-		}
+
 		for(i = 0; i < 40; i++)
 		{
-			if (0xfe == Ctrl->TempData[i])
+			if (Ctrl->TempData[i] != 0xff)
 			{
-				DummyLen = 40 - i - 1;
+				if (Ctrl->IsPrintData)
+				{
+					DBG_HexPrintf(Ctrl->TempData, 40);
+				}
+				if (0xfe == Ctrl->TempData[i])
+				{
+					offset = 1;
+				}
+				else
+				{
+					DBG("no 0xfe find %d,%x",i,Ctrl->TempData[i]);
+				}
+				DummyLen = 40 - i - offset;
 				if (DummyLen >= DataLen)
 				{
-					memcpy(RegDataBuf, &Ctrl->TempData[i + 1], DataLen);
+					memcpy(RegDataBuf, &Ctrl->TempData[i + offset], DataLen);
 					goto SDHC_SPIREADREGDATA_DONE;
 				}
 				else
 				{
-					memcpy(RegDataBuf, &Ctrl->TempData[i + 1], DummyLen);
+					memcpy(RegDataBuf, &Ctrl->TempData[i + offset], DummyLen);
 					memset(RegDataBuf + DummyLen, 0xff, DataLen - DummyLen);
 					SDHC_SpiXfer(Ctrl, RegDataBuf + DummyLen, DataLen - DummyLen);
 					goto SDHC_SPIREADREGDATA_DONE;
 				}
 			}
+
 		}
 	}
+	DBG("read config reg timeout!");
 	Result = -ERROR_OPERATION_FAILED;
 SDHC_SPIREADREGDATA_DONE:
 	SDHC_SpiCS(Ctrl, 0);
