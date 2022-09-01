@@ -339,6 +339,8 @@ enum
 #ifdef __AIR106_BSP__
 enum
 {
+	LCD_ID0 = 0,
+	LCD_MAX,
 	USB_ID0 = 0,
 	USB_MAX,
 	CAN_ID0 = 0,	//CAN CLK=SYS/2
@@ -355,7 +357,7 @@ enum
 	VIRTUAL_UART0 = 0,
 	VIRTUAL_UART_MAX,
 
-	SPI_ID0,
+	SPI_ID0 = 0,
 	SPI_ID1,
 	SPI_MAX,
 

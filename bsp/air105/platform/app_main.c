@@ -46,7 +46,7 @@ const uint32_t __attribute__((section (".app_info")))
 	0,
 };
 
-static void prvSystemReserCtrl(void)
+static void prvSystemHaltResetCtrl(void)
 {
 #ifdef __DEBUG__
 	WDT_Feed();
@@ -151,7 +151,7 @@ static void prvHW_Init(void)
 
 int main(void)
 {
-    cm_backtrace_init_ex("air105", "1.0", "v0001", prvSystemReserCtrl);
+    cm_backtrace_init_ex("air105", "1.0", "v0001", prvSystemHaltResetCtrl);
 	__NVIC_SetPriorityGrouping(7 - __NVIC_PRIO_BITS);//对于freeRTOS必须这样配置
 	SystemCoreClockUpdate();
     CoreTick_Init();
