@@ -20,7 +20,7 @@
  */
 
 #include "user.h"
-#define SAMPLE_PER_CH	(12)
+#define SAMPLE_PER_CH	(14)
 #if 0
 typedef struct
 {
@@ -178,11 +178,14 @@ void ADC_GlobalInit(void)
 	ADC0->ADC_CR2 &= ~(1 << 14);
 	ADC0->ADC_CR2 &= ~(1 << 13);
 	ADC0->ADC_CR1 = 0;
+#if 0
     ISR_SetHandler(ADC0_IRQn, ADC_IrqHandle, NULL);
 #ifdef __BUILD_OS___
 	ISR_SetPriority(ADC0_IRQn, IRQ_LOWEST_PRIORITY - 1);
 #else
 	ISR_SetPriority(ADC0_IRQn, 6);
+#endif
+
 #endif
 	ISR_OnOff(ADC0_IRQn, 0);
 //	ADC_IntelResistance(1);
@@ -213,23 +216,38 @@ uint32_t ADC_GetChannelValue(uint8_t Channel, uint32_t *Vol)
 	uint32_t min = 0x0fff;
 	uint32_t i;
 	ADC0->ADC_FIFO = 3;
-	prvADC.Done = 0;
-	ISR_OnOff(ADC0_IRQn, 1);
-	ADC0->ADC_CR1 = 0x060 | Channel;
-	while(!prvADC.Done){;}
-	for (i = 6; i < SAMPLE_PER_CH; i++)
-	{
-
-		value = (prvADC.Data[i] & 0x3F) * 0.33 + prvADC.Data[i];
-//		DBG("%d,%d,%d", i, prvADC.Data[i], value);
-		if(max < value)
-			max = value;
-		if(min > value)
-			min = value;
-		total += value;
-	}
+	while(ADC0->ADC_FIFO & (BIT(1))) {;}
+//	prvADC.Done = 0;
+//	ISR_OnOff(ADC0_IRQn, 1);
+	memset(prvADC.Data, 0, sizeof(prvADC.Data));
+	ADC0->ADC_CR1 = 0x040 | Channel;
+	while(!(ADC0->ADC_SR & BIT(0))){;}
 	ADC0->ADC_CR1 = 0;
-	value = ((total - max) -min)/(SAMPLE_PER_CH-8);
+//	prvADC.Done = 1;
+	for(i = 0; i < SAMPLE_PER_CH; i++)
+	{
+		prvADC.Data[i] = ADC0->ADC_DATA & 0x0fff;
+	}
+	ADC0->ADC_FIFO = 3;
+//	for (i = 0; i < SAMPLE_PER_CH; i++)
+//	{
+//		DBG("%d,%d", i, prvADC.Data[i]);
+//	}
+
+//	for (i = 6; i < SAMPLE_PER_CH; i++)
+//	{
+//
+//		value = (prvADC.Data[i] & 0x3F) * 0.33 + prvADC.Data[i];
+//		DBG("%d,%d,%d", i, prvADC.Data[i], value);
+//		if(max < value)
+//			max = value;
+//		if(min > value)
+//			min = value;
+//		total += value;
+//	}
+	ADC0->ADC_CR1 = Channel;
+//	value = ((total - max) -min)/(SAMPLE_PER_CH-8);
+	value = prvADC.Data[SAMPLE_PER_CH - 1];
 	if (!Channel)
 	{
 		*Vol = (value * 5264 / 4095);
