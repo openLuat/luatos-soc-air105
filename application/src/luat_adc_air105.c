@@ -56,14 +56,22 @@ int luat_adc_open(int ch, void *args)
         GPIO_Iomux(GPIOC_05, 2);
         GPIO_PullConfig(GPIOC_05, 0, 0);
         break;
-    case ADC_SET_GLOBAL_RANGE:
-    	ADC_IntelResistance((int)args);
-    	return 0;
     default:
         return -1;
     }
     ADC_ChannelOnOff(ch, 1);
     return 0;
+}
+
+int luat_adc_global_config(int tp, int val)
+{
+	switch(tp)
+	{
+    case ADC_SET_GLOBAL_RANGE:
+    	ADC_IntelResistance(val);
+    	return 0;
+	}
+	return -1;
 }
 
 int luat_adc_read(int ch, int *val, int *val2)

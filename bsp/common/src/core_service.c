@@ -892,7 +892,7 @@ void Core_ServiceInit(void)
 void Core_UserTaskInit(void)
 {
 #ifdef __LUATOS__
-	prvService.UserHandle = Task_Create(prvLuatOS_Task, NULL, 12*1024, LUATOS_TASK_PRO, "luatos task");
+	prvService.UserHandle = Task_Create(prvLuatOS_Task, NULL, 16*1024, LUATOS_TASK_PRO, "luatos task");
 	luat_base_init();
 #endif
 }
