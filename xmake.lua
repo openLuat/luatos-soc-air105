@@ -432,8 +432,7 @@ end
             os.cp("./project/air105/info.json", "$(buildir)/out/info.json")
             os.cp("./project/air105/soc_download.exe", "$(buildir)/out/soc_download.exe")
             os.cd("$(buildir)/out")
-            os.run(path7z .. " a -mx=9 maps.7z app.map bootloader.map")
-            os.run(path7z.." a LuatOS-SoC_"..AIR105_VERSION.."_AIR105.soc info.json bootloader.bin app.bin soc_download.exe maps.7z")
+            os.run(path7z.." a LuatOS-SoC_"..AIR105_VERSION.."_AIR105.soc info.json bootloader.bin app.bin soc_download.exe")
             os.rm("$(buildir)/out/info.json")
             os.rm("$(buildir)/out/soc_download.exe")
         else
