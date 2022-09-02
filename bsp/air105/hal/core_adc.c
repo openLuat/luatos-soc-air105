@@ -210,10 +210,10 @@ void ADC_ChannelOnOff(uint8_t Channel, uint8_t OnOff)
 uint32_t ADC_GetChannelValue(uint8_t Channel, uint32_t *Vol)
 {
 
-	uint32_t total= 0;
+//	uint32_t total= 0;
 	uint32_t value = 0;
-	uint32_t max = 0;
-	uint32_t min = 0x0fff;
+//	uint32_t max = 0;
+//	uint32_t min = 0x0fff;
 	uint32_t i;
 	ADC0->ADC_FIFO = 3;
 	while(ADC0->ADC_FIFO & (BIT(1))) {;}
@@ -248,13 +248,30 @@ uint32_t ADC_GetChannelValue(uint8_t Channel, uint32_t *Vol)
 	ADC0->ADC_CR1 = Channel;
 //	value = ((total - max) -min)/(SAMPLE_PER_CH-8);
 	value = prvADC.Data[SAMPLE_PER_CH - 1];
+
 	if (!Channel)
 	{
-		*Vol = (value * 5264 / 4095);
+		*Vol = (value * 1880 * 14 / 5) >> 12;
 	}
 	else
 	{
-		*Vol = (value * 1880 / 4095);
+		if (ADC0->ADC_CR2 & (1 << 13))
+		{
+			if (Channel != 6)
+			{
+				*Vol = (value * 3760) >> 12;
+			}
+			else
+			{
+				*Vol = (value * 470 * 1511 / 279) >> 11;
+			}
+
+		}
+		else
+		{
+			*Vol = (value * 1880 / 4095);
+		}
+
 	}
 	return value;
 }

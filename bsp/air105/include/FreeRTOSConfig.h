@@ -66,7 +66,7 @@
  extern uint32_t SystemCoreClock;
 #endif
 #ifdef __AIR105_BSP__
-#include "../chip/include/air105.h"
+#include "air105.h"
 #endif
 /*  CMSIS-RTOSv2 defines 56 levels of priorities. To be able to use them
  *  all and avoid application misbehavior, configUSE_PORT_OPTIMISED_TASK_SELECTION
