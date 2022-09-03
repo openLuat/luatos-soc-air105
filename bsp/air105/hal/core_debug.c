@@ -31,11 +31,13 @@
 #define DBG_TXBUF_SIZE DBG_BUF_SIZE
 #define DBG_RXBUF_SIZE (0)
 #define DBG_RXBUF_BAND (1)
+#define DBG_DUMMY_BUF_SIZE (1024)
 #else
 #define DBG_BUF_SIZE (4090)
 #define DBG_TXBUF_SIZE DBG_BUF_SIZE
 #define DBG_RXBUF_SIZE DBG_BUF_SIZE
 #define DBG_RXBUF_BAND (3)
+#define DBG_DUMMY_BUF_SIZE (1024)
 #endif
 
 typedef struct
@@ -45,16 +47,16 @@ typedef struct
 	CBFuncEx_t Fun;
 	CBDataFun_t TxFun;
 	//Loop_Buffer IrqBuffer;
-	uint8_t Data[DBG_BUF_SIZE];
+	uint8_t Data[DBG_DUMMY_BUF_SIZE];
 #ifdef __RUN_IN_RAM__
 	uint8_t CacheData[__FLASH_BLOCK_SIZE__];
 #else
-	uint8_t CacheData[DBG_BUF_SIZE * 2];
+	uint8_t CacheData[DBG_DUMMY_BUF_SIZE + 16];
 #endif
 #ifdef __RUN_IN_RAM__
 	uint8_t RxData[__FLASH_BLOCK_SIZE__];
 #else
-	uint8_t RxData[DBG_BUF_SIZE * 2];
+	uint8_t RxData[DBG_DUMMY_BUF_SIZE + 16];
 #endif
 	uint8_t TxBuf[DBG_TXBUF_SIZE];
 	uint8_t RxDMABuf[DBG_RXBUF_BAND][DBG_RXBUF_SIZE + 16];
