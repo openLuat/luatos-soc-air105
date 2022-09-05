@@ -71,9 +71,7 @@
 #define LUAT_USE_DNS  1
 #define LUAT_USE_NETWORK 1
 #define LUAT_USE_TLS 1
-// #define LUAT_USE_IOTAUTH 1
 #define LUAT_USE_LORA 1
-// #define LUAT_USE_MLX90640 1
 #define LUAT_USE_MINIZ 1
 
 //----------------------------
@@ -117,7 +115,6 @@
 #define LV_FONT_OPPOSANS_M_16
 //---------------------
 // LVGL
-#define LUAT_USE_LCD
 #define LUAT_USE_LVGL
 #define LV_DISP_DEF_REFR_PERIOD gLVFlashTime
 extern unsigned int gLVFlashTime;
@@ -176,7 +173,9 @@ extern unsigned int gLVFlashTime;
 #define LV_USE_PERF_MONITOR     1
 #define __LVGL_SLEEP_ENABLE__
 #define __LUATOS_TICK_64BIT__
-#define LUAT_USE_MEMORY_OPTIMIZATION_CODE_MMAP
+#ifndef LUAT_USE_MEMORY_OPTIMIZATION_CODE_MMAP
+#define LUAT_USE_MEMORY_OPTIMIZATION_CODE_MMAP 1
+#endif
 
 #ifndef __LV_DEBUG__
 #undef LV_USE_PERF_MONITOR
