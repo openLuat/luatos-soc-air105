@@ -133,14 +133,14 @@ target("lvgl")
     set_kind("static")
     add_defines("__BUILD_APP__","__BUILD_OS__","CMB_USING_OS_PLATFORM","CMB_OS_PLATFORM_TYPE=CMB_OS_PLATFORM_FREERTOS",luatos_define)
     on_load(function (target)
-        local conf_data = io.readfile("$(projectdir)/application/air105/include/luat_conf_bsp.h")
+        local conf_data = io.readfile("$(projectdir)/application/include/luat_conf_bsp.h")
         local LVGL_CONF = conf_data:find("// #define LUAT_USE_LVGL\n")
         if LVGL_CONF == nil then target:set("default", true) else target:set("default", false) end
     end)
 
     add_files(luatos.."components/lvgl/**.c")
 
-    add_includedirs("application/air105/include")
+    add_includedirs("application/include")
     add_includedirs("bsp/air105/include",{public = true})
     add_includedirs("bsp/usb/include",{public = true})
     --add_includedirs("bsp/common",{public = true})
@@ -168,7 +168,7 @@ target("miniz")
     set_arch("c-sky")
 
     add_files(luatos.."components/miniz/*.c")
-    add_includedirs("application/air105/include")
+    add_includedirs("application/include")
     add_includedirs("bsp/air105/include",{public = true})
     add_includedirs(luatos.."lua/include")
     add_includedirs(luatos.."luat/include")
@@ -211,7 +211,7 @@ target("app.elf")
     add_defines("__BUILD_APP__","__BUILD_OS__","CMB_USING_OS_PLATFORM","CMB_OS_PLATFORM_TYPE=CMB_OS_PLATFORM_FREERTOS",luatos_define)
 if with_luatos then
     on_load(function (target)
-        local conf_data = io.readfile("$(projectdir)/application/air105/include/luat_conf_bsp.h")
+        local conf_data = io.readfile("$(projectdir)/application/include/luat_conf_bsp.h")
         AIR105_VERSION = conf_data:match("#define LUAT_BSP_VERSION \"(%w+)\"")
         local LVGL_CONF = conf_data:find("// #define LUAT_USE_LVGL\n")
         if LVGL_CONF == nil then target:add("deps", "lvgl") end
@@ -269,7 +269,7 @@ end
     add_includedirs("bsp/air105/include",{public = true})
 
 if with_luatos then
-    add_files("application/air105/src/*.c")
+    add_files("application/src/*.c")
 
     add_files(luatos.."lua/src/*.c")
     add_files(luatos.."luat/modules/*.c")
@@ -295,7 +295,7 @@ if with_luatos then
     add_files(luatos.."components/coremark/*.c")
     add_files(luatos.."components/cjson/*.c")
     
-    add_includedirs("application/air105/include",{public = true})
+    add_includedirs("application/include",{public = true})
     add_includedirs(luatos.."lua/include",{public = true})
     add_includedirs(luatos.."luat/include",{public = true})
     add_includedirs(luatos.."components/common",{public = true})
