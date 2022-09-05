@@ -366,7 +366,7 @@ void DBG_HexPrintf(void *Data, unsigned int len)
 void DBG_Printf(const char* format, ...)
 {
 	char *buf = NULL;
-	char isr_buf[256];
+	char isr_buf[128];
 	int len;
 	va_list ap;
 	if (!prvDBGCtrl.AppMode) return;
@@ -374,7 +374,7 @@ void DBG_Printf(const char* format, ...)
 	if (OS_CheckInIrq())
 	{
 		buf = isr_buf;
-		len = vsnprintf_(buf, 255, format, ap);
+		len = vsnprintf_(buf, 127, format, ap);
 	}
 	else
 	{

@@ -206,6 +206,7 @@ static const luaL_Reg loadedlibs[] = {
   {"w5500", luaopen_w5500},
   {"network", luaopen_network_adapter},
   {"mqtt", luaopen_mqtt},
+  {"http2", luaopen_http2},
 #endif
 // #ifdef LUAT_USE_FOTA
   {"fota", luaopen_fota},
@@ -221,6 +222,9 @@ static const luaL_Reg loadedlibs[] = {
 #endif
 #ifdef LUAT_USE_MINIZ
   {"miniz", luaopen_miniz},
+#endif
+#ifdef LUAT_USE_IOTAUTH
+  {"iotauth", luaopen_iotauth},
 #endif
   {"usbapp", luaopen_usbapp},
   {"audio", luaopen_multimedia_audio},
@@ -247,6 +251,10 @@ void luat_openlibs(lua_State *L) {
 
 void luat_os_reboot(int code) {
 	SystemReset();
+}
+
+uint32_t luat_poweron_reason(void){
+  return 0;
 }
 
 const char* luat_os_bsp(void) {

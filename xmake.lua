@@ -58,6 +58,7 @@ add_defines("__AIR105_BSP__","__USE_XTL__","CMB_CPU_PLATFORM_TYPE=CMB_CPU_ARM_CO
 add_defines("__FLASH_OTA_INFO_ADDR__=0x0100F000")
 add_defines("_7ZIP_ST")
 add_defines("MBEDTLS_CONFIG_FILE=\"mbedtls_config.h\"")
+
 -- set warning all as error
 set_warnings("allextra")
 -- set_optimize("smallest")
@@ -132,14 +133,14 @@ target("lvgl")
     set_kind("static")
     add_defines("__BUILD_APP__","__BUILD_OS__","CMB_USING_OS_PLATFORM","CMB_OS_PLATFORM_TYPE=CMB_OS_PLATFORM_FREERTOS",luatos_define)
     on_load(function (target)
-        local conf_data = io.readfile("$(projectdir)/application/include/luat_conf_bsp.h")
+        local conf_data = io.readfile("$(projectdir)/application/air105/include/luat_conf_bsp.h")
         local LVGL_CONF = conf_data:find("// #define LUAT_USE_LVGL\n")
         if LVGL_CONF == nil then target:set("default", true) else target:set("default", false) end
     end)
 
     add_files(luatos.."components/lvgl/**.c")
 
-    add_includedirs("application/include")
+    add_includedirs("application/air105/include")
     add_includedirs("bsp/air105/include",{public = true})
     add_includedirs("bsp/usb/include",{public = true})
     --add_includedirs("bsp/common",{public = true})
@@ -167,7 +168,7 @@ target("miniz")
     set_arch("c-sky")
 
     add_files(luatos.."components/miniz/*.c")
-    add_includedirs("application/include")
+    add_includedirs("application/air105/include")
     add_includedirs("bsp/air105/include",{public = true})
     add_includedirs(luatos.."lua/include")
     add_includedirs(luatos.."luat/include")
@@ -208,17 +209,16 @@ target("app.elf")
     set_kind("binary")
     set_targetdir("$(buildir)/out")
     add_defines("__BUILD_APP__","__BUILD_OS__","CMB_USING_OS_PLATFORM","CMB_OS_PLATFORM_TYPE=CMB_OS_PLATFORM_FREERTOS",luatos_define)
-
 if with_luatos then
     on_load(function (target)
-        local conf_data = io.readfile("$(projectdir)/application/include/luat_conf_bsp.h")
+        local conf_data = io.readfile("$(projectdir)/application/air105/include/luat_conf_bsp.h")
         AIR105_VERSION = conf_data:match("#define LUAT_BSP_VERSION \"(%w+)\"")
         local LVGL_CONF = conf_data:find("// #define LUAT_USE_LVGL\n")
         if LVGL_CONF == nil then target:add("deps", "lvgl") end
         target:add("deps", "miniz")
     end)
 
-    --add_deps("tflm")
+    -- add_deps("tflm")
 end
 
     -- add deps
@@ -269,10 +269,11 @@ end
     add_includedirs("bsp/air105/include",{public = true})
 
 if with_luatos then
-    add_files("application/src/*.c")
+    add_files("application/air105/src/*.c")
 
     add_files(luatos.."lua/src/*.c")
     add_files(luatos.."luat/modules/*.c")
+    remove_files(luatos.."luat/modules/luat_lib_http.c")
     add_files(luatos.."luat/vfs/*.c")
     remove_files(luatos.."luat/vfs/luat_fs_posix.c")
     add_files(luatos.."components/common/*.c")
@@ -294,7 +295,7 @@ if with_luatos then
     add_files(luatos.."components/coremark/*.c")
     add_files(luatos.."components/cjson/*.c")
     
-    add_includedirs("application/include",{public = true})
+    add_includedirs("application/air105/include",{public = true})
     add_includedirs(luatos.."lua/include",{public = true})
     add_includedirs(luatos.."luat/include",{public = true})
     add_includedirs(luatos.."components/common",{public = true})
@@ -373,10 +374,17 @@ if with_luatos then
     add_includedirs(luatos.."components/network/libemqtt",{public = true})
     add_files(luatos.."components/network/libemqtt/*.c")
 
+    -- http
+    add_includedirs(luatos.."components/network/libhttp",{public = true})
+    add_files(luatos.."components/network/libhttp/luat_lib_http.c")
+
+    -- iotauth
+    add_files(luatos.."components/iotauth/luat_lib_iotauth.c")
+
     -- qrcode
     add_includedirs(luatos.."components/qrcode",{public = true})
     add_files(luatos.."components/qrcode/*.c")
-    
+
     -- lora
     add_includedirs(luatos.."components/lora",{public = true})
     add_files(luatos.."components/lora/**.c")
@@ -384,8 +392,7 @@ if with_luatos then
     -- fonts
     add_includedirs(luatos.."components/luatfonts",{public = true})
     add_files(luatos.."components/luatfonts/**.c")
-    add_includedirs(luatos.."components/lvgl/src/lv_font",{public = true})
-    
+
     -- crypto
     add_files(luatos.."components/crypto/**.c")
 else
