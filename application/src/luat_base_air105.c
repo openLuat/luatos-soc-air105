@@ -206,7 +206,7 @@ static const luaL_Reg loadedlibs[] = {
   {"w5500", luaopen_w5500},
   {"network", luaopen_network_adapter},
   {"mqtt", luaopen_mqtt},
-  {"http2", luaopen_http2},
+  {"http2", luaopen_http},
 #endif
 // #ifdef LUAT_USE_FOTA
   {"fota", luaopen_fota},
