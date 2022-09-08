@@ -84,8 +84,9 @@ SEND_AGAIN:
 //			prvDBGCtrl.TxBusy = 0;
 //			goto SEND_AGAIN;
 //		}
+
 	}
-	else
+	if (!prvDBGCtrl.LogBuffer.Pos)
 	{
 		if (prvDBGCtrl.LogBuffer.MaxLen > (DBG_BUF_SIZE * 8))
 		{
@@ -108,7 +109,7 @@ void add_printf_data(uint8_t *data, uint32_t len)
 	prvDBGCtrl.InsertBusy = 1;
 	if ((prvDBGCtrl.LogBuffer.Pos + len) > prvDBGCtrl.LogBuffer.MaxLen)
 	{
-		OS_ReSizeBuffer(&prvDBGCtrl.LogBuffer, prvDBGCtrl.LogBuffer.MaxLen * 2);
+		OS_ReSizeBuffer(&prvDBGCtrl.LogBuffer, prvDBGCtrl.LogBuffer.MaxLen + prvDBGCtrl.LogBuffer.Pos + len);
 	}
 	OS_BufferWrite(&prvDBGCtrl.LogBuffer, data, len);
 	prvDBGCtrl.InsertBusy = 0;
