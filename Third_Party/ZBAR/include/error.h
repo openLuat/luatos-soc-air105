@@ -106,12 +106,7 @@ extern int _zbar_verbosity;
 #else
 
 # ifdef __GNUC__
-#  define zprintf(level, format, args...) do {                          \
-        if(_zbar_verbosity >= level) {                                  \
-            fprintf(stderr, "%s: " format, __func__ , ##args);          \
-            ZFLUSH                                                      \
-        }                                                               \
-    } while(0)
+#  define zprintf(level, format, args...) do {  ;} while(0)
 # else
 #  define zprintf(level, format, ...) do {                              \
         if(_zbar_verbosity >= level) {                                  \
