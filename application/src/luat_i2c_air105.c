@@ -33,12 +33,15 @@ int luat_i2c_exist(int id) {
 }
     
 int luat_i2c_setup(int id, int speed, int slaveaddr) {
-    if (speed == 0)
+    if (speed == 0) {
         speed = 100 * 1000; // SLOW
-    else if (speed == 1)
+    }
+    else if (speed == 1) {
         speed = 400 * 1000; // FAST
-    else if (speed == 2)
+    }
+    else if (speed == 2) {
         speed = 400 * 1000; // SuperFast
+    }
 	GPIO_Iomux(GPIOE_06, 2);
 	GPIO_Iomux(GPIOE_07, 2);
 	I2C_MasterSetup(id, speed);

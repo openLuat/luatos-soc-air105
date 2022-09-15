@@ -615,10 +615,10 @@ void HWTimer_InitOperationQueue(uint8_t HWTimerID, uint32_t nCount, uint32_t Rep
 	prvHWTimer[HWTimerID].TotalRepeat = Repeat;
 	if (prvHWTimer[HWTimerID].Cmd)
 	{
-		OS_Free(prvHWTimer[HWTimerID].Cmd);
+		free(prvHWTimer[HWTimerID].Cmd);
 		prvHWTimer[HWTimerID].Cmd = NULL;
 	}
-	prvHWTimer[HWTimerID].Cmd = OS_Zalloc((nCount + 1) * sizeof(OPQueue_CmdStruct));
+	prvHWTimer[HWTimerID].Cmd = zalloc((nCount + 1) * sizeof(OPQueue_CmdStruct));
 	prvHWTimer[HWTimerID].CmdQueuePos = 0;
 	if (CmdDoneCB)
 	{
@@ -680,7 +680,7 @@ void HWTimer_ClearOperationQueue(uint8_t HWTimerID)
 
 void HWTimer_FreeOperationQueue(uint8_t HWTimerID)
 {
-	OS_Free(prvHWTimer[HWTimerID].Cmd);
+	free(prvHWTimer[HWTimerID].Cmd);
 	prvHWTimer[HWTimerID].Cmd = NULL;
 	prvHWTimer[HWTimerID].CmdDoneCB = prvHWTimer_DummyCB;
 }

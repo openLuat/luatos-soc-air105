@@ -685,11 +685,11 @@ static int32_t prvCamera_DCMICB(void *pData, void *pParam)
 	draw->yoffset = 0;
 	draw->Size = (draw->x2 - draw->x1 + 1) * (draw->y2 - draw->y1 + 1) * 2;
 	draw->ColorMode = COLOR_MODE_RGB_565;
-	draw->Data = OS_Malloc(draw->Size);
+	draw->Data = malloc(draw->Size);
 	if (!draw->Data)
 	{
 		DBG("lcd flush data no memory");
-		OS_Free(draw);
+		free(draw);
 		return -1;
 	}
 //	DBG_HexPrintf(RxBuf->Data, 8);

@@ -163,7 +163,8 @@ static size_t main_stack_size = 0;
 static uint32_t code_start_addr = 0;
 static size_t code_size = 0;
 static bool init_ok = false;
-static char call_stack_info[CMB_CALL_STACK_MAX_DEPTH * (8 + 1)] = { 0 };
+//static char call_stack_info[CMB_CALL_STACK_MAX_DEPTH * (8 + 1)] = { 0 };
+extern const uint8_t ByteToAsciiTable[16];
 static bool on_fault = false;
 static bool stack_is_overflow = false;
 static struct cmb_hard_fault_regs regs;
@@ -401,29 +402,23 @@ size_t cm_backtrace_call_stack(uint32_t *buffer, size_t size, uint32_t sp) {
  * @param sp stack pointer
  */
 static void print_call_stack(uint32_t sp) {
-    size_t i, cur_depth = 0;
+    size_t i,j, cur_depth = 0;
     uint32_t call_stack_buf[CMB_CALL_STACK_MAX_DEPTH] = {0};
-
     cur_depth = cm_backtrace_call_stack(call_stack_buf, CMB_CALL_STACK_MAX_DEPTH, sp);
-
+    char call_stack_info[CMB_CALL_STACK_MAX_DEPTH * (8 + 1)] = { 0 };
     for (i = 0; i < cur_depth; i++) {
-        #ifdef __BUILD_APP__
-        sprintf_(call_stack_info + i * (8 + 1), "%x", call_stack_buf[i]);
-        #else
-        sprintf(call_stack_info + i * (8 + 1), "%08lx", call_stack_buf[i]);
-        #endif
+    	for (j = 0; j < 8; j++)
+    	{
+    		call_stack_info[i * (8 + 1) + j] = ByteToAsciiTable[(unsigned char)((call_stack_buf[i] >> (28-j*4))&0x0f)];
+    	}
         call_stack_info[i * (8 + 1) + 8] = ' ';
     }
-
     if (cur_depth) {
         cmb_println(print_info[PRINT_CALL_STACK_INFO], fw_name, CMB_ELF_FILE_EXTENSION_NAME, cur_depth * (8 + 1),
                 call_stack_info);
     } else {
         cmb_println(print_info[PRINT_CALL_STACK_ERR]);
     }
-#ifdef __BUILD_OS__
-    Core_PrintServiceStack();
-#endif
 }
 
 /**

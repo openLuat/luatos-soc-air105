@@ -69,7 +69,35 @@ add_asflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","
 -- add_arflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c","--specs=nano.specs","-ffunction-sections","-fdata-sections","-fstack-usage","-Og","-DTRACE_LEVEL=4",{force = true})
 add_cxflags("-mcpu=cortex-m4","-Os","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c","--specs=nano.specs","-ffunction-sections","-fdata-sections","-fstack-usage","-DTRACE_LEVEL=4",{force = true})
 
-add_ldflags("-mcpu=cortex-m4","-Os","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","--specs=nano.specs","--specs=nosys.specs","-Wl,--gc-sections","-Wl,--check-sections","-Wl,--cref","-Wl,--no-whole-archive","-lc_nano","-Wl,--no-whole-archive",{force = true})
+add_ldflags("-mcpu=cortex-m4","-Os","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-static","--specs=nano.specs","-Wl,--gc-sections","-Wl,--check-sections","-Wl,--cref","-Wl,--no-whole-archive","-lc_nano","-Wl,--no-whole-archive",{force = true})
+
+
+add_ldflags(" -Wl,--wrap=malloc ",{force = true})
+add_ldflags(" -Wl,--wrap=free ",{force = true})
+add_ldflags(" -Wl,--wrap=zalloc ",{force = true})
+add_ldflags(" -Wl,--wrap=calloc ",{force = true})
+add_ldflags(" -Wl,--wrap=realloc ",{force = true})
+add_ldflags(" -Wl,--wrap=_malloc_r ",{force = true})
+add_ldflags(" -Wl,--wrap=_free_r ",{force = true})
+add_ldflags(" -Wl,--wrap=_zalloc_r ",{force = true})
+add_ldflags(" -Wl,--wrap=_calloc_r ",{force = true})
+add_ldflags(" -Wl,--wrap=_realloc_r ",{force = true})
+add_ldflags(" -Wl,--wrap=printf ",{force = true})
+add_ldflags(" -Wl,--wrap=sprintf ",{force = true})
+add_ldflags(" -Wl,--wrap=snprintf ",{force = true})
+add_ldflags(" -Wl,--wrap=vprintf ",{force = true})
+add_ldflags(" -Wl,--wrap=vsnprintf ",{force = true})
+add_ldflags(" -Wl,--wrap=fprintf ",{force = true})
+add_ldflags(" -Wl,--wrap=__assert ",{force = true})
+add_ldflags(" -Wl,--wrap=__assert_func ",{force = true})
+add_ldflags(" -Wl,--wrap=clock ",{force = true})
+add_ldflags(" -Wl,--wrap=localtime ",{force = true})
+add_ldflags(" -Wl,--wrap=gmtime ",{force = true})
+add_ldflags(" -Wl,--wrap=time ",{force = true})
+add_ldflags(" -Wl,--wrap=putc ",{force = true})
+add_ldflags(" -Wl,--wrap=putchar ",{force = true})
+add_ldflags(" -Wl,--wrap=puts ",{force = true})
+
 
 set_dependir("$(buildir)/.deps")
 set_objectdir("$(buildir)/.objs")
@@ -235,7 +263,12 @@ end
     add_files("Third_Party/jpeg_encode/*.c",{public = true})
     add_includedirs("Third_Party/jpeg_encode",{public = true})
 
-    
+    add_files("Third_Party/heap/*.c",{public = true})
+    add_includedirs("Third_Party/heap",{public = true})    
+
+    add_files("Third_Party/vsprintf/*.c",{public = true})
+    add_includedirs("Third_Party/vsprintf",{public = true})    
+
     --add_files("bsp/common/*.c",{public = true})
 	add_files("bsp/common/src/*.c",{public = true})
     add_includedirs("bsp/cmsis/include",{public = true})
@@ -272,6 +305,8 @@ if with_luatos then
     add_files("application/src/*.c")
 
     add_files(luatos.."lua/src/*.c")
+    remove_files(luatos.."lua/src/printf.c")
+    remove_files(luatos.."lua/src/bget.c")
     add_files(luatos.."luat/modules/*.c")
     remove_files(luatos.."luat/modules/luat_lib_http.c")
     add_files(luatos.."luat/vfs/*.c")
@@ -395,6 +430,10 @@ if with_luatos then
 
     -- crypto
     add_files(luatos.."components/crypto/**.c")
+
+    -- protobuf
+    add_includedirs(luatos.."components/serialization/protobuf")
+    add_files(luatos.."components/serialization/protobuf/*.c")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})

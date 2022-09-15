@@ -297,7 +297,7 @@ struct cmb_hard_fault_regs{
 if (!(EXPR))                                                                   \
 {                                                                              \
     cmb_println("(%s) has assert failed at %s.", #EXPR, __FUNCTION__);         \
-    while (1);                                                                 \
+    return;                                                               \
 }
 
 /* ELF(Executable and Linking Format) file extension name for each compiler */

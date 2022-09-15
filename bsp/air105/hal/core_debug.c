@@ -345,7 +345,7 @@ void DBG_HexPrintf(void *Data, unsigned int len)
     {
     	return ;
     }
-    uart_buf = OS_Zalloc(len * 3 + 2);
+    uart_buf = zalloc(len * 3 + 2);
 
     if (!uart_buf)
     {
@@ -361,7 +361,55 @@ void DBG_HexPrintf(void *Data, unsigned int len)
     uart_buf[j++] = '\n';
 
     prvDBGCtrl.TxFun(uart_buf, len * 3 + 2);
-	OS_Free(uart_buf);
+	free(uart_buf);
+}
+
+int	__wrap_putc (int ch, FILE * fd)
+{
+	return -1;
+}
+
+int	__wrap_putchar (int ch)
+{
+	char c = ch;
+	add_printf_data(&c, 1);
+	return 1;
+}
+int	__wrap_puts (const char *buf)
+{
+	int len = strlen(buf);
+	add_printf_data(buf, len);
+	return len;
+}
+
+void __wrap_printf(const char* format, ...)
+{
+	char *buf = NULL;
+	char isr_buf[128];
+	int len;
+	va_list ap;
+	if (!prvDBGCtrl.AppMode) return;
+	va_start(ap, format);
+	if (OS_CheckInIrq())
+	{
+		buf = isr_buf;
+		len = vsnprintf(buf, 127, format, ap);
+	}
+	else
+	{
+		buf = zalloc(1024);
+		len = vsnprintf(buf, 1023, format, ap);
+	}
+	va_end(ap);
+#ifndef __DEBUG__
+    prvDBGCtrl.TxFun( buf, len);
+#else
+    add_printf_data(buf, len);
+#endif
+	if (!OS_CheckInIrq())
+	{
+		free(buf);
+	}
 }
 
 void DBG_Printf(const char* format, ...)
@@ -375,12 +423,12 @@ void DBG_Printf(const char* format, ...)
 	if (OS_CheckInIrq())
 	{
 		buf = isr_buf;
-		len = vsnprintf_(buf, 127, format, ap);
+		len = vsnprintf(buf, 127, format, ap);
 	}
 	else
 	{
-		buf = OS_Zalloc(1024);
-		len = vsnprintf_(buf, 1023, format, ap);
+		buf = zalloc(1024);
+		len = vsnprintf(buf, 1023, format, ap);
 	}
 	va_end(ap);
 #ifndef __DEBUG__
@@ -390,7 +438,7 @@ void DBG_Printf(const char* format, ...)
 #endif
 	if (!OS_CheckInIrq())
 	{
-		OS_Free(buf);
+		free(buf);
 	}
 }
 

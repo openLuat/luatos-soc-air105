@@ -223,7 +223,7 @@ void Timer_WakeupRun(void)
 Timer_t * Timer_Create(CBFuncEx_t CB, void *Param, void *NotifyTask)
 {
 #ifdef __BUILD_OS__
-	Timer_t *Timer = OS_Malloc(sizeof(Timer_t));
+	Timer_t *Timer = malloc(sizeof(Timer_t));
 	if (Timer)
 	{
 		Timer_Setting(Timer, CB, Param, NotifyTask);
@@ -313,7 +313,7 @@ void Timer_Release(Timer_t *Timer)
 	Timer_Stop(Timer);
 	if ((uint32_t)Timer >= (uint32_t)(&__os_heap_start))
 	{
-		OS_Free(Timer);
+		free(Timer);
 	}
 }
 

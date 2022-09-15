@@ -28,6 +28,7 @@
 #include "core_dma.h"
 #include "core_flash.h"
 #include "core_debug.h"
+#include "core_gpio.h"
 #include "core_tick.h"
 #include "core_otp.h"
 #include "core_timer.h"

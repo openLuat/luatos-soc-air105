@@ -136,7 +136,7 @@ void DecodeQR_CBDataFun(uint8_t *Data, uint32_t Len){
 }
 
 static int32_t Camera_DrawLcd(void *DrawData, uint8_t Scan){
-    LCD_DrawStruct *draw = OS_Malloc(sizeof(LCD_DrawStruct));
+    LCD_DrawStruct *draw = malloc(sizeof(LCD_DrawStruct));
     if (!draw){
         DBG("lcd flush no memory");
         return -1;
@@ -162,10 +162,10 @@ static int32_t Camera_DrawLcd(void *DrawData, uint8_t Scan){
         draw->y2 = prvCamera.VLen + prvCamera.drawVLen -1;
         draw->Size = (draw->x2 - draw->x1 + 1) * (draw->y2 - draw->y1 + 1) * 2;
         draw->ColorMode = COLOR_MODE_RGB_565;
-        draw->Data = OS_Malloc(draw->Size);
+        draw->Data = malloc(draw->Size);
         if (!draw->Data){
             DBG("lcd flush data no memory");
-            OS_Free(draw);
+            free(draw);
             return -1;
         }
         memcpy(draw->Data, DrawData, draw->Size);
@@ -181,7 +181,7 @@ static int32_t Camera_DrawLcd(void *DrawData, uint8_t Scan){
         Core_CameraDraw(draw);
     }else{
         DBG("Scan error");
-        OS_Free(draw);
+        free(draw);
         return -1;
     }
 }
@@ -398,7 +398,7 @@ int luat_camera_capture(int id, uint8_t quality, const char *path)
 
 static voidpf luat_zip_zalloc(    voidpf opaque, uint32_t items, uint32_t size)
 {
-	voidpf *p = malloc(items * size);
+	voidpf *p = zalloc(items * size);
 	return p;
 }
 
@@ -434,10 +434,10 @@ static int luat_camera_video_zip(void *data ,void *param)
 		}
     }
 
-#undef zalloc
+
     strm.zalloc = luat_zip_zalloc;
     strm.zfree = luat_zip_free;
-#define zalloc OS_Zalloc
+
     ret = deflateInit2_(&strm, 1, Z_DEFLATED, 12, 6,
     		Z_DEFAULT_STRATEGY, ZLIB_VERSION, (int)sizeof(z_stream));
     if (Z_OK == ret)

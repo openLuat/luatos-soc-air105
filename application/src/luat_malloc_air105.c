@@ -41,23 +41,23 @@ static uint64_t luavm_pool_data[25 * 1024];
 //  管理系统内存
 
 void* luat_heap_malloc(size_t len) {
-    return OS_Malloc(len);
+    return malloc(len);
 }
 
 void luat_heap_free(void* ptr) {
-    OS_Free(ptr);
+    free(ptr);
 }
 
 void* luat_heap_realloc(void* ptr, size_t len) {
-    return OS_Realloc(ptr, len);
+    return realloc(ptr, len);
 }
 
 void* luat_heap_calloc(size_t count, size_t _size) {
-    return OS_Calloc(count,_size);
+    return calloc(count,_size);
 }
 
 void* luat_heap_zalloc(size_t _size) {
-    return OS_Zalloc(_size);
+    return zalloc(_size);
 }
 
 //------------------------------------------------
@@ -88,13 +88,13 @@ void* luat_heap_alloc(void *ud, void *ptr, size_t osize, size_t nsize) {
 //            else {
 //                // 释放内存块
 //                LLOGD("free %p ", ptr);
-//                OS_Free(ptr);
+//                free(ptr);
 //                return NULL;
 //            }
 //        }
 //        else {
 //            // 申请内存块
-//            ptr = OS_Malloc(nsize);
+//            ptr = malloc(nsize);
 //            LLOGD("malloc %p type=%d size=%d", ptr, osize, nsize);
 //            return ptr;
 //        }

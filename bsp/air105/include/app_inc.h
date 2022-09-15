@@ -57,10 +57,6 @@ typedef long long           int64_t;
 #include "core_task.h"
 #include "core_service.h"
 
-#define mallc OS_Malloc
-#define zallc OS_Zalloc
-#define reallc OS_Realloc
-#define free OS_Free
 #define IRQ_LOWEST_PRIORITY	configLIBRARY_LOWEST_INTERRUPT_PRIORITY
 #define IRQ_MAX_PRIORITY	configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY
 #endif

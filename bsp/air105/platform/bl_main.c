@@ -646,6 +646,7 @@ int main(void)
 	DBG_Init(0);
 	FileSystem_Init();
 	OS_InitBuffer(&prvBL.FWDataBuffer, SPI_FLASH_BLOCK_SIZE);
+
 LOCAL_UPGRADE_START:
 	Local_Upgrade();
 	Uart_BaseInit(DBG_UART_ID, DBG_UART_BR, 0, UART_DATA_BIT8, UART_PARITY_NONE, UART_STOP_BIT1, NULL);
@@ -658,9 +659,9 @@ LOCAL_UPGRADE_START:
 	if (__APP_START_MAGIC__ == AppInfo[0])
 	{
 #ifdef __DEBUG__
-		DBG_INFO("bootloader build debug %s %s %x!", __DATE__, __TIME__, QSPI->DEVICE_PARA);
+		DBG_INFO("bootloader build debug %s %s!", __DATE__, __TIME__);
 #else
-		DBG_INFO("bootloader build release %s %s!", __DATE__, __TIME__, QSPI->DEVICE_PARA);
+		DBG_INFO("bootloader build release %s %s!", __DATE__, __TIME__);
 #endif
 		Jump_AppRun(AppInfo[1]);
 	}

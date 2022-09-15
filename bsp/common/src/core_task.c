@@ -89,7 +89,7 @@ HANDLE Task_Create(TaskFun_t EntryFunction, void *Param, uint32_t StackSize, uin
 		return NULL;
 	}
 	if (!Handle) return NULL;
-	Head = OS_Zalloc(sizeof(llist_head));
+	Head = zalloc(sizeof(llist_head));
 #ifdef __USE_SEMAPHORE__
 	Sem = OS_MutexCreate();
 	DelaySem = OS_MutexCreate();
@@ -122,7 +122,7 @@ void Task_SendEvent(HANDLE TaskHandle, uint32_t ID, uint32_t P1, uint32_t P2, ui
 #ifdef __USE_SEMAPHORE__
 	SemaphoreHandle_t sem = (SemaphoreHandle_t)vTaskGetPoint(TaskHandle, TASK_POINT_EVENT_SEM);
 #endif
-	Core_EventStruct *Event = OS_Zalloc(sizeof(Core_EventStruct));
+	Core_EventStruct *Event = zalloc(sizeof(Core_EventStruct));
 	Event->ID = ID;
 	Event->Param1 = P1;
 	Event->Param2 = P2;
@@ -207,7 +207,7 @@ GET_NEW_EVENT:
 		OutEvent->Param1 = Event->Param1;
 		OutEvent->Param2 = Event->Param2;
 		OutEvent->Param3 = Event->Param3;
-		OS_Free(Event);
+		free(Event);
 	}
 	else
 	{

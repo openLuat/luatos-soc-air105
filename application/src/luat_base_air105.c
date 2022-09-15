@@ -226,6 +226,9 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_IOTAUTH
   {"iotauth", luaopen_iotauth},
 #endif
+#ifdef LUAT_USE_PROTOBUF
+  {"protobuf", luaopen_protobuf},
+#endif
   {"usbapp", luaopen_usbapp},
   {"audio", luaopen_multimedia_audio},
   {"codec", luaopen_multimedia_codec},

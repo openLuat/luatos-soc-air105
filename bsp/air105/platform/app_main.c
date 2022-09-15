@@ -48,8 +48,22 @@ const uint32_t __attribute__((section (".app_info")))
 
 static void prvSystemHaltResetCtrl(void)
 {
+	if (WDT->WDT_STAT)
+	{
+		DBG_Trace("触发看门狗中断");
+#ifdef __BUILD_OS__
+		Core_PrintServiceStack();
+#endif
+	}
 #ifdef __DEBUG__
-	WDT_Feed();
+	DBG_Trace("当前处于调试模式，将处于死循环状态");
+	while (1)
+	{
+		WDT_Feed();
+	}
+#else
+	WDT_ModeConfig(WDT_Mode_CPUReset);
+	DBG_Trace("当前处于工作模式，将在下次看门狗中断到来后重启");
 #endif
 }
 void SystemInit(void)

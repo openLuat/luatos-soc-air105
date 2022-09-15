@@ -230,7 +230,7 @@ int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint
 		{
 			LLOGD("lcd flush delay %ums, status %u,%u,%u,%d", retry_cnt, cache_len, x2-x1+1, y2-y1+1, last_flush);
 		}
-		LCD_DrawStruct *draw = OS_Zalloc(sizeof(LCD_DrawStruct));
+		LCD_DrawStruct *draw = zalloc(sizeof(LCD_DrawStruct));
 		if (!draw)
 		{
 			LLOGE("lcd flush no memory");
@@ -256,11 +256,11 @@ int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint
 	    draw->yoffset = conf->yoffset;
 	    draw->Size = (draw->x2 - draw->x1 + 1) * (draw->y2 - draw->y1 + 1) * 2;
 	    draw->ColorMode = COLOR_MODE_RGB_565;
-	    draw->Data = OS_Malloc(draw->Size);
+	    draw->Data = malloc(draw->Size);
 		if (!draw->Data)
 		{
 			LLOGE("lcd flush data no memory");
-			OS_Free(draw);
+			free(draw);
 			return -1;
 		}
 	    memcpy(draw->Data, color, draw->Size);

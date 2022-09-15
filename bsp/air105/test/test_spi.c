@@ -51,8 +51,8 @@ void SPI_TestInit(uint8_t SpiID, uint32_t Speed, uint32_t TestLen)
 	SPI_MasterInit(SpiID, 8, SPI_MODE_0, Speed, prvSPI_CB, NULL);
 	SPI_DMATxInit(SpiID, DMA1_STREAM_6, 0);
 	SPI_DMARxInit(SpiID, DMA1_STREAM_7, 0);
-	prvTxBuf = OS_Malloc(TestLen);
-	prvRxBuf = OS_Malloc(TestLen);
+	prvTxBuf = malloc(TestLen);
+	prvRxBuf = malloc(TestLen);
 }
 
 void SPI_TestOnce(uint8_t SpiID, uint32_t TestLen)

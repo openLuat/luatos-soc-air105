@@ -327,11 +327,6 @@ uint8_t OS_IsSchedulerRun(void);
 #endif
 uint32_t OS_EnterCritical(void);
 void OS_ExitCritical(uint32_t Critical);
-void *OS_Malloc(uint32_t Size);
-void *OS_Calloc(uint32_t count, uint32_t eltsize);
-void *OS_Zalloc(uint32_t Size);
-void OS_Free(void *p);
-void *OS_Realloc(void *buf, uint32_t size);
 void OS_MemInfo(uint32_t *curalloc, uint32_t *totfree, uint32_t *maxfree);
 int32_t OS_InitBuffer(Buffer_Struct *Buf, uint32_t Size);
 void OS_DeInitBuffer(Buffer_Struct *Buf);
@@ -549,11 +544,11 @@ void BytesPutDoubleToBuf(Buffer_Struct *Buf, double v);
 
 extern uint64_t GetSysTickMS();
 
-#define malloc OS_Malloc
-#define free OS_Free
-#define realloc OS_Realloc
-#define zalloc OS_Zalloc
-#define calloc OS_Calloc
+//void *__wrap_malloc(size_t Size);
+//void *__wrap_zalloc(size_t Size);
+//void *__wrap_calloc(size_t count, size_t eltsize);
+//void *__wrap_realloc(void *buf, size_t size);
+//void __wrap_free(void *p);
 
 #ifndef ASSERT
 #if defined(__DEBUG__)

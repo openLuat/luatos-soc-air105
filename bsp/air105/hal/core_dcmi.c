@@ -177,7 +177,7 @@ void DCMI_CaptureSwitch(uint8_t OnOff, uint32_t BufLen, uint32_t ImageW, uint32_
 		}
 		for(i = 0; i < DCMI_RXBUF_BAND; i++)
 		{
-			prvDCMI.uBuf[i].pu32 = OS_Malloc(BufLen * sizeof(uint32_t));
+			prvDCMI.uBuf[i].pu32 = malloc(BufLen * sizeof(uint32_t));
 		}
 		prvDCMI.RxDMASn = 0;
 		prvDCMI.BufLen = BufLen;
@@ -200,7 +200,7 @@ void DCMI_CaptureSwitch(uint8_t OnOff, uint32_t BufLen, uint32_t ImageW, uint32_
 		{
 			if (prvDCMI.uBuf[i].pu32)
 			{
-				OS_Free(prvDCMI.uBuf[i].pu32);
+				free(prvDCMI.uBuf[i].pu32);
 				prvDCMI.uBuf[i].pu32 = 0;
 			}
 		}

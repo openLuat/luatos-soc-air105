@@ -20,6 +20,7 @@
  */
 
 #include "bsp_common.h"
+#include "time.h"
 #ifdef __LUATOS__
 
 
@@ -182,56 +183,6 @@ __attribute__((weak)) void OS_ExitCritical(uint32_t Critical)
 	}
 }
 
-__attribute__((weak)) void *OS_Malloc(uint32_t Size)
-{
-	void *p;
-	uint32_t Critical = OS_EnterCritical();
-	p = bget(Size);
-	OS_ExitCritical(Critical);
-	return p;
-}
-
-__attribute__((weak)) void *OS_Zalloc(uint32_t Size)
-{
-	void *p;
-	uint32_t Critical = OS_EnterCritical();
-	p = bgetz(Size);
-	OS_ExitCritical(Critical);
-	return p;
-}
-
-__attribute__((weak)) void *OS_Calloc(uint32_t count, uint32_t eltsize)
-{
-	void *p;
-	uint32_t Critical = OS_EnterCritical();
-	p = bgetz(count * eltsize);
-	OS_ExitCritical(Critical);
-	return p;
-}
-
-__attribute__((weak)) void OS_Free(void *p)
-{
-	if (((uint32_t)p >= (uint32_t)(&__os_heap_start)) && ((uint32_t)p <= (uint32_t)(&__ram_end)))
-	{
-		uint32_t Critical = OS_EnterCritical();
-		brel(p);
-		OS_ExitCritical(Critical);
-	}
-
-}
-
-__attribute__((weak)) void *OS_Realloc(void *buf, uint32_t size)
-{
-	void *p;
-	uint32_t Critical = OS_EnterCritical();
-//	p = bget(size);
-//	memcpy(p, buf, size);
-//	brel(buf);
-	p = bgetr(buf, size);
-	OS_ExitCritical(Critical);
-	return p;
-}
-
 __attribute__((weak)) void OS_MemInfo(uint32_t *curalloc, uint32_t *totfree, uint32_t *maxfree)
 {
 	unsigned long  nget, nrel;
@@ -244,7 +195,7 @@ int32_t OS_InitBuffer(Buffer_Struct *Buf, uint32_t Size)
 {
 	if (!Buf)
 		return 0;
-	Buf->Data = OS_Zalloc(Size);
+	Buf->Data = zalloc(Size);
 	if (!Buf->Data)
 	{
 		Buf->MaxLen = 0;
@@ -260,7 +211,7 @@ void OS_DeInitBuffer(Buffer_Struct *Buf)
 {
 	if (Buf->Data)
 	{
-		OS_Free(Buf->Data);
+		free(Buf->Data);
 	}
 	Buf->Data = NULL;
 	Buf->MaxLen = 0;
@@ -274,9 +225,9 @@ int32_t OS_ReInitBuffer(Buffer_Struct *Buf, uint32_t Size)
 
 	if (Buf->Data)
 	{
-		OS_Free(Buf->Data);
+		free(Buf->Data);
 	}
-	Buf->Data = OS_Zalloc(Size);
+	Buf->Data = zalloc(Size);
 	if (!Buf->Data)
 	{
 		Buf->MaxLen = 0;
@@ -309,7 +260,7 @@ int32_t OS_ReSizeBuffer(Buffer_Struct *Buf, uint32_t Size)
 //	if (Old)
 //	{
 //		memcpy(New, Old, Buf->Pos);
-//		OS_Free(Old);
+//		free(Old);
 //	}
 	uint32_t Critical = OS_EnterCritical();
 	New = bgetr(Buf->Data, Size);
@@ -337,7 +288,7 @@ int32_t OS_BufferWrite(Buffer_Struct *Buf, void *Data, uint32_t Len)
 	}
 	if (!Buf->Data)
 	{
-		Buf->Data = OS_Zalloc(Len);
+		Buf->Data = zalloc(Len);
 		if (!Buf->Data)
 		{
 			return -ERROR_NO_MEMORY;
@@ -371,7 +322,7 @@ int32_t OS_BufferWriteLimit(Buffer_Struct *Buf, void *Data, uint32_t Len)
 	}
 	if (!Buf->Data)
 	{
-		Buf->Data = OS_Zalloc(Len);
+		Buf->Data = zalloc(Len);
 		if (!Buf->Data)
 		{
 			return -ERROR_NO_MEMORY;
@@ -846,56 +797,6 @@ __attribute__((weak)) void OS_ExitCritical(uint32_t Critical)
 	}
 }
 
-__attribute__((weak)) void *OS_Malloc(uint32_t Size)
-{
-	void *p;
-	uint32_t Critical = OS_EnterCritical();
-	p = bget(Size);
-	OS_ExitCritical(Critical);
-	return p;
-}
-
-__attribute__((weak)) void *OS_Zalloc(uint32_t Size)
-{
-	void *p;
-	uint32_t Critical = OS_EnterCritical();
-	p = bgetz(Size);
-	OS_ExitCritical(Critical);
-	return p;
-}
-
-__attribute__((weak)) void *OS_Calloc(uint32_t count, uint32_t eltsize)
-{
-	void *p;
-	uint32_t Critical = OS_EnterCritical();
-	p = bgetz(count * eltsize);
-	OS_ExitCritical(Critical);
-	return p;
-}
-
-__attribute__((weak)) void OS_Free(void *p)
-{
-	if (((uint32_t)p >= (uint32_t)(&__os_heap_start)) && ((uint32_t)p <= (uint32_t)(&__ram_end)))
-	{
-		uint32_t Critical = OS_EnterCritical();
-		brel(p);
-		OS_ExitCritical(Critical);
-	}
-
-}
-
-__attribute__((weak)) void *OS_Realloc(void *buf, uint32_t size)
-{
-	void *p;
-	uint32_t Critical = OS_EnterCritical();
-//	p = bget(size);
-//	memcpy(p, buf, size);
-//	brel(buf);
-	p = bgetr(buf, size);
-	OS_ExitCritical(Critical);
-	return p;
-}
-
 __attribute__((weak)) void OS_MemInfo(uint32_t *curalloc, uint32_t *totfree, uint32_t *maxfree)
 {
 	unsigned long  nget, nrel;
@@ -908,7 +809,7 @@ __attribute__((weak)) int32_t OS_InitBuffer(Buffer_Struct *Buf, uint32_t Size)
 {
 	if (!Buf)
 		return 0;
-	Buf->Data = OS_Zalloc(Size);
+	Buf->Data = zalloc(Size);
 	if (!Buf->Data)
 	{
 		Buf->MaxLen = 0;
@@ -924,7 +825,7 @@ __attribute__((weak)) void OS_DeInitBuffer(Buffer_Struct *Buf)
 {
 	if (Buf->Data)
 	{
-		OS_Free(Buf->Data);
+		free(Buf->Data);
 	}
 	Buf->Data = NULL;
 	Buf->MaxLen = 0;
@@ -938,9 +839,9 @@ __attribute__((weak)) int32_t OS_ReInitBuffer(Buffer_Struct *Buf, uint32_t Size)
 
 	if (Buf->Data)
 	{
-		OS_Free(Buf->Data);
+		free(Buf->Data);
 	}
-	Buf->Data = OS_Zalloc(Size);
+	Buf->Data = zalloc(Size);
 	if (!Buf->Data)
 	{
 		Buf->MaxLen = 0;
@@ -973,7 +874,7 @@ __attribute__((weak)) int32_t OS_ReSizeBuffer(Buffer_Struct *Buf, uint32_t Size)
 //	if (Old)
 //	{
 //		memcpy(New, Old, Buf->Pos);
-//		OS_Free(Old);
+//		free(Old);
 //	}
 	uint32_t Critical = OS_EnterCritical();
 	New = bgetr(Buf->Data, Size);
@@ -1001,7 +902,7 @@ __attribute__((weak)) int32_t OS_BufferWrite(Buffer_Struct *Buf, void *Data, uin
 	}
 	if (!Buf->Data)
 	{
-		Buf->Data = OS_Zalloc(Len);
+		Buf->Data = zalloc(Len);
 		if (!Buf->Data)
 		{
 			return -ERROR_NO_MEMORY;
@@ -1035,7 +936,7 @@ __attribute__((weak)) int32_t OS_BufferWriteLimit(Buffer_Struct *Buf, void *Data
 	}
 	if (!Buf->Data)
 	{
-		Buf->Data = OS_Zalloc(Len);
+		Buf->Data = zalloc(Len);
 		if (!Buf->Data)
 		{
 			return -ERROR_NO_MEMORY;
@@ -2223,3 +2124,185 @@ uint32_t unicode_to_utf8(void *in, uint32_t unicodelen, uint8_t *out, uint8_t is
 }
 
 #endif
+
+void *__wrap_malloc(size_t Size)
+{
+	void *p;
+	uint32_t Critical = OS_EnterCritical();
+	p = bget(Size);
+	OS_ExitCritical(Critical);
+	return p;
+}
+
+void *__wrap_zalloc(size_t Size)
+{
+	void *p;
+	uint32_t Critical = OS_EnterCritical();
+	p = bgetz(Size);
+	OS_ExitCritical(Critical);
+	return p;
+}
+
+void *__wrap_calloc(size_t count, size_t eltsize)
+{
+	void *p;
+	uint32_t Critical = OS_EnterCritical();
+	p = bgetz(count * eltsize);
+	OS_ExitCritical(Critical);
+	return p;
+}
+
+void __wrap_free(void *p)
+{
+	if (((uint32_t)p >= (uint32_t)(&__os_heap_start)) && ((uint32_t)p <= (uint32_t)(&__ram_end)))
+	{
+		uint32_t Critical = OS_EnterCritical();
+		brel(p);
+		OS_ExitCritical(Critical);
+	}
+
+}
+
+void *__wrap_realloc(void *buf, size_t size)
+{
+	void *p;
+	uint32_t Critical = OS_EnterCritical();
+//	p = bget(size);
+//	memcpy(p, buf, size);
+//	brel(buf);
+	p = bgetr(buf, size);
+	OS_ExitCritical(Critical);
+	return p;
+}
+
+void *__wrap__malloc_r(size_t Size)
+{
+	void *p;
+	uint32_t Critical = OS_EnterCritical();
+	p = bget(Size);
+	OS_ExitCritical(Critical);
+	return p;
+}
+
+void *__wrap__zalloc_r(size_t Size)
+{
+	void *p;
+	uint32_t Critical = OS_EnterCritical();
+	p = bgetz(Size);
+	OS_ExitCritical(Critical);
+	return p;
+}
+
+void *__wrap__calloc_r(size_t count, size_t eltsize)
+{
+	void *p;
+	uint32_t Critical = OS_EnterCritical();
+	p = bgetz(count * eltsize);
+	OS_ExitCritical(Critical);
+	return p;
+}
+
+void __wrap__free_r(void *p)
+{
+	if (((uint32_t)p >= (uint32_t)(&__os_heap_start)) && ((uint32_t)p <= (uint32_t)(&__ram_end)))
+	{
+		uint32_t Critical = OS_EnterCritical();
+		brel(p);
+		OS_ExitCritical(Critical);
+	}
+
+}
+
+void *__wrap__realloc_r(void *buf, size_t size)
+{
+	void *p;
+	uint32_t Critical = OS_EnterCritical();
+//	p = bget(size);
+//	memcpy(p, buf, size);
+//	brel(buf);
+	p = bgetr(buf, size);
+	OS_ExitCritical(Critical);
+	return p;
+}
+
+void __wrap___assert (const char *s1, int d1, const char *s2)
+{
+	__disable_irq();
+	DBG_Trace("assert %s,%d,%s", s1, d1, s2);
+	for( ;; );
+}
+
+void __wrap___assert_func (const char *s1, int d1, const char *s2, const char *s3)
+{
+	__disable_irq();
+	DBG_Trace("assert %s,%d,%s,%s", s1, d1, s2, s3);
+	for( ;; );
+}
+
+static struct tm prvTM;
+
+struct tm *__wrap_localtime (const time_t *_timer)
+{
+	Time_UserDataStruct Time;
+	Date_UserDataStruct Date;
+	uint64_t Sec;
+	if (_timer)
+	{
+		Sec = *_timer;
+		Tamp2UTC(Sec, &Date, &Time, 0);
+	}
+	else
+	{
+		RTC_GetDateTime(&Date, &Time);
+	}
+	prvTM.tm_year = Date.Year - 1900;
+	prvTM.tm_mon = Date.Mon - 1;
+	prvTM.tm_mday = Date.Day;
+	prvTM.tm_hour = Time.Hour;
+	prvTM.tm_min = Time.Min;
+	prvTM.tm_sec = Time.Sec;
+	return &prvTM;
+}
+
+struct tm *__wrap_gmtime (const time_t *_timer)
+{
+	Time_UserDataStruct Time;
+	Date_UserDataStruct Date;
+	uint64_t Sec;
+	if (_timer)
+	{
+		Sec = *_timer;
+		Tamp2UTC(Sec, &Date, &Time, 0);
+	}
+	else
+	{
+		RTC_GetDateTime(&Date, &Time);
+	}
+	prvTM.tm_year = Date.Year - 1900;
+	prvTM.tm_mon = Date.Mon - 1;
+	prvTM.tm_mday = Date.Day;
+	prvTM.tm_hour = Time.Hour;
+	prvTM.tm_min = Time.Min;
+	prvTM.tm_sec = Time.Sec;
+	return &prvTM;
+}
+
+clock_t	   __wrap_clock (void)
+{
+	return GetSysTickMS()/1000;
+}
+
+time_t	   __wrap_time (time_t *_timer)
+{
+	time_t t = RTC_GetUTC();
+	if (_timer)
+	{
+		*_timer = t;
+	}
+	return t;
+}
+
+void	_exit (int __status)
+{
+	return;
+}

@@ -314,7 +314,7 @@ int qr_code_data_list_extract_text(const qr_code_data_list *_qrlist,
             cur_eci=entry->payload.eci;
             if(cur_eci<=QR_ECI_ISO8859_16&&cur_eci!=14){
               if(cur_eci!=QR_ECI_GLI0&&cur_eci!=QR_ECI_CP437){
-                sprintf_(buf,"ISO8859-%i",QR_MAXI(cur_eci,3)-2);
+                sprintf(buf,"ISO8859-%i",QR_MAXI(cur_eci,3)-2);
                 enc=buf;
               }
               /*Note that CP437 requires an iconv compiled with

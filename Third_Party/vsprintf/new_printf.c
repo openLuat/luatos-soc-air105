@@ -32,7 +32,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
+#include <stdio.h>
 #include "printf.h"
 
 
@@ -870,6 +870,15 @@ int printf_(const char* format, ...)
 }
 
 
+int __wrap_sprintf(char* buffer, const char* format, ...)
+{
+  va_list va;
+  va_start(va, format);
+  const int ret = _vsnprintf(_out_buffer, buffer, (size_t)-1, format, va);
+  va_end(va);
+  return ret;
+}
+
 int sprintf_(char* buffer, const char* format, ...)
 {
   va_list va;
@@ -880,6 +889,15 @@ int sprintf_(char* buffer, const char* format, ...)
 }
 
 
+int __wrap_snprintf(char* buffer, size_t count, const char* format, ...)
+{
+  va_list va;
+  va_start(va, format);
+  const int ret = _vsnprintf(_out_buffer, buffer, count, format, va);
+  va_end(va);
+  return ret;
+}
+
 int snprintf_(char* buffer, size_t count, const char* format, ...)
 {
   va_list va;
@@ -889,6 +907,11 @@ int snprintf_(char* buffer, size_t count, const char* format, ...)
   return ret;
 }
 
+int __wrap_vprintf(const char* format, va_list va)
+{
+  char buffer[1];
+  return _vsnprintf(_out_char, buffer, (size_t)-1, format, va);
+}
 
 int vprintf_(const char* format, va_list va)
 {
@@ -896,6 +919,10 @@ int vprintf_(const char* format, va_list va)
   return _vsnprintf(_out_char, buffer, (size_t)-1, format, va);
 }
 
+int __wrap_vsnprintf(char* buffer, size_t count, const char* format, va_list va)
+{
+  return _vsnprintf(_out_buffer, buffer, count, format, va);
+}
 
 int vsnprintf_(char* buffer, size_t count, const char* format, va_list va)
 {
@@ -911,4 +938,9 @@ int fctprintf(void (*out)(char character, void* arg), void* arg, const char* for
   const int ret = _vsnprintf(_out_fct, (char*)(uintptr_t)&out_fct_wrap, (size_t)-1, format, va);
   va_end(va);
   return ret;
+}
+
+int	__wrap_fprintf (FILE *fp, const char *format, va_list va)
+{
+	return -1;
 }
