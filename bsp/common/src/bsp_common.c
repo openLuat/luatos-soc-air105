@@ -2306,3 +2306,21 @@ void	_exit (int __status)
 {
 	return;
 }
+
+void * __wrap_pvPortMalloc( size_t xSize )
+{
+	void *p;
+	uint32_t Critical = OS_EnterCritical();
+	p = bget(xSize);
+	OS_ExitCritical(Critical);
+	return p;
+}
+void __wrap_vPortFree( void * p )
+{
+	if (((uint32_t)p >= (uint32_t)(&__os_heap_start)) && ((uint32_t)p <= (uint32_t)(&__ram_end)))
+	{
+		uint32_t Critical = OS_EnterCritical();
+		brel(p);
+		OS_ExitCritical(Critical);
+	}
+}

@@ -97,7 +97,8 @@ add_ldflags(" -Wl,--wrap=time ",{force = true})
 add_ldflags(" -Wl,--wrap=putc ",{force = true})
 add_ldflags(" -Wl,--wrap=putchar ",{force = true})
 add_ldflags(" -Wl,--wrap=puts ",{force = true})
-
+add_ldflags(" -Wl,--wrap=pvPortMalloc ",{force = true})
+add_ldflags(" -Wl,--wrap=vPortFree ",{force = true})
 
 set_dependir("$(buildir)/.deps")
 set_objectdir("$(buildir)/.objs")
