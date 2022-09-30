@@ -26,11 +26,15 @@ typedef struct
 	void *pParam;
 	void *fd;
 	void *CoderParam;
+	void *UserParam;
+	Timer_t *PADelayTimer;
 	Buffer_Struct FileDataBuffer;
 	Buffer_Struct AudioDataBuffer;
 	llist_head DataHead;
 	uint32_t SampleRate;
 	uint32_t waitRequire;
+	uint32_t DummyAudioTime;
+	uint32_t PADelayTime;
 	uint8_t BitDepth;
 	uint8_t ChannelCount;	//声道，目前只有1或者2
 	auStreamFormat_t Format;
