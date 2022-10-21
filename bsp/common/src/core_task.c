@@ -334,12 +334,7 @@ void Task_Debug(HANDLE TaskHandle)
 	Core_TaskStruct *Handle = (void *)TaskHandle;
 	DBG("%x,%x,%x", &Handle->EventHead, Handle->EventHead.next, Handle->EventHead.prev);
 }
-#else
-void Task_SendEvent(HANDLE TaskHandle, uint32_t ID, uint32_t P1, uint32_t P2, uint32_t P3)
-{
 
-}
-#endif
 
 static StaticTask_t prvIdleTCB;
 static StaticTask_t prvTimerTaskTCB;
@@ -361,3 +356,11 @@ void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
 	*ppxTimerTaskStackBuffer = prvTimerTaskStack;
 	*pulTimerTaskStackSize = 256;
 }
+
+
+#else
+void Task_SendEvent(HANDLE TaskHandle, uint32_t ID, uint32_t P1, uint32_t P2, uint32_t P3)
+{
+
+}
+#endif
