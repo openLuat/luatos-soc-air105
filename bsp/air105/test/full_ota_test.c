@@ -168,7 +168,7 @@ void prvFOTA_Test(void *p)
 	{
 		OutFlash_Test();
 	}
-	Task_Exit();
+	Task_Exit(NULL);
 }
 
 void FOTA_InFlashInit(void)

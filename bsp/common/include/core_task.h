@@ -30,6 +30,6 @@ HANDLE Task_GetCurrent(void);
 void Task_DelayTick(uint64_t Tick);
 void Task_DelayUS(uint32_t US);
 void Task_DelayMS(uint32_t MS);
-void Task_Exit(void);
+void Task_Exit(HANDLE TaskHandle);
 void Task_Debug(HANDLE TaskHandle);
 #endif

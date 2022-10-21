@@ -114,7 +114,7 @@ void prvUSB_Test(void *p)
     	Test_USBStart();
     	Core_USBDefaultDeviceStart(0);
     }
-	Task_Exit();
+	Task_Exit(NULL);
 }
 void USB_TestInit(void)
 {

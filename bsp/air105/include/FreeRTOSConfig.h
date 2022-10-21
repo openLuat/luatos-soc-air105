@@ -79,7 +79,7 @@
 #define configUSE_IDLE_HOOK               1
 #define configUSE_TICK_HOOK               0
 #define configMAX_PRIORITIES              (7)
-#define configSUPPORT_STATIC_ALLOCATION   0
+#define configSUPPORT_STATIC_ALLOCATION   1
 #define configCPU_CLOCK_HZ                (SystemCoreClock)
 #define configTICK_RATE_HZ                ((TickType_t)100)
 #define configMINIMAL_STACK_SIZE          ((uint16_t)256)
@@ -96,7 +96,7 @@
 #define configUSE_APPLICATION_TASK_TAG    0
 #define configUSE_COUNTING_SEMAPHORES     1
 #define configGENERATE_RUN_TIME_STATS     0
-#define configNUM_THREAD_LOCAL_STORAGE_POINTERS 4
+#define configNUM_THREAD_LOCAL_STORAGE_POINTERS 0
 #define configUSE_TASK_NOTIFICATIONS		1
 #define configTASK_NOTIFICATION_ARRAY_ENTRIES    2
 /* Co-routine definitions. */

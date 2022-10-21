@@ -161,6 +161,7 @@ __attribute__((weak)) uint32_t OS_EnterCritical(void)
 	{
 		__disable_irq();
 	}
+	return 0;
 }
 __attribute__((weak)) void OS_ExitCritical(uint32_t Critical)
 {
@@ -343,7 +344,6 @@ int32_t OS_BufferWriteLimit(Buffer_Struct *Buf, void *Data, uint32_t Len)
 void OS_BufferRemove(Buffer_Struct *Buf, uint32_t Len)
 {
 	uint32_t RestLen;
-	uint32_t i;
 	if (!Buf)
 		return ;
 	if (!Buf->Data)

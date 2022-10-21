@@ -5440,35 +5440,6 @@ char * vTaskName(void)
 }
 /*-----------------------------------------------------------*/
 
-void * vTaskGetPoint(TaskHandle_t xHandle, uint8_t Sn)
-{
-	if (Sn >= configNUM_THREAD_LOCAL_STORAGE_POINTERS) return NULL;
-	TCB_t * pxTCB = prvGetTCBFromHandle( xHandle );
-	return pxTCB->pvThreadLocalStoragePointers[Sn];
-}
-
-void vTaskSetPoint(TaskHandle_t xHandle, uint8_t Sn, void * p)
-{
-	if (Sn >= configNUM_THREAD_LOCAL_STORAGE_POINTERS) return ;
-	TCB_t * pxTCB = prvGetTCBFromHandle( xHandle );
-	pxTCB->pvThreadLocalStoragePointers[Sn] = p;
-}
-
-void vTaskModifyPoint(TaskHandle_t xHandle, uint8_t Sn, int Add)
-{
-	if (Sn >= configNUM_THREAD_LOCAL_STORAGE_POINTERS) return ;
-	TCB_t * pxTCB = prvGetTCBFromHandle( xHandle );
-	if (Add > 0)
-	{
-		pxTCB->pvThreadLocalStoragePointers[Sn]++;
-	}
-	else
-	{
-		pxTCB->pvThreadLocalStoragePointers[Sn]--;
-	}
-
-}
-
 void *vTaskGetCurrent(void)
 {
 	return pxCurrentTCB;
