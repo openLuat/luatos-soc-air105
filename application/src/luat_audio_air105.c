@@ -38,7 +38,7 @@
 #define MP3_FRAME_LEN 4 * 1152
 static Audio_StreamStruct prvAudioStream;
 
-int iot_audio_write_blank_raw(uint32_t multimedia_id, uint8_t cnt);
+int luat_audio_write_blank_raw(uint32_t multimedia_id, uint8_t cnt);
 
 static int32_t luat_audio_wav_decode(void *pData, void *pParam)
 {
@@ -50,7 +50,7 @@ static int32_t luat_audio_wav_decode(void *pData, void *pParam)
 		{
 			if (!Stream->IsStop)
 			{
-				Audio_WriteRaw(Stream, Stream->FileDataBuffer.Data, Stream->FileDataBuffer.Pos);
+				Audio_WriteRaw(Stream, Stream->FileDataBuffer.Data, Stream->FileDataBuffer.Pos, 0);
 			}
 		}
 		else
@@ -120,7 +120,7 @@ static int32_t luat_audio_mp3_decode(void *pData, void *pParam)
 		if (!Stream->IsStop)
 		{
 			STEP(8);
-			Audio_WriteRaw(Stream, Stream->AudioDataBuffer.Data, Stream->AudioDataBuffer.Pos);
+			Audio_WriteRaw(Stream, Stream->AudioDataBuffer.Data, Stream->AudioDataBuffer.Pos, 0);
 			STEP(9);
 		}
 		Stream->AudioDataBuffer.Pos = 0;
@@ -207,7 +207,7 @@ int luat_audio_start_raw(uint8_t multimedia_id, uint8_t audio_format, uint8_t nu
 	{
 		if (prvAudioStream.DummyAudioTime)
 		{
-			iot_audio_write_blank_raw(multimedia_id, prvAudioStream.DummyAudioTime);
+			luat_audio_write_blank_raw(multimedia_id, prvAudioStream.DummyAudioTime);
 		}
 		if (prvAudioStream.PADelayTimer)
 		{
@@ -217,14 +217,14 @@ int luat_audio_start_raw(uint8_t multimedia_id, uint8_t audio_format, uint8_t nu
 	return result;
 }
 
-int iot_audio_write_blank_raw(uint32_t multimedia_id, uint8_t cnt)
+int luat_audio_write_blank_raw(uint32_t multimedia_id, uint8_t cnt)
 {
 	uint32_t total = ((prvAudioStream.SampleRate / 10) * prvAudioStream.ChannelCount * (prvAudioStream.BitDepth / 8) );
 	uint8_t *dummy = malloc(total);
 	memset(dummy, 0, total);
 	for(int i = 0 ; i < cnt; i++)
 	{
-		Audio_WriteRaw(&prvAudioStream, dummy, total);
+		Audio_WriteRaw(&prvAudioStream, dummy, total, 1);
 	}
 	free(dummy);
 	return 0;
@@ -233,7 +233,7 @@ int iot_audio_write_blank_raw(uint32_t multimedia_id, uint8_t cnt)
 int luat_audio_write_raw(uint8_t multimedia_id, uint8_t *data, uint32_t len)
 {
 	if (len)
-		return Audio_WriteRaw(&prvAudioStream, data, len);
+		return Audio_WriteRaw(&prvAudioStream, data, len, 0);
 	return -1;
 }
 

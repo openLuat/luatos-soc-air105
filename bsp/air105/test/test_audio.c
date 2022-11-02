@@ -21,12 +21,12 @@ static int32_t Audio_TestCB(void *pData, void *pParam)
 	//在这里通知某个线程需要获取更多数据
 	if ((TotalLen - ReadLen) > ONCE_READ_LEN)
 	{
-		Audio_WriteRaw(&prvStream, pBuf + ReadLen, ONCE_READ_LEN);
+		Audio_WriteRaw(&prvStream, pBuf + ReadLen, ONCE_READ_LEN, 0);
 		ReadLen += ONCE_READ_LEN;
 	}
 	else
 	{
-		Audio_WriteRaw(&prvStream, pBuf + ReadLen, (TotalLen - ReadLen));
+		Audio_WriteRaw(&prvStream, pBuf + ReadLen, (TotalLen - ReadLen), 0);
 		ReadLen = TotalLen;
 	}
 	return 0;
@@ -46,8 +46,8 @@ void Audio_Test(void)
 	ReadLen = 0;
 	pBuf = wavData;
 	//内存充足的情况下，可以连续写入2次，第一块发送完成后，会立刻发送第二块， 同时回调让用户输入更多数据
-	Audio_WriteRaw(&prvStream, pBuf, ONCE_READ_LEN);
-	Audio_WriteRaw(&prvStream, pBuf + ONCE_READ_LEN, ONCE_READ_LEN);
+	Audio_WriteRaw(&prvStream, pBuf, ONCE_READ_LEN, 0);
+	Audio_WriteRaw(&prvStream, pBuf + ONCE_READ_LEN, ONCE_READ_LEN, 0);
 	ReadLen += 2 * ONCE_READ_LEN;
 }
 

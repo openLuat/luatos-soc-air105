@@ -61,7 +61,7 @@ void Audio_GlobalInit(void);
  */
 int32_t Audio_StartRaw(Audio_StreamStruct *pStream);
 
-int32_t Audio_WriteRaw(Audio_StreamStruct *pStream, uint8_t *pByteData, uint32_t ByteLen);
+int32_t Audio_WriteRaw(Audio_StreamStruct *pStream, uint8_t *pByteData, uint32_t ByteLen, uint8_t AddHead);
 
 void Audio_Stop(Audio_StreamStruct *pStream);
 

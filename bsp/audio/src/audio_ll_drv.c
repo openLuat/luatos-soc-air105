@@ -111,7 +111,7 @@ static int32_t prvAudio_RunDAC(Audio_StreamStruct *pStream)
 	return ERROR_NONE;
 }
 
-static int32_t prvAudio_WriteDACRaw(Audio_StreamStruct *pStream, uint8_t *pByteData, uint32_t ByteLen)
+static int32_t prvAudio_WriteDACRaw(Audio_StreamStruct *pStream, uint8_t *pByteData, uint32_t ByteLen, uint8_t AddHead)
 {
 	uint32_t i, VaildLen;
 	uint32_t DiffBit;
@@ -197,7 +197,15 @@ static int32_t prvAudio_WriteDACRaw(Audio_StreamStruct *pStream, uint8_t *pByteD
 	}
 	uint32_t Critical;
 	Critical = OS_EnterCritical();
-	llist_add_tail(&Block->Node, &pStream->DataHead);
+	if (AddHead)
+	{
+		llist_add(&Block->Node, &pStream->DataHead);
+	}
+	else
+	{
+		llist_add_tail(&Block->Node, &pStream->DataHead);
+	}
+
 	OS_ExitCritical(Critical);
 	if (!pStream->IsHardwareRun && !pStream->IsPause)
 	{
@@ -206,13 +214,13 @@ static int32_t prvAudio_WriteDACRaw(Audio_StreamStruct *pStream, uint8_t *pByteD
 	return ERROR_NONE;
 }
 
-int32_t Audio_WriteRaw(Audio_StreamStruct *pStream, uint8_t *pByteData, uint32_t ByteLen)
+int32_t Audio_WriteRaw(Audio_StreamStruct *pStream, uint8_t *pByteData, uint32_t ByteLen, uint8_t AddHead)
 {
 	if (!ByteLen) {return -ERROR_PARAM_INVALID;}
 	switch(pStream->BusType)
 	{
 	case AUSTREAM_BUS_DAC:
-		return prvAudio_WriteDACRaw(pStream, pByteData, ByteLen);
+		return prvAudio_WriteDACRaw(pStream, pByteData, ByteLen, AddHead);
 	default:
 		return -ERROR_PARAM_INVALID;
 	}

@@ -30,18 +30,22 @@
 #define LUAT_LOG_TAG "luat.rtos"
 #include "luat_log.h"
 
-int luat_thread_start(luat_thread_t* thread){
-	thread->handle = Task_Create(thread->task_fun, thread->userdata, thread->stack_size, thread->priority, thread->name);
-	return 0;
-}
 
+int luat_rtos_task_create(luat_rtos_task_handle *task_handle, uint32_t stack_size, uint8_t priority, const char *task_name, luat_rtos_task_entry task_fun, void* user_data, uint16_t event_cout)
+{
+	priority = configMAX_PRIORITIES * 100 / priority;
+	if (!priority) priority = 2;
+	if (priority >= configMAX_PRIORITIES) priority -= 1;
+	*task_handle = Task_Create(task_fun, user_data, stack_size >> 2, priority, task_name);
+	return (*task_handle)?0:-1;
+}
 int luat_send_event_to_task(void* task_handle, uint32_t id, uint32_t param1, uint32_t param2, uint32_t param3)
 {
 	Task_SendEvent(task_handle, id, param1, param2, param3);
 	return 0;
 }
 
-int luat_wait_event_from_task(void* task_handle, uint32_t wait_event_id, void *out_event, void *call_back, uint32_t ms)
+int luat_wait_event_from_task(void* task_handle, uint32_t wait_event_id, luat_event_t *out_event, void *call_back, uint32_t ms)
 {
 	return Task_GetEventByMS(task_handle, wait_event_id, out_event, call_back, ms);
 }
