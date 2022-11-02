@@ -435,6 +435,10 @@ if with_luatos then
     -- protobuf
     add_includedirs(luatos.."components/serialization/protobuf")
     add_files(luatos.."components/serialization/protobuf/*.c")
+    
+    -- rsa
+    add_includedirs(luatos.."components/rsa/inc")
+    add_files(luatos.."components/rsa/**.c")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})

@@ -93,6 +93,8 @@
 // #define LUAT_USE_VMX 1 
 // #define LUAT_USE_NES
 
+#define LUAT_USE_RSA 1
+
 //---------------------
 // UI
 #define LUAT_USE_LCD 1
