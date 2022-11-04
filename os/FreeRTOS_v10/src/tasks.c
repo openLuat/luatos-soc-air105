@@ -2091,9 +2091,6 @@ void vTaskStartScheduler( void )
         portCONFIGURE_TIMER_FOR_RUN_TIME_STATS();
 
         traceTASK_SWITCHED_IN();
-#ifdef __BUILD_OS__
-        OS_SetStartFlag();
-#endif
         /* Setting up the timer tick is hardware specific and thus in the
          * portable interface. */
         if( xPortStartScheduler() != pdFALSE )

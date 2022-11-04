@@ -137,14 +137,11 @@ void OS_ResumeTask(HANDLE taskHandle)
 static uint8_t prvOSRunFlag;
 extern const uint32_t __os_heap_start;
 extern const uint32_t __ram_end;
-__attribute__((weak)) void OS_SetStartFlag(void)
-{
-	prvOSRunFlag = 1;
-}
+
 __attribute__((weak)) uint32_t OS_EnterCritical(void)
 {
 #ifdef __BUILD_OS__
-	if (prvOSRunFlag)
+	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
 	{
 		if (__get_IPSR())
 		{
@@ -166,7 +163,7 @@ __attribute__((weak)) uint32_t OS_EnterCritical(void)
 __attribute__((weak)) void OS_ExitCritical(uint32_t Critical)
 {
 #ifdef __BUILD_OS__
-	if (prvOSRunFlag)
+	if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
 	{
 		if (__get_IPSR())
 		{
