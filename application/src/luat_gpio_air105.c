@@ -88,7 +88,7 @@ int luat_gpio_setup(luat_gpio_t *gpio){
     return 0;
 }
 
-int luat_gpio_set(int pin, int level){
+int luat_gpio_set(int pin, uint8_t level){
     if (pin < HAL_GPIO_2 || pin >= HAL_GPIO_MAX) return 0;
     GPIO_Output(pin, level);
     return 0;
