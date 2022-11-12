@@ -24,6 +24,7 @@
 #include "luat_fs.h"
 #include "luat_ota.h"
 
+
 struct lfs_config mcu_flash_lfs_cfg;
 struct lfs LFS;
 
@@ -173,11 +174,6 @@ int luat_fs_init(void) {
 	};
 	luat_fs_mount(&conf);
 
-#ifdef LUAT_USE_OTA
-	//OTA检测升级
-    luat_ota(script_luadb_start_addr);
-#endif
-
 	// 指向3M 的脚本区, luadb格式
 	luat_fs_conf_t conf2 = {
 		.busname = (char*)script_luadb_start_addr,
@@ -197,11 +193,3 @@ int luat_fs_init(void) {
 	#endif
 	return 0;
 }
-
-#ifdef LUAT_USE_OTA
-int luat_flash_write(uint32_t addr, uint8_t * buf, uint32_t len){
-	// DBG("addr %x %d", addr,len);
-	Flash_Erase(addr, __FLASH_SECTOR_SIZE__);
-	return Flash_Program( addr, buf, len);
-}
-#endif
