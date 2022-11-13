@@ -85,16 +85,19 @@ HANDLE Task_Create(TaskFun_t EntryFunction, void *Param, uint32_t StackSize, uin
 		free(stack_mem);
 		return NULL;
 	}
-	if (!xTaskCreateStatic(EntryFunction, Name, StackSize, Param, Priority, stack_mem, &Handle->TCB))
-	{
-		free(Handle);
-		free(stack_mem);
-		return NULL;
-	}
 #ifdef __USE_CORE_TIMER__
 	Handle->EventTimer = Timer_Create(prvTaskTimerCallback, Handle, NULL);
 	Handle->DelayTimer = Timer_Create(prvTaskDelayTimerCallback, Handle, NULL);
 #endif
+	if (!xTaskCreateStatic(EntryFunction, Name, StackSize, Param, Priority, stack_mem, &Handle->TCB))
+	{
+		Timer_Release(Handle->EventTimer);
+		Timer_Release(Handle->DelayTimer);
+		free(Handle);
+		free(stack_mem);
+		return NULL;
+	}
+
 	Handle->TCB.uxDummy20 = 0;
 	INIT_LLIST_HEAD(&Handle->EventHead);
 	Handle->isRun = 1;
