@@ -204,7 +204,7 @@ static const luaL_Reg loadedlibs[] = {
 #endif
 #ifdef LUAT_USE_W5500
   {"w5500", luaopen_w5500},
-  {"network", luaopen_network_adapter},
+  {"socket", luaopen_socket_adapter},
   {"mqtt", luaopen_mqtt},
   {"http2", luaopen_http},
 #endif
