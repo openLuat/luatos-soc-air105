@@ -435,8 +435,8 @@ static int luat_camera_video_zip(void *data ,void *param)
     }
 
 
-    strm.zalloc = luat_zip_zalloc;
-    strm.zfree = luat_zip_free;
+    strm.zalloc = NULL;
+    strm.zfree = NULL;
 
     ret = deflateInit2_(&strm, 1, Z_DEFLATED, 12, 6,
     		Z_DEFAULT_STRATEGY, ZLIB_VERSION, (int)sizeof(z_stream));
