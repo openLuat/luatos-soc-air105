@@ -36,7 +36,7 @@ int luat_rtos_task_create(luat_rtos_task_handle *task_handle, uint32_t stack_siz
 	priority = configMAX_PRIORITIES * 100 / priority;
 	if (!priority) priority = 2;
 	if (priority >= configMAX_PRIORITIES) priority -= 1;
-	*task_handle = Task_Create(task_fun, user_data, stack_size >> 2, priority, task_name);
+	*task_handle = Task_Create(task_fun, user_data, stack_size, priority, task_name);
 	return (*task_handle)?0:-1;
 }
 int luat_send_event_to_task(void* task_handle, uint32_t id, uint32_t param1, uint32_t param2, uint32_t param3)
