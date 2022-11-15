@@ -5,6 +5,7 @@ set_version("0.0.2", {build = "%Y%m%d%H%M"})
 add_rules("mode.debug", "mode.release")
 
 local AIR105_VERSION = ""
+local VM_64BIT = nil
 local with_luatos = true
 local luatos = "../LuatOS/"
 
@@ -246,6 +247,7 @@ if with_luatos then
         local LVGL_CONF = conf_data:find("// #define LUAT_USE_LVGL\n")
         if LVGL_CONF == nil then target:add("deps", "lvgl") end
         target:add("deps", "miniz")
+        VM_64BIT = conf_data:find("\r#define LUAT_CONF_VM_64bit") or conf_data:find("\n#define LUAT_CONF_VM_64bit")
     end)
 
     -- add_deps("tflm")
@@ -481,7 +483,14 @@ end
             path7z = find_file("7z.exe", { "C:/Program Files/7-Zip/" })
         end
         if path7z then
-            os.cp("./project/air105/info.json", "$(buildir)/out/info.json")
+            if VM_64BIT then
+                import("core.base.json")
+                local info_table = json.loadfile("./project/air105/info.json")
+                info_table["script"]["bitw"] = 64
+                json.savefile("./build/out/info.json", info_table)
+            else
+                os.cp("./project/air105/info.json", "$(buildir)/out/info.json")
+            end
             os.cp("./project/air105/soc_download.exe", "$(buildir)/out/soc_download.exe")
             os.cd("$(buildir)/out")
             os.run(path7z.." a LuatOS-SoC_"..AIR105_VERSION.."_AIR105.soc info.json bootloader.bin app.bin soc_download.exe")
