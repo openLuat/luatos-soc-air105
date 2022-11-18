@@ -324,17 +324,27 @@ void __FUNC_IN_RAM__ GPIO_ToggleMulti(uint32_t Port, uint32_t Pins)
 
 void __FUNC_IN_RAM__ GPIO_OutPulse(uint32_t Pin, uint8_t *Data, uint16_t BitLen, uint16_t Delay)
 {
-	volatile int i, j;
-	uint8_t table[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+	uint16_t i;
+	volatile int j;
+	uint8_t mask = 0;
+	uint8_t level = 0;
 	uint8_t Port = (Pin >> 4);
 	Pin = 1 << (Pin & 0x0000000f);
+	uint32_t v0 = (Pin << 16);
+	uint32_t v1 = Pin;
 	__disable_irq();
 	if (Delay)
 	{
 		for(i = 0;i < BitLen; i++)
 		{
+			mask >>= 1;
+			if (!mask)
+			{
+				mask = 0x80;
+				level = Data[i >> 3];
+			}
+			prvGPIO_Resource[Port].RegBase->BSRR = (level & mask)?v1:v0;
 			j = Delay;
-			prvGPIO_Resource[Port].RegBase->BSRR |= (Data[i >> 3] & (table[i & 0x07]))?Pin:(Pin << 16);
 			while(j > 0) {j--;}
 		}
 	}
@@ -342,7 +352,13 @@ void __FUNC_IN_RAM__ GPIO_OutPulse(uint32_t Pin, uint8_t *Data, uint16_t BitLen,
 	{
 		for(i = 0;i < BitLen; i++)
 		{
-			prvGPIO_Resource[Port].RegBase->BSRR |= (Data[i >> 3] & (table[i & 0x07]))?Pin:(Pin << 16);
+			mask >>= 1;
+			if (!mask)
+			{
+				mask = 0x80;
+				level = Data[i >> 3];
+			}
+			prvGPIO_Resource[Port].RegBase->BSRR = (level & mask)?v1:v0;
 		}
 	}
 	__enable_irq();
