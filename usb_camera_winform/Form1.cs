@@ -19,6 +19,15 @@ namespace Air105摄像头预览
             thread.IsBackground = true;
         }
 
+        public  void record_uart_data(byte[] buff, int offset, int size)
+        {
+            String path = "uart.dat";
+            using (FileStream FS = new FileStream(path, File.Exists(path) ? FileMode.Append : FileMode.OpenOrCreate, FileAccess.Write))
+            {
+                FS.Write(buff, offset, size);
+                FS.Close();
+            }
+        }
         private void Form1_Load(object sender, EventArgs e)
         {
             reload_com_names();
@@ -52,7 +61,7 @@ namespace Air105摄像头预览
         void Run_mac_flasher()
         {
             Thread.Sleep(1000);
-            var buff = new byte[64 * 1024];
+            var buff = new byte[16 * 1024 * 1024];
             while (true)
             {
                 if (comName == "" || power_ready == false)
@@ -87,6 +96,7 @@ namespace Air105摄像头预览
                 }
                 if (rlen > 0)
                 {
+                    record_uart_data(buff, 0, rlen);
                     if (buff[0] == 'A' && buff[1] == 'i' && buff[2] == 'r')
                     {
                         for (int i = 0; i < buff.Length; i++)
@@ -114,6 +124,15 @@ namespace Air105摄像头预览
                                     }));
                                     break;
                                 }
+                                if (dataRequire > 16*1024*1024)
+                                {
+                                    text = "最大支持16M的图片";
+                                    this.label_data_log.BeginInvoke(new Action(() =>
+                                    {
+                                        this.label_data_log.Text = text;
+                                    }));
+                                    break;
+                                }
                                 //var dataRecv = rlen;
                                 while (rlen < dataRequire + i + 2)
                                 {
@@ -121,6 +140,7 @@ namespace Air105摄像头预览
                                     if (len2 > 0)
                                     {
                                         rlen += len2;
+                                        record_uart_data(buff, rlen, len2);
                                     }
                                     else if (len2 < 0)
                                     {

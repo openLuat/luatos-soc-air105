@@ -42,9 +42,9 @@
             // pictureBox_main
             // 
             this.pictureBox_main.BackColor = System.Drawing.SystemColors.ControlDark;
-            this.pictureBox_main.Location = new System.Drawing.Point(60, 93);
+            this.pictureBox_main.Location = new System.Drawing.Point(12, 96);
             this.pictureBox_main.Name = "pictureBox_main";
-            this.pictureBox_main.Size = new System.Drawing.Size(240, 320);
+            this.pictureBox_main.Size = new System.Drawing.Size(640, 480);
             this.pictureBox_main.TabIndex = 0;
             this.pictureBox_main.TabStop = false;
             // 
@@ -72,7 +72,7 @@
             // label_data_log
             // 
             this.label_data_log.AutoSize = true;
-            this.label_data_log.Location = new System.Drawing.Point(12, 438);
+            this.label_data_log.Location = new System.Drawing.Point(13, 604);
             this.label_data_log.Name = "label_data_log";
             this.label_data_log.Size = new System.Drawing.Size(69, 20);
             this.label_data_log.TabIndex = 4;
@@ -118,7 +118,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
-            this.ClientSize = new System.Drawing.Size(368, 475);
+            this.ClientSize = new System.Drawing.Size(666, 719);
             this.Controls.Add(this.textBox_br);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.button2);
@@ -129,7 +129,7 @@
             this.Controls.Add(this.pictureBox_main);
             this.MaximizeBox = false;
             this.Name = "Form1";
-            this.Text = "Air105摄像头预览";
+            this.Text = "LuatOS摄像头预览";
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_main)).EndInit();
             this.ResumeLayout(false);
