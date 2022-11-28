@@ -413,6 +413,11 @@ if with_luatos then
     add_includedirs(luatos.."components/network/libemqtt",{public = true})
     add_files(luatos.."components/network/libemqtt/*.c")
 
+    -- http_parser
+    add_includedirs(luatos.."components/network/http_parser",{public = true})
+    add_files(luatos.."components/network/http_parser/*.c")
+
+    
     -- http
     add_includedirs(luatos.."components/network/libhttp",{public = true})
     add_files(luatos.."components/network/libhttp/luat_lib_http.c")
