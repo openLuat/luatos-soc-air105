@@ -233,10 +233,16 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_RSA
   {"rsa", luaopen_rsa},
 #endif
+#ifdef LUAT_USE_USB
   {"usbapp", luaopen_usbapp},
+#endif
+#ifdef LUAT_USE_MEDIA
   {"audio", luaopen_multimedia_audio},
   {"codec", luaopen_multimedia_codec},
+#endif
+#ifdef LUAT_USE_IO_QUEUE
   {"ioqueue", luaopen_io_queue},
+#endif
   {NULL, NULL}
 };
 

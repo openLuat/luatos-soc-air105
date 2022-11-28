@@ -69,6 +69,10 @@
 #define LUAT_USE_SOFTKB 1
 // #define LUAT_USE_PROTOBUF
 
+#define LUAT_USE_USB    1
+#define LUAT_USE_MEDIA    1
+#define LUAT_USE_IO_QUEUE    1
+
 #define LUAT_USE_W5500  1
 #define LUAT_USE_DHCP  1
 #define LUAT_USE_DNS  1
