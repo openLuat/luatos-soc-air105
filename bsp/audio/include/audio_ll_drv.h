@@ -35,10 +35,11 @@ typedef struct
 	uint32_t waitRequire;
 	uint32_t DummyAudioTime;
 	uint32_t PADelayTime;
-	uint8_t BitDepth;
-	uint8_t ChannelCount;	//声道，目前只有1或者2
+	int LastError;
 	auStreamFormat_t Format;
 	auStreamBusType_t BusType;	//音频总线类型，DAC, IIS之类的
+	uint8_t BitDepth;
+	uint8_t ChannelCount;	//声道，目前只有1或者2
 	uint8_t BusID;		//音频总线ID
 	uint8_t IsDataSigned;	//数据是否是有符号的
 	uint8_t IsHardwareRun;

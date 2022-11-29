@@ -285,6 +285,7 @@ int luat_audio_pause_raw(uint8_t multimedia_id, uint8_t is_pause)
 int luat_audio_play_stop(uint8_t multimedia_id)
 {
 	prvAudioStream.IsStop = 1;
+	prvAudioStream.LastError = -1;
 }
 
 uint8_t luat_audio_is_finish(uint8_t multimedia_id)
@@ -318,7 +319,6 @@ int luat_audio_play_file(uint8_t multimedia_id, const char *path)
     size_t len;
 	mp3dec_frame_info_t info;
 	FILE *fd = luat_fs_fopen(path, "r");
-
 	if (!fd)
 	{
 		return -1;
@@ -410,7 +410,7 @@ int luat_audio_play_file(uint8_t multimedia_id, const char *path)
 			prvAudioStream.pParam = multimedia_id;
 			prvAudioStream.IsFileNotEnd = 1;
 			prvAudioStream.Decoder(&prvAudioStream, prvAudioStream.CoderParam);
-
+			prvAudioStream.LastError = 0;
 			if (!llist_num(&prvAudioStream.DataHead))
 			{
 				prvAudioStream.fd = NULL;
@@ -461,4 +461,14 @@ void luat_audio_config_pa(uint8_t multimedia_id, uint32_t pin, int level, uint32
 void luat_audio_config_dac(uint8_t multimedia_id, int pin, int level)
 {
 
+}
+
+uint16_t luat_audio_vol(uint8_t multimedia_id, uint16_t vol)
+{
+	return 100;
+}
+
+int luat_audio_play_get_last_error(uint8_t multimedia_id)
+{
+	return prvAudioStream.LastError;
 }
