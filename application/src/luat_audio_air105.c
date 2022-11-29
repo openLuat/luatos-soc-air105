@@ -29,6 +29,7 @@
 #include "mp3_decode/minimp3.h"
 #define LUAT_LOG_TAG "audio"
 #include "luat_log.h"
+#include "luat_audio.h"
 //#define __DECODE_DEBUG__
 #ifdef __DECODE_DEBUG__
 #define STEP(X)	Stream->DecodeStep=X
@@ -292,6 +293,11 @@ uint8_t luat_audio_is_finish(uint8_t multimedia_id)
 	return !prvAudioStream.waitRequire;
 }
 
+int luat_audio_play_multi_files(uint8_t multimedia_id, uData_t *info, uint32_t files_num, uint8_t error_stop)
+{
+	return -1;
+}
+
 int luat_audio_play_file(uint8_t multimedia_id, const char *path)
 {
 	if (prvAudioStream.IsPlaying)
@@ -431,7 +437,7 @@ int luat_audio_play_file(uint8_t multimedia_id, const char *path)
 	return -1;
 }
 
-void luat_audio_config_pa(int8_t multimedia_id, uint32_t pin, int level, uint32_t dummy_time_len, uint32_t pa_delay_time)
+void luat_audio_config_pa(uint8_t multimedia_id, uint32_t pin, int level, uint32_t dummy_time_len, uint32_t pa_delay_time)
 {
 	if (pin < GPIO_NONE)
 	{
@@ -450,4 +456,9 @@ void luat_audio_config_pa(int8_t multimedia_id, uint32_t pin, int level, uint32_
 	{
 		prvAudioStream.PADelayTimer = Timer_Create(luat_audio_pa_on, NULL, NULL);
 	}
+}
+
+void luat_audio_config_dac(uint8_t multimedia_id, int pin, int level)
+{
+
 }
