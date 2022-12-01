@@ -3962,6 +3962,6 @@
 #include "mbedtls/check_config.h"
 
 
-#define __SMALL_RAM___
+#define __SMALL_RAM__
 
 #endif /* MBEDTLS_CONFIG_H */
