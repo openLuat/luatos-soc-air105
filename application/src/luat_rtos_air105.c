@@ -61,6 +61,13 @@ int luat_start_rtos_timer(void *timer, uint32_t ms, uint8_t is_repeat)
 	return Timer_StartMS(timer, ms, is_repeat);
 }
 
+int luat_rtos_timer_start(void *timer, uint32_t timeout, uint8_t repeat, luat_rtos_timer_callback_t callback_fun, void *user_param)
+{
+	Timer_Stop(timer);
+	Timer_SetCallback(timer, callback_fun, user_param);
+	return Timer_StartMS(timer, timeout, repeat);
+}
+
 void luat_stop_rtos_timer(void *timer)
 {
 	Timer_Stop(timer);

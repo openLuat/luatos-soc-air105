@@ -45,4 +45,5 @@ void Timer_Release(Timer_t *Timer);
 uint32_t Timer_NextToRest(void);
 uint8_t Timer_IsRunning(Timer_t *Timer);
 void Timer_PrintAll(void);
+void Timer_SetCallback(Timer_t *Timer, CBFuncEx_t CB, void *Param);
 #endif

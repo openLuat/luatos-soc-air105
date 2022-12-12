@@ -322,6 +322,14 @@ uint32_t Timer_NextToRest(void)
 	return TIMM0->TIM[SYS_TIMER_TIM].CurrentValue;
 }
 
+void Timer_SetCallback(Timer_t *Timer, CBFuncEx_t CB, void *Param)
+{
+	uint32_t Critical = OS_EnterCritical();
+	Timer->CallBack = CB;
+	Timer->Param = Param;
+	OS_ExitCritical(Critical);
+}
+
 uint8_t Timer_IsRunning(Timer_t *Timer)
 {
 	if (Timer->Node.next && Timer->Node.prev)
