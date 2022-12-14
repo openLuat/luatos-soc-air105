@@ -33,7 +33,7 @@
 
 int luat_rtos_task_create(luat_rtos_task_handle *task_handle, uint32_t stack_size, uint8_t priority, const char *task_name, luat_rtos_task_entry task_fun, void* user_data, uint16_t event_cout)
 {
-	priority = configMAX_PRIORITIES * 100 / priority;
+	priority = configMAX_PRIORITIES * priority / 100;
 	if (!priority) priority = 2;
 	if (priority >= configMAX_PRIORITIES) priority -= 1;
 	*task_handle = Task_Create(task_fun, user_data, stack_size, priority, task_name);
@@ -164,4 +164,3 @@ int luat_rtos_queue_recv(luat_rtos_queue_t queue_handle, void *item, uint32_t it
 	}
 	return 0;
 }
-
