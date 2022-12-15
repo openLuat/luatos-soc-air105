@@ -40,14 +40,15 @@ typedef struct
 	timer_t *rs485_timer;
 	union
 	{
-		uint16_t rs485_param;
+		uint32_t rs485_param;
 		struct
 		{
-			uint16_t wait_time:14;
-			uint16_t rx_level:1;
-			uint16_t is_485used:1;
+			uint32_t wait_time:30;
+			uint32_t rx_level:1;
+			uint32_t is_485used:1;
 		}rs485_param_bit;
 	};
+	uint16_t unused;
 	uint8_t rx_mark;
 	uint8_t rs485_pin;
 }serials_info;
