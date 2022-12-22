@@ -169,6 +169,7 @@ target("lvgl")
     end)
 
     add_files(luatos.."components/lvgl/**.c")
+    remove_files(luatos.."components/lvgl/lv_demos/**.c")
 
     add_includedirs("application/include")
     add_includedirs("bsp/air105/include",{public = true})
