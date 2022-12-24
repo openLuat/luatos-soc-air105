@@ -71,3 +71,9 @@ int luat_pm_dtimer_wakeup_id(int* id) {
     return -1;
 }
 
+
+int luat_pm_power_ctrl(int id, uint8_t onoff) {
+    LLOGW("not support yet");
+    return -1;
+}
+
