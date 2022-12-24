@@ -548,7 +548,15 @@ void Remote_Upgrade(void)
 				ReadLen += ReadBuffer.Pos;
 
 				prvBL.FWDataBuffer.Pos = __FLASH_BLOCK_SIZE__;
-				Result = LzmaUncompress(prvBL.FWDataBuffer.Data, &prvBL.FWDataBuffer.Pos, ReadBuffer.Data, &LzmaDataLen, LzmaHead, LzmaHeadLen);
+				if (LzmaHead[0])
+				{
+					Result = LzmaUncompress(prvBL.FWDataBuffer.Data, &prvBL.FWDataBuffer.Pos, ReadBuffer.Data, &LzmaDataLen, LzmaHead, LzmaHeadLen);
+				}
+				else
+				{
+					prvBL.FWDataBuffer.Pos = LzmaDataLen;
+					memcpy(prvBL.FWDataBuffer.Data, ReadBuffer.Data, LzmaDataLen);
+				}
 				while(Flash_CheckBusy()){;}
 				Flash_Program(ProgramPos, prvBL.FWDataBuffer.Data, prvBL.FWDataBuffer.Pos);
 				WDT_Feed();
