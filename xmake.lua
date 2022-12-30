@@ -414,6 +414,10 @@ if with_luatos then
     add_includedirs(luatos.."components/network/libemqtt",{public = true})
     add_files(luatos.."components/network/libemqtt/*.c")
 
+    -- sntp
+    add_includedirs(luatos.."components/network/libsntp",{public = true})
+    add_files(luatos.."components/network/libsntp/*.c")
+
     -- http_parser
     add_includedirs(luatos.."components/network/http_parser",{public = true})
     add_files(luatos.."components/network/http_parser/*.c")
