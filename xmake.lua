@@ -453,6 +453,10 @@ if with_luatos then
     -- rsa
     add_includedirs(luatos.."components/rsa/inc")
     add_files(luatos.."components/rsa/**.c")
+
+    -- 添加fskv
+    add_includedirs(luatos.."components/fskv")
+    add_files(luatos.."components/fskv/*.c")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})
