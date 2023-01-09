@@ -87,6 +87,10 @@ void luat_task_resume_all(void)
 	OS_ResumeTask(NULL);
 }
 
+void *luat_get_current_task(void)
+{
+	return xTaskGetCurrentTaskHandle();
+}
 
 void *luat_mutex_create(void)
 {
