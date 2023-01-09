@@ -84,6 +84,7 @@
 #define LUAT_USE_NETWORK 1
 #define LUAT_USE_TLS 1
 #define LUAT_USE_SNTP 1
+#define LUAT_USE_FTP 1
 
 // #define LUAT_USE_IOTAUTH 1
 #define LUAT_USE_LORA 1

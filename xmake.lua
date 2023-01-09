@@ -421,6 +421,10 @@ if with_luatos then
     -- http_parser
     add_includedirs(luatos.."components/network/http_parser",{public = true})
     add_files(luatos.."components/network/http_parser/*.c")
+    
+    -- libftp
+    add_includedirs(luatos.."components/network/libftp",{public = true})
+    add_files(luatos.."components/network/libftp/*.c")
 
     
     -- http
