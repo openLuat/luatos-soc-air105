@@ -50,6 +50,12 @@ int luat_wait_event_from_task(void* task_handle, uint32_t wait_event_id, luat_ev
 	return Task_GetEventByMS(task_handle, wait_event_id, out_event, call_back, ms);
 }
 
+int luat_rtos_task_delete(void* task_handle)
+{
+	if (!task_handle) return -1;
+	Task_Exit(task_handle);
+	return 0;
+}
 
 void *luat_create_rtos_timer(void *cb, void *param, void *task_handle)
 {
