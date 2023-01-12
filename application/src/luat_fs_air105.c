@@ -150,6 +150,7 @@ void FileSystem_Init(void)
 
 extern const struct luat_vfs_filesystem vfs_fs_lfs2;
 extern const struct luat_vfs_filesystem vfs_fs_luadb;
+extern const struct luat_vfs_filesystem vfs_fs_ram;
 
 #ifdef LUAT_USE_VFS_INLINE_LIB
 //extern const char luadb_inline[];
@@ -173,6 +174,15 @@ int luat_fs_init(void) {
 		.mount_point = "",
 	};
 	luat_fs_mount(&conf);
+
+    luat_vfs_reg(&vfs_fs_ram);
+    luat_fs_conf_t conf3 = {
+		.busname = NULL,
+		.type = "ram",
+		.filesystem = "ram",
+		.mount_point = "/ram/"
+	};
+	luat_fs_mount(&conf3);
 
 	// 指向3M 的脚本区, luadb格式
 	luat_fs_conf_t conf2 = {
