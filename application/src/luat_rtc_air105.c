@@ -78,3 +78,7 @@ uint32_t luat_get_utc(uint32_t *tamp)
 	}
 	return sec;
 }
+
+int luat_rtc_timezone(int* timezone) {
+    return 32; // 暂不支持
+}
