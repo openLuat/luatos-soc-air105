@@ -32,7 +32,6 @@ enum
 typedef struct
 {
 	StaticTask_t TCB;
-	uint8_t dummy[1];	//不加这个就会死机
 	volatile llist_head EventHead;
 #ifdef __USE_CORE_TIMER__
 	Timer_t *EventTimer;

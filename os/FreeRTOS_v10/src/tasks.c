@@ -266,10 +266,8 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
 
     #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
         StackType_t * pxEndOfStack; /*< Points to the highest valid address for the stack. */
-	#else
-		UBaseType_t     uxSizeOfStack;      /*< Support For CmBacktrace >*/
 	#endif /* ( portSTACK_GROWTH > 0 )*/
-
+    UBaseType_t     uxSizeOfStack;      /*< Support For CmBacktrace >*/
     #if ( portCRITICAL_NESTING_IN_TCB == 1 )
         UBaseType_t uxCriticalNesting; /*< Holds the critical section nesting depth for ports that do not maintain their own count in the port layer. */
     #endif
