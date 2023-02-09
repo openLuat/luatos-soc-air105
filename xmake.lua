@@ -430,7 +430,7 @@ if with_luatos then
     -- http
     add_includedirs(luatos.."components/network/libhttp",{public = true})
     -- add_files(luatos.."components/network/libhttp/luat_lib_http.c")
-    add_files(luatos.."components/network/libhttp/luat_http_client.c")
+    add_files(luatos.."components/network/libhttp/*.c")
 
     -- iotauth
     add_files(luatos.."components/iotauth/luat_lib_iotauth.c")
