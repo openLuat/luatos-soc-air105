@@ -34,7 +34,7 @@
 typedef struct
 {
 	uint8_t id;
-	uint8_t mark;
+//	uint8_t mark;
     uint8_t mode;//spi模式
 }Spi_Struct;
 
@@ -42,22 +42,22 @@ static Spi_Struct luat_spi[6] ={0};
 
 int32_t luat_spi_cb(void *pData, void *pParam){
 //    LLOGD("luat_spi_cb pData:%d pParam:%d ",(int)pData,(int)pParam);
-    switch ((int)pData){
-        case 0:
-            luat_spi[5].mark = 0;
-            break;
-        case 1:
-            luat_spi[0].mark = 0;
-            break;
-        case 2:
-            luat_spi[1].mark = 0;
-            break;
-        case 3:
-            luat_spi[2].mark = 0;
-            break;
-        default:
-            break;
-    }
+//    switch ((int)pData){
+//        case 0:
+//            luat_spi[5].mark = 0;
+//            break;
+//        case 1:
+//            luat_spi[0].mark = 0;
+//            break;
+//        case 2:
+//            luat_spi[1].mark = 0;
+//            break;
+//        case 3:
+//            luat_spi[2].mark = 0;
+//            break;
+//        default:
+//            break;
+//    }
 }
 
 int luat_spi_device_config(luat_spi_device_t* spi_dev) {
@@ -178,7 +178,7 @@ int luat_spi_close(int spi_id) {
 int luat_spi_transfer(int spi_id, const char* send_buf, size_t send_length, char* recv_buf, size_t recv_length) {
     // LLOGD("SPI_MasterInit luat_spi%d:%d send_buf:%x recv_buf:%x length:%d ",spi_id,luat_spi[spi_id], *send_buf, *recv_buf, length);
     // while(luat_spi[spi_id].mark)
-    luat_spi[spi_id].mark = 1;
+//    luat_spi[spi_id].mark = 1;
     if(luat_spi[spi_id].mode==0)
         SPI_FlashBlockTransfer(luat_spi[spi_id].id, send_buf, send_length, recv_buf, recv_length);
     else
@@ -189,7 +189,7 @@ int luat_spi_transfer(int spi_id, const char* send_buf, size_t send_length, char
 int luat_spi_recv(int spi_id, char* recv_buf, size_t length) {
     // LLOGD("SPI_MasterInit luat_spi%d:%d recv_buf:%x length:%d ",spi_id,luat_spi[spi_id], *recv_buf, length);
     // while(luat_spi[spi_id].mark)
-    luat_spi[spi_id].mark = 1;
+//    luat_spi[spi_id].mark = 1;
     SPI_BlockTransfer(luat_spi[spi_id].id, recv_buf, recv_buf, length);
     return length;
 }
@@ -197,9 +197,15 @@ int luat_spi_recv(int spi_id, char* recv_buf, size_t length) {
 int luat_spi_send(int spi_id, const char* send_buf, size_t length) {
     // LLOGD("luat_spi_send luat_spi%d:%d send_buf:%x length:%d ",spi_id,luat_spi[spi_id], *send_buf, length);
     // while(luat_spi[spi_id].mark)
-    luat_spi[spi_id].mark = 1;
+//    luat_spi[spi_id].mark = 1;
     SPI_BlockTransfer(luat_spi[spi_id].id, send_buf, NULL, length);
     return length;
+}
+
+int luat_spi_change_speed(int spi_id, uint32_t speed)
+{
+	SPI_SetNewConfig(luat_spi[spi_id].id, speed, 0xff);
+	return 0;
 }
 
 int luat_spi_no_block_transfer(int spi_id, uint8_t *tx_buff, uint8_t *rx_buff, size_t len, void *CB, void *pParam)
@@ -380,7 +386,6 @@ int luat_lcd_draw(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint16_t x2, 
     return 0;
 }
 #endif
-
 
 static void *luat_fatfs_spi_ctrl;
 static HANDLE luat_fatfs_locker;
