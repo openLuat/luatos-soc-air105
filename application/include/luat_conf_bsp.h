@@ -61,7 +61,12 @@
 #define LUAT_USE_SFD  1
 // #define LUAT_USE_STATEM 1
 // #define LUAT_USE_COREMARK 1
-#define LUAT_USE_FDB 1
+
+// FDB 提供kv数据库, 与nvm库类似
+// #define LUAT_USE_FDB 1
+// fskv提供与fdb库兼容的API,旨在替换fdb库
+#define LUAT_USE_FSKV 1
+
 //#define LUAT_USE_ZLIB
 #define LUAT_USE_CAMERA  1
 #define LUAT_USE_I2CTOOLS 1
@@ -69,7 +74,7 @@
 // #define LUAT_USE_PROTOBUF
 
 #define LUAT_USE_FATFS 1
-// #define LUAT_USE_FATFS_CHINESE 1
+// #define LUAT_TF_SPI_FAST
 // #define LUAT_FF_USE_LFN 3
 // #define LUAT_FF_LFN_UNICODE 3
 
@@ -84,10 +89,8 @@
 #define LUAT_USE_TLS 1
 #define LUAT_USE_SNTP 1
 #define LUAT_USE_FTP 1
-// #define LUAT_USE_PING 1
 
-
-#define LUAT_USE_IOTAUTH 1
+// #define LUAT_USE_IOTAUTH 1
 #define LUAT_USE_LORA 1
 // #define LUAT_USE_MLX90640 1
 #define LUAT_USE_MINIZ 1
@@ -132,7 +135,7 @@
 // #define USE_U8G2_OPPOSANSM32_CHINESE
 /**********LVGL FONT*************/
 //#define LV_FONT_OPPOSANS_M_12
-#define LV_FONT_OPPOSANS_M_16
+// #define LV_FONT_OPPOSANS_M_16
 //---------------------
 // LVGL
 #define LUAT_USE_LCD
