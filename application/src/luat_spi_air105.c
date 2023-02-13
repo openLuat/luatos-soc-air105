@@ -387,6 +387,7 @@ int luat_lcd_draw(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint16_t x2, 
 }
 #endif
 
+#if 1
 static void *luat_fatfs_spi_ctrl;
 static HANDLE luat_fatfs_locker;
 static void sdhc_spi_check(luat_fatfs_spi_t* userdata)
@@ -524,3 +525,10 @@ void *luat_spi_get_sdhc_ctrl(void)
 {
 	return luat_fatfs_spi_ctrl;
 }
+
+#else
+void *luat_spi_get_sdhc_ctrl(void)
+{
+	return NULL;
+}
+#endif
