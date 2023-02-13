@@ -53,6 +53,10 @@ uint64_t luat_mcu_tick64(void) {
 	return GetSysTick();
 }
 
+uint64_t luat_mcu_tick64_ms(void) {
+    return GetSysTickMS();
+}
+
 int luat_mcu_us_period(void) {
 	return SYS_TIMER_1US;
 }

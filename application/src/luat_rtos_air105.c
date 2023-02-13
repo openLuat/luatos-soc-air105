@@ -98,6 +98,11 @@ void *luat_get_current_task(void)
 	return xTaskGetCurrentTaskHandle();
 }
 
+void luat_rtos_task_sleep(uint32_t ms)
+{
+	Task_DelayMS(ms);
+}
+
 void *luat_mutex_create(void)
 {
 	return OS_MutexCreateUnlock();
