@@ -125,8 +125,7 @@ typedef struct
 	uint8_t ExternResult[8];
 	uint8_t ExternLen;
 	uint8_t TempData[__SDHC_BLOCK_LEN__ + 8];
-	uint8_t IsPrintData;
-	uint8_t IsMMC;
+	uint8_t SDSC;
 	uint8_t USBDelayTime;
 	uint8_t WaitFree;
 }SDHC_SPICtrlStruct;

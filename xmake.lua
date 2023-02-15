@@ -425,6 +425,10 @@ if with_luatos then
     -- libftp
     add_includedirs(luatos.."components/network/libftp",{public = true})
     add_files(luatos.."components/network/libftp/*.c")
+    
+    -- websocket
+    add_includedirs(luatos.."components/network/websocket",{public = true})
+    add_files(luatos.."components/network/websocket/*.c")
 
     
     -- http

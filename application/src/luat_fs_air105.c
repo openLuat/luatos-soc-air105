@@ -151,6 +151,7 @@ void FileSystem_Init(void)
 extern const struct luat_vfs_filesystem vfs_fs_lfs2;
 extern const struct luat_vfs_filesystem vfs_fs_luadb;
 extern const struct luat_vfs_filesystem vfs_fs_ram;
+extern size_t luat_luadb_act_size;
 
 #ifdef LUAT_USE_VFS_INLINE_LIB
 //extern const char luadb_inline[];
@@ -191,6 +192,10 @@ int luat_fs_init(void) {
 		.filesystem = "luadb",
 		.mount_point = "/luadb/",
 	};
+	luat_luadb_act_size = __SCRIPT_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__;
+	#ifdef LUAT_USE_FSKV
+	luat_luadb_act_size -= 64 * 1024;
+	#endif
 	luat_fs_mount(&conf2);
 	// #endif
 	#endif

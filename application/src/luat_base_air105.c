@@ -214,6 +214,7 @@ static const luaL_Reg loadedlibs[] = {
   {"socket", luaopen_socket_adapter},
   {"mqtt", luaopen_mqtt},
   {"http", luaopen_http},
+  {"websocket", luaopen_websocket},
 #ifdef LUAT_USE_FTP
   {"ftp", luaopen_ftp},
 #endif

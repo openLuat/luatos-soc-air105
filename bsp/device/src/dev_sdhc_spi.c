@@ -350,17 +350,9 @@ static int32_t SDHC_SpiCmd(SDHC_SPICtrlStruct *Ctrl, uint8_t Cmd, uint32_t Arg, 
 	memset(Ctrl->TempData + 6, 0xff, 8);
 	TxLen = 14;
 
-	if (Ctrl->IsPrintData)
-	{
-		DBG_HexPrintf(Ctrl->TempData, TxLen);
-	}
 	Ctrl->SPIError = 0;
 	Ctrl->SDHCError = 0;
 	SDHC_SpiXfer(Ctrl, Ctrl->TempData, TxLen);
-	if (Ctrl->IsPrintData)
-	{
-		DBG_HexPrintf(Ctrl->TempData, TxLen);
-	}
 	for(i = 7; i < TxLen; i++)
 	{
 		if (Ctrl->TempData[i] != 0xff)
@@ -380,7 +372,12 @@ static int32_t SDHC_SpiCmd(SDHC_SPICtrlStruct *Ctrl, uint8_t Cmd, uint32_t Arg, 
 	{
 		SDHC_SpiCS(Ctrl, 0);
 	}
-//	DBG("cmd %x arg %x result %d", Cmd, Arg, Result);
+	if (Result)
+	{
+		DBG("cmd %x arg %x result %d", Cmd, Arg, Result);
+		DBG_HexPrintf(Ctrl->TempData, TxLen);
+	}
+
 	return Result;
 }
 
@@ -408,17 +405,9 @@ static int32_t SDHC_SpiReadRegData(SDHC_SPICtrlStruct *Ctrl, uint8_t *RegDataBuf
 				DBG("no 0xfe find %d,%x",i,Ctrl->ExternResult[i]);
 			}
 			DummyLen = Ctrl->ExternLen - i - offset;
-			if (Ctrl->IsPrintData)
-			{
-				DBG_HexPrintf(&Ctrl->ExternResult[i], DummyLen + offset);
-			}
 			memcpy(RegDataBuf, &Ctrl->ExternResult[i + offset], DummyLen);
 			memset(RegDataBuf + DummyLen, 0xff, DataLen - DummyLen);
 			SDHC_SpiXfer(Ctrl, RegDataBuf + DummyLen, DataLen - DummyLen);
-			if (Ctrl->IsPrintData)
-			{
-				DBG_HexPrintf(RegDataBuf + DummyLen, DataLen - DummyLen);
-			}
 			goto SDHC_SPIREADREGDATA_DONE;
 		}
 
@@ -432,10 +421,6 @@ static int32_t SDHC_SpiReadRegData(SDHC_SPICtrlStruct *Ctrl, uint8_t *RegDataBuf
 		{
 			if (Ctrl->TempData[i] != 0xff)
 			{
-				if (Ctrl->IsPrintData)
-				{
-					DBG_HexPrintf(Ctrl->TempData, 40);
-				}
 				if (0xfe == Ctrl->TempData[i])
 				{
 					offset = 1;
@@ -501,10 +486,10 @@ static int32_t SDHC_SpiWriteBlockData(SDHC_SPICtrlStruct *Ctrl)
 		waitCnt = 0;
 		while( (GetSysTick() < OpEndTick) && !DoneFlag )
 		{
-			TxLen = Ctrl->WriteWaitCnt?Ctrl->WriteWaitCnt:40;
+			TxLen = Ctrl->WriteWaitCnt?Ctrl->WriteWaitCnt:80;
 			memset(Ctrl->TempData, 0xff, TxLen);
 			SDHC_SpiXfer(Ctrl, Ctrl->TempData, TxLen);
-			for(i = 0; i < TxLen; i++)
+			for(i = 4; i < TxLen; i++)
 			{
 				if (Ctrl->TempData[i] == 0xff)
 				{
@@ -543,7 +528,7 @@ SDHC_SPIWRITEBLOCKDATA_DONE:
 		TxLen = sizeof(Ctrl->TempData);
 		memset(Ctrl->TempData, 0xff, TxLen);
 		SDHC_SpiXfer(Ctrl, Ctrl->TempData, TxLen);
-		for(i = 0; i < TxLen; i++)
+		for(i = 4; i < TxLen; i++)
 		{
 			if (Ctrl->TempData[i] == 0xff)
 			{
@@ -639,22 +624,22 @@ void SDHC_SpiInitCard(void *pSDHC)
 	Ctrl->IsInitDone = 0;
 	Ctrl->SDHCState = 0xff;
 	Ctrl->Info.CardCapacity = 0;
-	Ctrl->WriteWaitCnt = 40;
+	Ctrl->WriteWaitCnt = 80;
 	SPI_SetNewConfig(Ctrl->SpiID, 400000, 0xff);
 	GPIO_Output(Ctrl->CSPin, 0);
 	SDHC_SpiXfer(Ctrl, Ctrl->TempData, 20);
 	GPIO_Output(Ctrl->CSPin, 1);
 	memset(Ctrl->TempData, 0xff, 20);
 	SDHC_SpiXfer(Ctrl, Ctrl->TempData, 20);
-	Ctrl->IsMMC = 0;
+	Ctrl->SDSC = 0;
 	if (SDHC_SpiCmd(Ctrl, CMD0, 0, 1))
 	{
 		goto INIT_DONE;
 	}
-	OpEndTick = GetSysTick() + 1 * CORE_TICK_1S;
+	OpEndTick = GetSysTick() + 3 * CORE_TICK_1S;
 	if (SDHC_SpiCmd(Ctrl, CMD8, 0x1aa, 1))	//只支持2G以上的SDHC卡
 	{
-		goto INIT_DONE;
+		Ctrl->SDSC = 1;
 	}
 WAIT_INIT_DONE:
 	if (GetSysTick() >= OpEndTick)
@@ -665,13 +650,24 @@ WAIT_INIT_DONE:
 	{
 		goto INIT_DONE;
 	}
-	if (SDHC_SpiCmd(Ctrl, SD_CMD_SD_APP_OP_COND, 0x40000000, 1))
+	if (Ctrl->SDSC)
 	{
-		goto INIT_DONE;
+		if (SDHC_SpiCmd(Ctrl, SD_CMD_SD_APP_OP_COND, 0, 1))
+		{
+			goto INIT_DONE;
+		}
+	}
+	else
+	{
+		if (SDHC_SpiCmd(Ctrl, SD_CMD_SD_APP_OP_COND, 0x40000000, 1))
+		{
+			goto INIT_DONE;
+		}
 	}
 	Ctrl->IsInitDone = !Ctrl->SDHCState;
 	if (!Ctrl->IsInitDone)
 	{
+		Task_DelayMS(10);
 		goto WAIT_INIT_DONE;
 	}
 	if (SDHC_SpiCmd(Ctrl, CMD58, 0, 1))
@@ -701,6 +697,7 @@ void SDHC_SpiReadCardConfig(void *pSDHC)
 	SD_CardInfo *pCardInfo = &Ctrl->Info;
 	uint64_t Temp;
 	uint8_t flag_SDHC = (Ctrl->OCR & 0x40000000) >> 30;
+	Ctrl->SDSC = !flag_SDHC;
 	if (Ctrl->Info.CardCapacity) return;
 
 	if (SDHC_SpiCmd(Ctrl, CMD9, 0, 0))
@@ -866,7 +863,7 @@ void SDHC_SpiReadCardConfig(void *pSDHC)
 		pCardInfo->CardCapacity *= pCardInfo->CardBlockSize;
 		pCardInfo->LogBlockNbr = (pCardInfo->CardCapacity) / (pCardInfo->LogBlockSize);
     }
-//    DBG("卡容量 %lluKB", pCardInfo->CardCapacity/1024);
+    DBG("卡容量 %lluKB", pCardInfo->CardCapacity/1024);
 	return;
 READ_CONFIG_ERROR:
 	Ctrl->IsInitDone = 0;
@@ -886,9 +883,25 @@ void SDHC_SpiReadBlocks(void *pSDHC, uint8_t *Buf, uint32_t StartLBA, uint32_t B
 		return;
 	}
 #endif
+	if (Ctrl->SDSC)
+	{
+		if (SDHC_SpiCmd(Ctrl, CMD16, 512, 1))
+		{
+			goto SDHC_SPIREADBLOCKS_ERROR;
+		}
+	}
+	uint32_t address;
 	Buffer_StaticInit(&Ctrl->DataBuf, Buf, BlockNums);
 SDHC_SPIREADBLOCKS_START:
-	if (SDHC_SpiCmd(Ctrl, CMD18, StartLBA + Ctrl->DataBuf.Pos, 0))
+	if (Ctrl->SDSC)
+	{
+		address = (StartLBA + Ctrl->DataBuf.Pos) * 512;
+	}
+	else
+	{
+		address = (StartLBA + Ctrl->DataBuf.Pos);
+	}
+	if (SDHC_SpiCmd(Ctrl, CMD18, address, 0))
 	{
 		goto SDHC_SPIREADBLOCKS_CHECK;
 	}
@@ -958,15 +971,31 @@ void SDHC_SpiWriteBlocks(void *pSDHC, const uint8_t *Buf, uint32_t StartLBA, uin
 		return;
 	}
 #endif
-	Buffer_StaticInit(&Ctrl->DataBuf, Buf, BlockNums);
-SDHC_SPIREADBLOCKS_START:
-	if (SDHC_SpiCmd(Ctrl, CMD25, StartLBA + Ctrl->DataBuf.Pos, 0))
+	if (Ctrl->SDSC)
 	{
-		goto SDHC_SPIREADBLOCKS_ERROR;
+		if (SDHC_SpiCmd(Ctrl, CMD16, 512, 1))
+		{
+			goto SDHC_SPIWRITEBLOCKS_ERROR;
+		}
+	}
+	uint32_t address;
+	Buffer_StaticInit(&Ctrl->DataBuf, Buf, BlockNums);
+SDHC_SPIWRITEBLOCKS_START:
+	if (Ctrl->SDSC)
+	{
+		address = (StartLBA + Ctrl->DataBuf.Pos) * 512;
+	}
+	else
+	{
+		address = (StartLBA + Ctrl->DataBuf.Pos);
+	}
+	if (SDHC_SpiCmd(Ctrl, CMD25, address, 0))
+	{
+		goto SDHC_SPIWRITEBLOCKS_ERROR;
 	}
 	if (SDHC_SpiWriteBlockData(Ctrl))
 	{
-		goto SDHC_SPIREADBLOCKS_ERROR;
+		goto SDHC_SPIWRITEBLOCKS_ERROR;
 	}
 	if (Ctrl->DataBuf.Pos != Ctrl->DataBuf.MaxLen)
 	{
@@ -975,15 +1004,15 @@ SDHC_SPIREADBLOCKS_START:
 		if (Retry > 3)
 		{
 			Ctrl->SDHCError = 1;
-			goto SDHC_SPIREADBLOCKS_ERROR;
+			goto SDHC_SPIWRITEBLOCKS_ERROR;
 		}
-		goto SDHC_SPIREADBLOCKS_START;
+		goto SDHC_SPIWRITEBLOCKS_START;
 	}
 #ifdef __BUILD_OS__
 	OS_MutexRelease(prvRWMutex);
 #endif
 	return;
-SDHC_SPIREADBLOCKS_ERROR:
+SDHC_SPIWRITEBLOCKS_ERROR:
 	DBG("write error!");
 	Ctrl->IsInitDone = 0;
 	Ctrl->SDHCError = 1;
@@ -998,8 +1027,8 @@ void *SDHC_SpiCreate(uint8_t SpiID, uint8_t CSPin)
 	SDHC_SPICtrlStruct *Ctrl = zalloc(sizeof(SDHC_SPICtrlStruct));
 	Ctrl->CSPin = CSPin;
 	Ctrl->SpiID = SpiID;
-	Ctrl->SDHCReadBlockTo = 50 * CORE_TICK_1MS;
-	Ctrl->SDHCWriteBlockTo = 50 * CORE_TICK_1MS;
+	Ctrl->SDHCReadBlockTo = 100 * CORE_TICK_1MS;
+	Ctrl->SDHCWriteBlockTo = 100 * CORE_TICK_1MS;
 #ifdef __BUILD_OS__
 	if (!prvRWMutex)
 	{

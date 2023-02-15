@@ -74,7 +74,7 @@
 // #define LUAT_USE_PROTOBUF
 
 #define LUAT_USE_FATFS 1
-#define LUAT_TF_SPI_FAST
+#define LUAT_USE_FATFS_CHINESE
 // #define LUAT_FF_USE_LFN 3
 // #define LUAT_FF_LFN_UNICODE 3
 
@@ -135,7 +135,7 @@
 // #define USE_U8G2_OPPOSANSM32_CHINESE
 /**********LVGL FONT*************/
 //#define LV_FONT_OPPOSANS_M_12
-// #define LV_FONT_OPPOSANS_M_16
+#define LV_FONT_OPPOSANS_M_16
 //---------------------
 // LVGL
 #define LUAT_USE_LCD
