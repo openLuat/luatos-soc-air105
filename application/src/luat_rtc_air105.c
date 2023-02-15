@@ -23,6 +23,8 @@
 #include "luat_rtc.h"
 #include "app_interface.h"
 
+extern int Base_year;
+
 int luat_rtc_set(struct tm *tblock) {
 	Date_UserDataStruct Date;
 	Time_UserDataStruct Time;
@@ -35,6 +37,9 @@ int luat_rtc_set(struct tm *tblock) {
     Date.Year = tblock->tm_year;
     Date.Mon = tblock->tm_mon;
     Date.Day = tblock->tm_mday;
+
+    Date.Year += Base_year;
+    Date.Mon += 1;
 
     RTC_SetDateTime(&Date, &Time, 1);
     return 0;
@@ -58,6 +63,10 @@ int luat_rtc_get(struct tm *tblock) {
     tblock->tm_year = Date.Year;
     tblock->tm_mon = Date.Mon;
     tblock->tm_mday = Date.Day;
+
+    tblock->tm_year -= Base_year;
+    tblock->tm_mon -= 1;
+
     return 0;
 }
 
