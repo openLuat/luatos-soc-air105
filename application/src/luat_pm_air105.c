@@ -15,7 +15,7 @@ int luat_pm_request(int mode) {
 //    {
 //    	Uart_Sleep(i, 0);
 //    }
-	if (mode != LUAT_PM_SLEEP_MODE_IDLE)
+	if (mode > LUAT_PM_SLEEP_MODE_IDLE)
 	{
 		PM_SetDriverRunFlag(PM_DRV_DBG, 0);
 	}
@@ -23,6 +23,7 @@ int luat_pm_request(int mode) {
 	{
 		PM_SetDriverRunFlag(PM_DRV_DBG, 1);
 	}
+
     return 0;
 }
 
