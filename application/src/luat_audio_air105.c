@@ -458,7 +458,7 @@ void luat_audio_config_pa(uint8_t multimedia_id, uint32_t pin, int level, uint32
 	}
 }
 
-void luat_audio_config_dac(uint8_t multimedia_id, int pin, int level)
+void luat_audio_config_dac(uint8_t multimedia_id, int pin, int level, uint32_t dac_off_delay_time)
 {
 
 }
