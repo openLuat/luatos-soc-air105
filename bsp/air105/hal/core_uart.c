@@ -48,6 +48,7 @@ typedef struct
 	Buffer_Struct RxDMABuf[RX_BUF_BAND];
 #endif
 	uint32_t LastError;
+	uint32_t RxBufferSize;
 #ifdef __RX_USE_DMA__
 	uint8_t RxDMASn;
 
@@ -200,7 +201,7 @@ void Uart_BaseInit(uint8_t UartID, uint32_t BaudRate, uint8_t IsRxCacheEnable, u
     UART_FIFOInitStruct.FIFO_RX_Trigger = UART_FIFO_RX_Trigger_1_2_Full;
     UART_FIFOInitStruct.FIFO_TX_Trigger = UART_FIFO_TX_Trigger_1_4_Full;
     UART_FIFOInitStruct.FIFO_TX_TriggerIntEnable = ENABLE;
-
+    prvUart[UartID].RxBufferSize = 1024;
     ISR_SetHandler(prvUart[UartID].IrqLine, prvUart_IrqHandle, (void *)UartID);
 #ifdef __BUILD_OS__
 	ISR_SetPriority(prvUart[UartID].IrqLine, IRQ_MAX_PRIORITY + 2);
@@ -297,6 +298,11 @@ void Uart_BaseInit(uint8_t UartID, uint32_t BaudRate, uint8_t IsRxCacheEnable, u
     }
 }
 
+
+void Uart_SetRxBufferSize(uint8_t UartID, uint32_t RxBufferSize)
+{
+	prvUart[UartID].RxBufferSize = RxBufferSize?RxBufferSize:1024;
+}
 
 void Uart_SetCb(uint8_t UartID, CBFuncEx_t CB)
 {
@@ -651,10 +657,13 @@ static void prvUart_IrqHandle(int32_t IrqLine, void *pData)
 			if (prvUart[UartID].RxCacheMode)
 			{
 				Uart_CacheRead(UartID, 8);
+				if (prvUart[UartID].RxBuf.Pos > prvUart[UartID].RxBufferSize)
+				{
+					prvUart[UartID].Callback((uint32_t)UartID, (void *)UART_CB_RX_BUFFER_FULL);
+				}
 				break;
 			}
 #endif
-
 			prvUart[UartID].Callback((uint32_t)UartID, (void *)UART_CB_RX_NEW);
 		}
 		break;

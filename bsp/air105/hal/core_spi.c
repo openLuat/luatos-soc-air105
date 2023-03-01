@@ -75,6 +75,7 @@ typedef struct
 	Buffer_Struct RxBuf;
 	uint32_t Speed;
 	uint32_t TargetSpeed;
+	uint32_t UseDMAValue;
 	uint8_t DMATxStream;
 	uint8_t DMARxStream;
 	uint8_t Is16Bit;
@@ -84,7 +85,7 @@ typedef struct
 	uint8_t SpiMode;
 	uint8_t timeout;
 }SPI_ResourceStruct;
-
+#define USE_DMA_MIN_FRQ	(100000)
 static SPI_ResourceStruct prvSPI[SPI_MAX] = {
 		{
 				HSPIM,
@@ -386,6 +387,7 @@ static void HSPI_MasterInit(uint8_t SpiID, uint8_t Mode, uint32_t Speed)
 	SPI->CR0 = ctrl;
 	SPI->DCR = 30|(1 << 7);
 	prvSPI[SpiID].Speed = (SystemCoreClock >> 1) / div;
+	prvSPI[SpiID].UseDMAValue = (prvSPI[SpiID].Speed >> 3) / USE_DMA_MIN_FRQ;
 	ISR_SetHandler(prvSPI[SpiID].IrqLine, HSPI_IrqHandle, (uint32_t)SpiID);
 #ifdef __BUILD_OS__
 	ISR_SetPriority(prvSPI[SpiID].IrqLine, IRQ_MAX_PRIORITY + 1);
@@ -437,6 +439,7 @@ void SPI_MasterInit(uint8_t SpiID, uint8_t DataBit, uint8_t Mode, uint32_t Speed
 		if (!div) div = 2;
 		if (div % 2) div++;
 		prvSPI[SpiID].Speed = (SystemCoreClock >> 2) / div;
+		prvSPI[SpiID].UseDMAValue = (prvSPI[SpiID].Speed >> 3) / USE_DMA_MIN_FRQ;
 		SPI->CTRLR0 = ctrl;
 		SPI->BAUDR = div;
 		SPI->TXFTLR = 0;
@@ -784,18 +787,9 @@ static int32_t prvSPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_
 
 int32_t SPI_BlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint8_t *RxData, uint32_t Len)
 {
-	uint32_t times = 192000000;
-	if (prvSPI[SpiID].Speed >= 48000000)
-	{
-		times = Len * 100000;
-	}
-	else if (prvSPI[SpiID].Speed >= 8000000)
-	{
-		times = Len * 1000000;
-	}
 #ifdef __BUILD_OS__
 	//if ( OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= (Len * 50000 * ((SpiID==HSPI_ID0)?2:1))))
-	if ( OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= times))
+	if ( OS_CheckInIrq() || (Len <= prvSPI[SpiID].UseDMAValue))
 	{
 		prvSPI[SpiID].IsBlockMode = 0;
 #endif
@@ -976,18 +970,9 @@ static int32_t prvSPI_FlashBlockTransfer(uint8_t SpiID, const uint8_t *TxData, u
 
 int32_t SPI_FlashBlockTransfer(uint8_t SpiID, const uint8_t *TxData, uint32_t WLen, uint8_t *RxData, uint32_t RLen)
 {
-	uint32_t times = 192000000;
-	if (prvSPI[SpiID].Speed >= 48000000)
-	{
-		times = (WLen + RLen) * 100000;
-	}
-	else if (prvSPI[SpiID].Speed >= 8000000)
-	{
-		times = (WLen + RLen)  * 1000000;
-	}
 #ifdef __BUILD_OS__
 //	if ( OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= ((WLen + RLen) * 50000 * ((SpiID==HSPI_ID0)?2:1) )))
-	if ( OS_CheckInIrq() || ((prvSPI[SpiID].Speed >> 3) >= times))
+	if ( OS_CheckInIrq() || ((WLen + RLen) <= prvSPI[SpiID].UseDMAValue))
 	{
 		prvSPI[SpiID].IsBlockMode = 0;
 #endif
@@ -1211,4 +1196,5 @@ void SPI_SetNewConfig(uint8_t SpiID, uint32_t Speed, uint8_t NewMode)
 		SPI->SSIENR = 1;
 		break;
 	}
+	prvSPI[SpiID].UseDMAValue = (prvSPI[SpiID].Speed >> 3) / USE_DMA_MIN_FRQ;
 }

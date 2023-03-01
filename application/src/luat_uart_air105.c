@@ -233,6 +233,7 @@ int luat_uart_setup(luat_uart_t *uart){
     } else {
     	serials[uart->id].rx_mark = 0;
         Uart_BaseInit(uart->id, uart->baud_rate, 1, (uart->data_bits), parity, stop_bits, NULL);
+        Uart_SetRxBufferSize(uart->id, uart->bufsz);
         serials[uart->id].rs485_param_bit.is_485used = (uart->pin485 < GPIO_NONE)?1:0;
         serials[uart->id].rs485_pin = uart->pin485;
         serials[uart->id].rs485_param_bit.rx_level = uart->rx_level;
