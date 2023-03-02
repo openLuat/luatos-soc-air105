@@ -112,7 +112,11 @@
 // #define LUAT_USE_VMX 1 
 // #define LUAT_USE_NES
 
+// RSA 加解密,加签验签
 #define LUAT_USE_RSA 1
+
+// 国密算法 SM2/SM3/SM4
+// #define LUAT_USE_GMSSL 1
 
 //---------------------
 // UI

@@ -468,6 +468,15 @@ if with_luatos then
 
     add_files(luatos.."components/max30102/*.c")
     add_includedirs(luatos.."components/max30102")
+
+    -- 国密算法, by chenxudong1208, 基于GMSSL
+    add_includedirs(luatos.."components/gmssl/include")
+    add_includedirs(luatos.."components/gmssl/include/internal")
+    add_includedirs(luatos.."components/gmssl/include/openssl")
+    add_includedirs(luatos.."components/gmssl/include/sm2")
+    add_includedirs(luatos.."components/gmssl/include/sm3")
+    add_includedirs(luatos.."components/gmssl/include/sm4")
+    add_files(luatos.."components/gmssl/src/**.c")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})

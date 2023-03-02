@@ -256,6 +256,9 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_MAX30102
   {"max30102", luaopen_max30102},
 #endif
+#ifdef LUAT_USE_GMSSL
+  {"gmssl",  luaopen_gmssl},              // 国密算法
+#endif
   {NULL, NULL}
 };
 
