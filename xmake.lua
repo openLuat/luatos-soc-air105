@@ -465,6 +465,9 @@ if with_luatos then
     -- 添加fskv
     add_includedirs(luatos.."components/fskv")
     add_files(luatos.."components/fskv/*.c")
+
+    add_files(luatos.."components/max30102/*.c")
+    add_includedirs(luatos.."components/max30102")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})

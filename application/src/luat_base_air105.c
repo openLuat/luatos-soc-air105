@@ -253,6 +253,9 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_IO_QUEUE
   {"ioqueue", luaopen_io_queue},
 #endif
+#ifdef LUAT_USE_MAX30102
+  {"max30102", luaopen_max30102},
+#endif
   {NULL, NULL}
 };
 

@@ -92,6 +92,7 @@
 
 // #define LUAT_USE_IOTAUTH 1
 #define LUAT_USE_LORA 1
+// #define LUAT_USE_MAX30102 1
 // #define LUAT_USE_MLX90640 1
 #define LUAT_USE_MINIZ 1
 
