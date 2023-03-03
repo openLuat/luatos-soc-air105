@@ -37,6 +37,7 @@ enum
 	PM_HW_MAX = 32,
 	PM_DRV_USB = 0,
 	PM_DRV_DBG,
+	PM_DRV_SOFT_UART,
 	PM_DRV_USER,
 	PM_DRV_MAX = 32,
 };

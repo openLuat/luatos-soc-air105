@@ -49,6 +49,7 @@
 #define LUAT_USE_KEYBOARD 1
 #define LUAT_USE_DAC 1
 #define LUAT_USE_OTP 1
+#define LUAT_USE_SOFT_UART 1
 
 #define LUAT_USE_CRYPTO  1
 #define LUAT_USE_CJSON  1
@@ -92,7 +93,7 @@
 
 // #define LUAT_USE_IOTAUTH 1
 #define LUAT_USE_LORA 1
-// #define LUAT_USE_MAX30102 1
+// #define LUAT_USE_MAX30102
 // #define LUAT_USE_MLX90640 1
 #define LUAT_USE_MINIZ 1
 
@@ -117,6 +118,7 @@
 
 // 国密算法 SM2/SM3/SM4
 // #define LUAT_USE_GMSSL 1
+
 
 //---------------------
 // UI

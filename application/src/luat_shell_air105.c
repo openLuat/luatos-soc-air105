@@ -22,9 +22,9 @@
 
 #include "luat_base.h"
 #include "luat_shell.h"
-
-#include "luat_uart.h"
 #include "app_interface.h"
+#include "luat_uart.h"
+
 
 
 #define LUAT_LOG_TAG "luat.shell"

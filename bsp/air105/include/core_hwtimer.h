@@ -120,4 +120,7 @@ uint32_t HWTimer_GetOperationQueueCaptureResult(uint8_t HWTimerID, CBFuncEx_t CB
 uint32_t HWTimer_GetOperationQueueLen(uint8_t HWTimerID);
 
 OPQueue_CmdStruct *HWTimer_GetOperationQueue(uint8_t HWTimerID);
+
+int HWTimer_GetIrqLine(uint8_t HWTimerID);
+uint8_t HWTimer_GetIDFromIrqline(int Irqline);
 #endif

@@ -725,3 +725,20 @@ OPQueue_CmdStruct *HWTimer_GetOperationQueue(uint8_t HWTimerID)
 {
 	return 	prvHWTimer[HWTimerID].Cmd;
 }
+
+int __FUNC_IN_RAM__ HWTimer_GetIrqLine(uint8_t HWTimerID)
+{
+	return prvHWTimer[HWTimerID].IrqLine;
+}
+
+uint8_t __FUNC_IN_RAM__ HWTimer_GetIDFromIrqline(int Irqline)
+{
+	if (Irqline > TIM0_3_IRQn)
+	{
+		return (Irqline - TIM0_4_IRQn) + 4;
+	}
+	else
+	{
+		return (Irqline - TIM0_0_IRQn);
+	}
+}
