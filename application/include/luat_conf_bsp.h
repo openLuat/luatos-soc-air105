@@ -216,4 +216,6 @@ extern unsigned int gLVFlashTime;
 #define LUAT_RT_RET_TYPE int
 #define LUAT_RT_RET	0
 #define LUAT_RT_CB_PARAM void *pdata, void *param
+
+#define __LUAT_C_CODE_IN_RAM__ __attribute__((section (".RamFunc")))
 #endif

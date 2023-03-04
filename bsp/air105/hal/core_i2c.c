@@ -202,8 +202,8 @@ void I2C_MasterSetup(uint8_t I2CID, uint32_t Speed)
 	uint32_t Cnt = ((SystemCoreClock >> 3) / Speed);
 	I2C->IC_ENABLE = 0;
 	while(I2C->IC_ENABLE_STATUS & I2C_IC_ENABLE_STATUS_IC_EN){;}
-	I2C->IC_SDA_HOLD = 5;
-	I2C->IC_SDA_SETUP = Cnt/3;
+	I2C->IC_SDA_HOLD = Cnt >> 2;
+	I2C->IC_SDA_SETUP = Cnt >> 2;
 	switch(Speed)
 	{
 	case 100000:
