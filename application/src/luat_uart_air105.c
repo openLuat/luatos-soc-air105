@@ -20,11 +20,12 @@
  */
 
 #include "luat_base.h"
+#include "app_interface.h"
 #include "luat_malloc.h"
 #include "luat_msgbus.h"
 #include "luat_uart.h"
 
-#include "app_interface.h"
+
 
 
 #define LUAT_LOG_TAG "luat.uart"
@@ -321,3 +322,77 @@ int luat_uart_wait_485_tx_done(int uartid)
     }
     return cnt;
 }
+
+#ifdef LUAT_USE_SOFT_UART
+#ifdef __AIR105_BSP__
+#include "air105.h"
+#include "air105_conf.h"
+#endif
+#ifndef __BSP_COMMON_H__
+#include "c_common.h"
+#endif
+
+static void __FUNC_IN_RAM__ prvHWTimer_IrqHandler(int32_t Line, void *pData)
+{
+	CommonFun_t callback = (CommonFun_t )pData;
+	uint8_t hwtimer_id = HWTimer_GetIDFromIrqline(Line);
+	volatile uint32_t clr;
+	clr = TIMM0->TIM[hwtimer_id].EOI;
+	callback();
+}
+
+int luat_uart_soft_setup_hwtimer_callback(int hwtimer_id, CommonFun_t callback)
+{
+	int irq_line = HWTimer_GetIrqLine(hwtimer_id);
+
+	TIMM0->TIM[hwtimer_id].ControlReg = 0;
+	ISR_OnOff(irq_line, 0);
+	ISR_Clear(irq_line);
+	if (callback)
+	{
+		ISR_SetHandler(irq_line, prvHWTimer_IrqHandler, callback);
+		ISR_SetPriority(irq_line, 3);
+		ISR_OnOff(irq_line, 1);
+	}
+	return 0;
+}
+void __FUNC_IN_RAM__ luat_uart_soft_gpio_fast_output(int pin, uint8_t value)
+{
+	GPIO_Output(pin, value);
+}
+uint8_t __FUNC_IN_RAM__ luat_uart_soft_gpio_fast_input(int pin)
+{
+	return GPIO_Input(pin);
+}
+void luat_uart_soft_gpio_fast_irq_set(int pin, uint8_t on_off)
+{
+	if (on_off)
+	{
+		GPIO_ExtiConfig(pin, 0, 0, 1);
+	}
+	else
+	{
+		GPIO_ExtiConfig(pin, 0, 0, 0);
+	}
+}
+uint32_t luat_uart_soft_cal_baudrate(uint32_t baudrate)
+{
+	return (48000000/baudrate);
+}
+void __FUNC_IN_RAM__ luat_uart_soft_hwtimer_onoff(int hwtimer_id, uint32_t period)
+{
+	TIMM0->TIM[hwtimer_id].ControlReg = 0;
+
+    // Enable TIMER IRQ
+    if (period)
+    {
+    	TIMM0->TIM[hwtimer_id].LoadCount = period - 1;
+    	TIMM0->TIM[hwtimer_id].ControlReg = TIMER_CONTROL_REG_TIMER_ENABLE|TIMER_CONTROL_REG_TIMER_MODE;
+    }
+}
+
+void __FUNC_IN_RAM__ luat_uart_soft_sleep_enable(uint8_t is_enable)
+{
+	PM_SetDriverRunFlag(PM_DRV_SOFT_UART, !is_enable);
+}
+#endif
