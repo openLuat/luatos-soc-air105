@@ -45,7 +45,6 @@
 #define LUAT_USE_MCU  1
 // #define LUAT_USE_HWTIMER  1
 #define LUAT_USE_RTC 1
-// #define LUAT_USE_SDIO 1
 #define LUAT_USE_KEYBOARD 1
 #define LUAT_USE_DAC 1
 #define LUAT_USE_OTP 1
