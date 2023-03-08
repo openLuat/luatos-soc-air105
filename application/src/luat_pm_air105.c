@@ -78,3 +78,7 @@ int luat_pm_power_ctrl(int id, uint8_t onoff) {
     return -1;
 }
 
+int luat_pm_wakeup_pin(int pin, int val){
+    LLOGW("not support yet");
+    return -1;
+}
