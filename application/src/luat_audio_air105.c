@@ -472,3 +472,7 @@ int luat_audio_play_get_last_error(uint8_t multimedia_id)
 {
 	return prvAudioStream.LastError;
 }
+
+void luat_audio_set_bus_type(uint8_t bus_type)
+{
+}
