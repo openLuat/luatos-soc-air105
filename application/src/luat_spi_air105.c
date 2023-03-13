@@ -114,7 +114,7 @@ int luat_spi_setup(luat_spi_t* spi) {
     uint8_t spi_id = spi->id;
     if (spi_id == 0) {
         luat_spi[spi_id].id=SPI_ID0;
-        if (spi_id == 0 || spi->cs == GPIOB_13)
+        if (spi->cs == 0 || spi->cs == GPIOB_13)
             GPIO_Iomux(GPIOB_13, 0);
         GPIO_Iomux(GPIOB_12, 0);
         GPIO_Iomux(GPIOB_14, 0);
@@ -122,7 +122,7 @@ int luat_spi_setup(luat_spi_t* spi) {
     }
     else if (spi_id == 1) {
         luat_spi[spi_id].id=SPI_ID1;
-        if (spi_id == 1 || spi->cs == GPIOA_07)
+        if (spi->cs == 0 || spi->cs == GPIOA_07)
 	        GPIO_Iomux(GPIOA_07,3);
 	    GPIO_Iomux(GPIOA_06,3);
 	    GPIO_Iomux(GPIOA_08,3);
@@ -130,7 +130,7 @@ int luat_spi_setup(luat_spi_t* spi) {
     }
     else if (spi_id == 2) {
         luat_spi[spi_id].id=SPI_ID2;
-        if (spi_id == 2 || spi->cs == GPIOB_03)
+        if (spi->cs == 0 || spi->cs == GPIOB_03)
 	        GPIO_Iomux(GPIOB_03,0);
 	    GPIO_Iomux(GPIOB_02,0);
 	    GPIO_Iomux(GPIOB_04,0);
@@ -138,7 +138,7 @@ int luat_spi_setup(luat_spi_t* spi) {
     }
     else if (spi_id == 5) {
         luat_spi[spi_id].id=HSPI_ID0;
-        if (spi_id == 5 || spi->cs == GPIOC_14)
+        if (spi->cs == 0 || spi->cs == GPIOC_14)
 	        GPIO_Iomux(GPIOC_14,3);
 	    GPIO_Iomux(GPIOC_12,3);
 	    GPIO_Iomux(GPIOC_13,3);
