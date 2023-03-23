@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include "luat_multimedia.h"
 #include "app_interface.h"
-#include "mp3_decode/minimp3.h"
 #define LUAT_LOG_TAG "audio"
 #include "luat_log.h"
 #include "luat_audio.h"
@@ -69,8 +68,7 @@ static int32_t luat_audio_mp3_decode(void *pData, void *pParam)
 	uint32_t pos = 0;
 	int read_len;
 	int result;
-	mp3dec_frame_info_t info;
-	mp3dec_t *mp3_decoder = (mp3dec_t *)pParam;
+	uint32_t out_len, hz, used;
 	Audio_StreamStruct *Stream = (Audio_StreamStruct *)pData;
 	Stream->AudioDataBuffer.Pos = 0;
 
@@ -81,11 +79,11 @@ static int32_t luat_audio_mp3_decode(void *pData, void *pParam)
 		while (( Stream->AudioDataBuffer.Pos < (Stream->AudioDataBuffer.MaxLen - MP3_FRAME_LEN * 2) ) && (Stream->IsFileNotEnd || Stream->FileDataBuffer.Pos > 2) && !Stream->IsStop)
 		{
 			STEP(3);
-			if (Stream->FileDataBuffer.Pos < MINIMP3_MAX_SAMPLES_PER_FRAME)
+			if (Stream->FileDataBuffer.Pos < MP3_MAX_CODED_FRAME_SIZE)
 			{
 				if (Stream->IsFileNotEnd)
 				{
-					read_len = luat_fs_fread(Stream->FileDataBuffer.Data + Stream->FileDataBuffer.Pos, MINIMP3_MAX_SAMPLES_PER_FRAME, 1, Stream->fd);
+					read_len = luat_fs_fread(Stream->FileDataBuffer.Data + Stream->FileDataBuffer.Pos, MP3_MAX_CODED_FRAME_SIZE, 1, Stream->fd);
 					if (read_len > 0)
 					{
 						Stream->FileDataBuffer.Pos += read_len;
@@ -100,21 +98,20 @@ static int32_t luat_audio_mp3_decode(void *pData, void *pParam)
 			STEP(4);
 			do
 			{
-				memset(&info, 0, sizeof(info));
 				STEP(5);
-				result = mp3dec_decode_frame(mp3_decoder, Stream->FileDataBuffer.Data + pos, Stream->FileDataBuffer.Pos - pos,
-						(mp3d_sample_t *)&Stream->AudioDataBuffer.Data[Stream->AudioDataBuffer.Pos], &info);
+				result = mp3_decoder_get_data(pParam, Stream->FileDataBuffer.Data + pos, Stream->FileDataBuffer.Pos - pos,
+						(int16_t *)&Stream->AudioDataBuffer.Data[Stream->AudioDataBuffer.Pos], &out_len, &hz, &used);
 				STEP(6);
 				if (result > 0)
 				{
-					Stream->AudioDataBuffer.Pos += (result * info.channels * 2);
+					Stream->AudioDataBuffer.Pos += out_len;
 				}
-				pos += info.frame_bytes;
+				pos += used;
 				if (Stream->AudioDataBuffer.Pos >= (Stream->AudioDataBuffer.MaxLen - MP3_FRAME_LEN * 2))
 				{
 					break;
 				}
-			} while ( ((Stream->FileDataBuffer.Pos - pos) >= (MINIMP3_MAX_SAMPLES_PER_FRAME * Stream->IsFileNotEnd + 1)) && !Stream->IsStop);
+			} while ( ((Stream->FileDataBuffer.Pos - pos) >= (MP3_MAX_CODED_FRAME_SIZE * Stream->IsFileNotEnd + 1)) && !Stream->IsStop);
 			STEP(7);
 			OS_BufferRemove(&Stream->FileDataBuffer, pos);
 		}
@@ -308,16 +305,15 @@ int luat_audio_play_file(uint8_t multimedia_id, const char *path)
 
 	uint32_t jump, i;
 	uint8_t temp[16];
-	mp3dec_t *mp3_decoder;
+	void *mp3_decoder;
 	int result;
 	int audio_format = MULTIMEDIA_DATA_TYPE_PCM;
-	int num_channels;
-	int sample_rate;
+	uint8_t num_channels;
+	uint32_t sample_rate;
 	int bits_per_sample = 16;
 	uint32_t align;
 	int is_signed = 1;
     size_t len;
-	mp3dec_frame_info_t info;
 	FILE *fd = luat_fs_fopen(path, "r");
 	if (!fd)
 	{
@@ -341,19 +337,16 @@ int luat_audio_play_file(uint8_t multimedia_id, const char *path)
 		{
 			luat_fs_fseek(fd, 0, SEEK_SET);
 		}
-		mp3_decoder = luat_heap_malloc(sizeof(mp3dec_t));
-		memset(mp3_decoder, 0, sizeof(mp3dec_t));
-		mp3dec_init(mp3_decoder);
+		mp3_decoder = mp3_decoder_create();
+		mp3_decoder_init(mp3_decoder);
 		OS_InitBuffer(&prvAudioStream.FileDataBuffer, MP3_FRAME_LEN);
 		prvAudioStream.FileDataBuffer.Pos = luat_fs_fread(prvAudioStream.FileDataBuffer.Data, MP3_FRAME_LEN, 1, fd);
-		result = mp3dec_decode_frame(mp3_decoder, prvAudioStream.FileDataBuffer.Data, prvAudioStream.FileDataBuffer.Pos, NULL, &info);
+
+		result = mp3_decoder_get_info(mp3_decoder, prvAudioStream.FileDataBuffer.Data, prvAudioStream.FileDataBuffer.Pos, &sample_rate, &num_channels);
 		if (result)
 		{
 			prvAudioStream.CoderParam = mp3_decoder;
-
-			memset(mp3_decoder, 0, sizeof(mp3dec_t));
-			num_channels = info.channels;
-			sample_rate = info.hz;
+			mp3_decoder_init(mp3_decoder);
 			len = (num_channels * sample_rate >> 2);	//一次时间为1/16秒
 			OS_ReInitBuffer(&prvAudioStream.AudioDataBuffer, len + MP3_FRAME_LEN * 2);	//防止溢出，需要多一点空间
 			prvAudioStream.Decoder = luat_audio_mp3_decode;
