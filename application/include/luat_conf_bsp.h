@@ -118,6 +118,7 @@
 // 国密算法 SM2/SM3/SM4
 // #define LUAT_USE_GMSSL 1
 
+// #define LUAT_USE_ICONV 1
 
 //---------------------
 // UI

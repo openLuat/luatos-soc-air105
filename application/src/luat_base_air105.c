@@ -259,6 +259,9 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_GMSSL
   {"gmssl",  luaopen_gmssl},              // 国密算法
 #endif
+#ifdef LUAT_USE_ICONV
+  {"iconv", luaopen_iconv},
+#endif
   {NULL, NULL}
 };
 
