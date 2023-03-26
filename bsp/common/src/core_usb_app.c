@@ -1026,6 +1026,25 @@ READ_END:
 	return ReadLen;
 }
 
+void Core_VUartRxBufferClear(uint8_t UartID)
+{
+	Virtual_UartCtrlStruct *pVUart = &prvLuatOS_VirtualUart[UartID];
+	switch(UartID)
+	{
+	case VIRTUAL_UART0:
+		USB_StackEpIntOnOff(pVUart->USB_ID, pVUart->ToDeviceEpIndex, 1, 0);
+		break;
+	}
+	pVUart->RxBuf.Pos = 0;
+	switch(UartID)
+	{
+	case VIRTUAL_UART0:
+		USB_StackEpIntOnOff(pVUart->USB_ID, pVUart->ToDeviceEpIndex, 1, 1);
+		break;
+	}
+	return ;
+}
+
 int32_t Core_VUartBufferTx(uint8_t UartID, const uint8_t *Data, uint32_t Len)
 {
 	Virtual_UartCtrlStruct *pVUart = &prvLuatOS_VirtualUart[UartID];

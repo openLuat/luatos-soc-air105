@@ -72,6 +72,7 @@ void Core_VUartDeInit(uint8_t UartID);
 void Core_VUartSetRxTimeout(uint8_t UartID, uint32_t TimeoutUS);
 void Core_VUartSetCb(uint8_t UartID, CBFuncEx_t CB);
 uint32_t Core_VUartRxBufferRead(uint8_t UartID, uint8_t *Data, uint32_t Len);
+void Core_VUartRxBufferClear(uint8_t UartID);
 int32_t Core_VUartBufferTx(uint8_t UartID, const uint8_t *Data, uint32_t Len);
 void Core_VUartBufferTxStop(uint8_t UartID);
 

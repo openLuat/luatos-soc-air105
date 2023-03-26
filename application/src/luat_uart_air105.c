@@ -282,6 +282,22 @@ int luat_uart_read(int uartid, void *buffer, size_t length){
     return ret;
 }
 
+void luat_uart_clear_rx_cache(int uartid)
+{
+    int ret = 0;
+    if (!luat_uart_exist(uartid)){
+        return;
+    }
+    if (uartid >= LUAT_VUART_ID_0) uartid = MAX_DEVICE_COUNT;
+    serials[uartid].rx_mark = 0;
+    if (uartid >= MAX_DEVICE_COUNT)
+    	Core_VUartRxBufferClear(VIRTUAL_UART0);
+    else
+        Uart_RxBufferClear(uartid);
+//    LLOGD("uartid:%d buffer:%s ret:%d ",uartid,buffer, ret);
+    return;
+}
+
 int luat_uart_close(int uartid){
     if (!luat_uart_exist(uartid)){
         return 0;
