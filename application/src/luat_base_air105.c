@@ -262,6 +262,9 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_ICONV
   {"iconv", luaopen_iconv},
 #endif
+#ifdef LUAT_USE_BIT64
+  {"bit64", luaopen_bit64},
+#endif
   {NULL, NULL}
 };
 

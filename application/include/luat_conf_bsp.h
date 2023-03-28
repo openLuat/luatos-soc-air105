@@ -95,7 +95,7 @@
 // #define LUAT_USE_MAX30102
 // #define LUAT_USE_MLX90640 1
 #define LUAT_USE_MINIZ 1
-
+#define LUAT_USE_BIT64 1
 //----------------------------
 // 高通字体, 需配合芯片使用
 #define LUAT_USE_GTFONT 1
