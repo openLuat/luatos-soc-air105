@@ -521,11 +521,13 @@ end
             else
                 os.cp("./project/air105/info.json", "$(buildir)/out/info.json")
             end
+            os.cp("./application/include/luat_conf_bsp.h", "$(buildir)/out/luat_conf_bsp.h")
             os.cp("./project/air105/soc_download.exe", "$(buildir)/out/soc_download.exe")
             os.cd("$(buildir)/out")
-            os.run(path7z.." a -mx9 LuatOS-SoC_"..AIR105_VERSION.."_AIR105.soc info.json bootloader.bin app.bin soc_download.exe")
+            os.run(path7z.." a -mx9 LuatOS-SoC_"..AIR105_VERSION.."_AIR105.soc info.json bootloader.bin app.bin soc_download.exe luat_conf_bsp.h")
             os.rm("$(buildir)/out/info.json")
             os.rm("$(buildir)/out/soc_download.exe")
+            os.rm("$(buildir)/out/luat_conf_bsp.h")
         else
             print("7z not find")
             return
