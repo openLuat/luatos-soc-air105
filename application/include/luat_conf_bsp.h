@@ -25,14 +25,11 @@
 
 #define LUAT_BSP_VERSION "V0016"
 
-// 启用64位虚拟机
-// #define LUAT_CONF_VM_64bit
-
-#define LUAT_USE_FS_VFS 1
-#define LUAT_USE_VFS_INLINE_LIB 1
-// 内存优化: 减少内存消耗, 会稍微减低性能
-#define LUAT_USE_MEMORY_OPTIMIZATION_CODE_MMAP 1
-
+//------------------------------------------------------
+// 以下custom --> 到  <-- custom 之间的内容,是供用户配置的
+// 同时也是云编译可配置的部分. 提交代码时切勿删除会修改标识
+//custom -->
+//------------------------------------------------------
 
 #define LUAT_USE_UART 1
 #define LUAT_USE_GPIO 1
@@ -61,6 +58,14 @@
 #define LUAT_USE_SFD  1
 // #define LUAT_USE_STATEM 1
 // #define LUAT_USE_COREMARK 1
+
+
+// 启用64位虚拟机
+// #define LUAT_CONF_VM_64bit
+
+
+
+
 
 // FDB 提供kv数据库, 与nvm库类似
 // #define LUAT_USE_FDB 1
@@ -147,13 +152,8 @@
 // LVGL
 #define LUAT_USE_LCD
 #define LUAT_USE_LVGL
-#define LV_DISP_DEF_REFR_PERIOD gLVFlashTime
-extern unsigned int gLVFlashTime;
-#define LUAT_LV_DEBUG 0
-#define LV_USE_LOG 1
-#define LV_MEM_CUSTOM 1
 
-#define LUAT_USE_LVGL_INDEV 1
+#define LV_USE_LOG 1
 
 #define LUAT_USE_LVGL_ARC   //圆弧 无依赖
 #define LUAT_USE_LVGL_BAR   //进度条 无依赖
@@ -194,11 +194,42 @@ extern unsigned int gLVFlashTime;
 #define LUAT_FS_SIZE                512         //文件系统大小,必须为64KB的倍数
 #define FLASH_FS_REGION_SIZE        (LUAT_FS_SIZE + LUAT_SCRIPT_SIZE)
 
+
+//-------------------------------------------------------------------------------
+//<-- custom
+//------------------------------------------------------------------------------
+
+
+// 以下选项仅开发人员可修改, 一般用户切勿自行修改
+
+#define LUAT_GPIO_NUMS	32
+#define LUAT__UART_TX_NEED_WAIT_DONE
+// 内存优化: 减少内存消耗, 会稍微减低性能
+#define LUAT_USE_MEMORY_OPTIMIZATION_CODE_MMAP 1
+
+//----------------------------------
+// 使用VFS(虚拟文件系统)和内置库文件, 必须启用
+#define LUAT_USE_FS_VFS 1
+#define LUAT_USE_VFS_INLINE_LIB 1
+//----------------------------------
+
+#define LV_DISP_DEF_REFR_PERIOD gLVFlashTime
+extern unsigned int gLVFlashTime;
+
+#define LUAT_LV_DEBUG 0
+
+#define LV_MEM_CUSTOM 1
+
+#define LUAT_USE_LVGL_INDEV 1
+
+
 #define LV_HOR_RES_MAX          (240)
 #define LV_VER_RES_MAX          (240)
 #define LV_COLOR_DEPTH          16
 
 #define LV_COLOR_16_SWAP   1
+#define __LVGL_SLEEP_ENABLE__
+
 #define LV_TICK_CUSTOM 1
 #define LV_TICK_CUSTOM_INCLUDE  "app_interface.h"         /*Header for the system time function*/
 #define LV_TICK_CUSTOM_SYS_TIME_EXPR ((uint32_t)GetSysTickMS())     /*Expression evaluating to current system time in ms*/
@@ -207,7 +238,7 @@ extern unsigned int gLVFlashTime;
 #define time(X)	luat_time(X)
 
 #define LV_USE_PERF_MONITOR     1
-#define __LVGL_SLEEP_ENABLE__
+
 #define __LUATOS_TICK_64BIT__
 #define LUAT_USE_MEMORY_OPTIMIZATION_CODE_MMAP
 
@@ -215,12 +246,10 @@ extern unsigned int gLVFlashTime;
 #undef LV_USE_PERF_MONITOR
 #endif
 
-#define LUAT_GPIO_NUMS	32
-#define LUAT__UART_TX_NEED_WAIT_DONE
-
 #define LUAT_RT_RET_TYPE int
 #define LUAT_RT_RET	0
 #define LUAT_RT_CB_PARAM void *pdata, void *param
 
 #define __LUAT_C_CODE_IN_RAM__ __attribute__((section (".RamFunc")))
+
 #endif
