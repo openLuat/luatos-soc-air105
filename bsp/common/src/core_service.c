@@ -21,6 +21,8 @@
 
 #include "user.h"
 #ifdef __BUILD_OS__
+#include "global_config.h"
+#include "luat_conf_bsp.h"
 #include "zbar.h"
 #include "symbol.h"
 #include "image.h"
@@ -612,7 +614,7 @@ static void prvCore_PrintTaskStack(HANDLE TaskHandle)
 	for(i = 0; i < 16, SP < StackAddress + Len; SP += 4)
 	{
 		PC = *((uint32_t *) SP) - 4;
-		if ((PC > __FLASH_APP_START_ADDR__) && (PC < (__FLASH_BASE_ADDR__ + __CORE_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__)))
+		if ((PC > __FLASH_APP_START_ADDR__) && (PC < (__FLASH_BASE_ADDR__ + __FLASH_MAX_SIZE__ - FLASH_FS_REGION_SIZE * 1024)))
 		{
 
 	        if (PC % 2 == 0) {

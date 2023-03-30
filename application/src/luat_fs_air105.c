@@ -32,10 +32,9 @@ struct lfs LFS;
 #define LFS_BLOCK_DEVICE_PROG_SIZE      (__FLASH_PAGE_SIZE__)
 #define LFS_BLOCK_DEVICE_LOOK_AHEAD     (16)
 #define LFS_BLOCK_DEVICE_CACHE_SIZE     (256)
-#define SCRIPT_LUADB_START_ADDR			(__FLASH_BASE_ADDR__ + __CORE_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__)
 // 根据头文件的定义, 算出脚本区和文件系统区的绝对地址
-const size_t script_luadb_start_addr = SCRIPT_LUADB_START_ADDR;
-const size_t lfs_fs_start_addr = SCRIPT_LUADB_START_ADDR + __SCRIPT_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__ ;
+const size_t script_luadb_start_addr = (__FLASH_BASE_ADDR__ + __FLASH_MAX_SIZE__ - FLASH_FS_REGION_SIZE * 1024);
+const size_t lfs_fs_start_addr = (__FLASH_BASE_ADDR__ + __FLASH_MAX_SIZE__ - LUAT_FS_SIZE * 1024);
 static HANDLE lfs_locker;
 static int block_device_read(const struct lfs_config *cfg, lfs_block_t block,
         lfs_off_t off, void *buffer, lfs_size_t size)
@@ -192,7 +191,7 @@ int luat_fs_init(void) {
 		.filesystem = "luadb",
 		.mount_point = "/luadb/",
 	};
-	luat_luadb_act_size = __SCRIPT_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__;
+	luat_luadb_act_size = LUAT_SCRIPT_SIZE;
 	#ifdef LUAT_USE_FSKV
 	luat_luadb_act_size -= 64 * 1024;
 	#endif

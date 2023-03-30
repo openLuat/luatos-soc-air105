@@ -6,6 +6,10 @@ add_rules("mode.debug", "mode.release")
 
 local AIR105_VERSION = ""
 local VM_64BIT = nil
+local script_addr = nil
+local fs_addr = nil
+local LUAT_SCRIPT_SIZE = nil
+local LUAT_FS_SIZE = nil
 local with_luatos = true
 local luatos = "../LuatOS/"
 
@@ -249,6 +253,21 @@ if with_luatos then
         if LVGL_CONF == nil then target:add("deps", "lvgl") end
         target:add("deps", "miniz")
         VM_64BIT = conf_data:find("\r#define LUAT_CONF_VM_64bit") or conf_data:find("\n#define LUAT_CONF_VM_64bit")
+        local FDB_CONF = conf_data:find("\r#define LUAT_USE_FDB") or conf_data:find("\n#define LUAT_USE_FDB") or conf_data:find("\r#define LUAT_USE_FSKV") or conf_data:find("\n#define LUAT_USE_FSKV") 
+        LUAT_SCRIPT_SIZE = tonumber(conf_data:match("\r#define LUAT_SCRIPT_SIZE%s+(%d+)") or conf_data:match("\n#define LUAT_SCRIPT_SIZE%s+(%d+)"))
+        LUAT_FS_SIZE = tonumber(conf_data:match("\r#define LUAT_FS_SIZE%s+(%d+)") or conf_data:match("\n#define LUAT_FS_SIZE%s+(%d+)"))
+        FLASH_FS_REGION_SIZE = LUAT_SCRIPT_SIZE + LUAT_FS_SIZE
+        LUA_SCRIPT_ADDR = 16777216 + (4096 - FLASH_FS_REGION_SIZE) * 1024
+        LUA_FS_ADDR = LUA_SCRIPT_ADDR + LUAT_FS_SIZE * 1024
+        script_addr = string.format("%X", LUA_SCRIPT_ADDR)
+        fs_addr = string.format("%X", LUA_FS_ADDR)
+        if FDB_CONF then
+            FLASH_FS_REGION_SIZE = FLASH_FS_REGION_SIZE + 64
+        end
+        local LD_FLASH_SIZE = 4096-FLASH_FS_REGION_SIZE-64 --64KB为bl+ota信息占用
+        local ld_data = io.readfile("$(projectdir)/project/air105/app.ld")
+        ld_data = ld_data:gsub(2944,LD_FLASH_SIZE)
+        io.writefile("$(buildir)/out/app.ld", ld_data)
     end)
 
     -- add_deps("tflm")
@@ -483,7 +502,7 @@ end
     -- add_files(luatos.."components/nes/*.cpp",luatos.."components/nes/luat/*.c",{public = true})
     -- add_includedirs(luatos.."components/nes",luatos.."components/nes/luat",{public = true})
 
-    add_ldflags("-Wl,--whole-archive -Wl,--start-group ./lib/libgt.a ./lib/libencrypt.a -Wl,--end-group -Wl,--no-whole-archive","-Wl,-Map=./build/out/app.map","-Wl,-T$(projectdir)/project/air105/app.ld",{force = true})
+    add_ldflags("-Wl,--whole-archive -Wl,--start-group ./lib/libgt.a ./lib/libencrypt.a -Wl,--end-group -Wl,--no-whole-archive","-Wl,-Map=./build/out/app.map","-Wl,-T$(buildir)/out/app.ld",{force = true})
 
 	after_build(function(target)
         sdk_dir = target:toolchains()[1]:sdkdir().."/"
@@ -517,6 +536,12 @@ end
                 import("core.base.json")
                 local info_table = json.loadfile("./project/air105/info.json")
                 info_table["script"]["bitw"] = 64
+
+                info_table["rom"]["fs"]["script"]["size"] = LUAT_SCRIPT_SIZE
+                info_table["fs"]["total_len"] = LUAT_FS_SIZE
+                info_table["download"]["script_addr"] = script_addr
+                info_table["download"]["fs_addr"] = fs_addr
+
                 json.savefile("./build/out/info.json", info_table)
             else
                 os.cp("./project/air105/info.json", "$(buildir)/out/info.json")
@@ -528,6 +553,7 @@ end
             os.rm("$(buildir)/out/info.json")
             os.rm("$(buildir)/out/soc_download.exe")
             os.rm("$(buildir)/out/luat_conf_bsp.h")
+            os.rm("$(buildir)/out/app.ld")
         else
             print("7z not find")
             return
