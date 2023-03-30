@@ -76,7 +76,7 @@
 #define LUAT_USE_CAMERA  1
 #define LUAT_USE_I2CTOOLS 1
 #define LUAT_USE_SOFTKB 1
-// #define LUAT_USE_PROTOBUF
+#define LUAT_USE_PROTOBUF
 
 #define LUAT_USE_FATFS 1
 #define LUAT_USE_FATFS_CHINESE
@@ -95,7 +95,7 @@
 #define LUAT_USE_SNTP 1
 #define LUAT_USE_FTP 1
 
-// #define LUAT_USE_IOTAUTH 1
+#define LUAT_USE_IOTAUTH 1
 #define LUAT_USE_LORA 1
 // #define LUAT_USE_MAX30102
 // #define LUAT_USE_MLX90640 1
@@ -121,7 +121,7 @@
 #define LUAT_USE_RSA 1
 
 // 国密算法 SM2/SM3/SM4
-// #define LUAT_USE_GMSSL 1
+#define LUAT_USE_GMSSL 1
 
 // #define LUAT_USE_ICONV 1
 
@@ -153,7 +153,7 @@
 #define LUAT_USE_LCD
 #define LUAT_USE_LVGL
 
-#define LV_USE_LOG 1
+// #define LV_USE_LOG 1
 
 #define LUAT_USE_LVGL_ARC   //圆弧 无依赖
 #define LUAT_USE_LVGL_BAR   //进度条 无依赖
@@ -192,7 +192,6 @@
 
 #define LUAT_SCRIPT_SIZE            512         //脚本区大小,必须为64KB的倍数
 #define LUAT_FS_SIZE                512         //文件系统大小,必须为64KB的倍数
-#define FLASH_FS_REGION_SIZE        (LUAT_FS_SIZE + LUAT_SCRIPT_SIZE)
 
 
 //-------------------------------------------------------------------------------
@@ -201,6 +200,7 @@
 
 
 // 以下选项仅开发人员可修改, 一般用户切勿自行修改
+#define FLASH_FS_REGION_SIZE        (LUAT_FS_SIZE + LUAT_SCRIPT_SIZE)
 
 #define LUAT_GPIO_NUMS	32
 #define LUAT__UART_TX_NEED_WAIT_DONE
