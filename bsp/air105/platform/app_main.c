@@ -20,7 +20,7 @@
  */
 
 #include "app_inc.h"
-#include "luat_conf_bsp.h"
+
 uint32_t SystemCoreClock;
 uint8_t gMainWDTEnable;
 static HANDLE prvWDTTimer;
@@ -33,16 +33,16 @@ extern const uint32_t __init_fun_array_start;
 extern const uint32_t __init_fun_array_end;
 extern const uint32_t __task_fun_array_start;
 extern const uint32_t __task_fun_array_end;
-#define SCRIPT_LUADB_START_ADDR			(__FLASH_BASE_ADDR__ + __CORE_FLASH_BLOCK_NUM__ * __FLASH_BLOCK_SIZE__)
-const uint32_t __attribute__((section (".app_info")))
+
+const uint32_t __attribute__((section (".app_info"))) __attribute__((weak))
     g_CAppInfo[8] =
 {
 	__APP_START_MAGIC__,
 	&__isr_start_address,
 	__BL_VERSION__,
 	__CORE_VERSION__,
-	__FLASH_BASE_ADDR__ + __FLASH_MAX_SIZE__ - FLASH_FS_REGION_SIZE * 1024,
-	__FLASH_BASE_ADDR__ + __FLASH_MAX_SIZE__ - LUAT_FS_SIZE * 1024,
+	0,
+	0,
 	0,
 	0,
 };

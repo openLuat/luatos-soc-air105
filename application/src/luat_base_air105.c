@@ -40,6 +40,19 @@ void lv_bmp_init(void);
 void lv_png_init(void);
 void lv_split_jpeg_init(void);
 #endif
+extern const uint32_t __isr_start_address;
+const uint32_t __attribute__((section (".app_info")))
+    g_CAppInfo[8] =
+{
+	__APP_START_MAGIC__,
+	&__isr_start_address,
+	__BL_VERSION__,
+	__CORE_VERSION__,
+	__FLASH_BASE_ADDR__ + __FLASH_MAX_SIZE__ - FLASH_FS_REGION_SIZE * 1024,
+	__FLASH_BASE_ADDR__ + __FLASH_MAX_SIZE__ - LUAT_FS_SIZE * 1024,
+	0,
+	0,
+};
 
 LUAMOD_API int luaopen_usbapp( lua_State *L );
 
