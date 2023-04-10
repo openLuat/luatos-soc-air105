@@ -66,15 +66,15 @@ add_defines("MBEDTLS_CONFIG_FILE=\"mbedtls_config.h\"")
 
 -- set warning all as error
 set_warnings("allextra")
--- set_optimize("smallest")
+set_optimize("smallest")
 -- set language: c11
 set_languages("c11", "cxx11")
 
 add_asflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c",{force = true})
 -- add_arflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c","--specs=nano.specs","-ffunction-sections","-fdata-sections","-fstack-usage","-Og","-DTRACE_LEVEL=4",{force = true})
-add_cxflags("-mcpu=cortex-m4","-Os","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c","--specs=nano.specs","-ffunction-sections","-fdata-sections","-fstack-usage","-DTRACE_LEVEL=4",{force = true})
+add_cxflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c","--specs=nano.specs","-ffunction-sections","-fdata-sections","-fstack-usage","-DTRACE_LEVEL=4",{force = true})
 
-add_ldflags("-mcpu=cortex-m4","-Os","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-static","--specs=nano.specs","-Wl,--gc-sections","-Wl,--check-sections","-Wl,--cref","-Wl,--no-whole-archive","-lc_nano","-Wl,--no-whole-archive",{force = true})
+add_ldflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-static","--specs=nano.specs","-Wl,--gc-sections","-Wl,--check-sections","-Wl,--cref","-Wl,--no-whole-archive","-lc_nano","-Wl,--no-whole-archive",{force = true})
 
 
 add_ldflags(" -Wl,--wrap=malloc ",{force = true})
