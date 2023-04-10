@@ -35,8 +35,17 @@
 #include "task.h"
 #include "app_interface.h"
 
+#ifndef	LUAT_HEAP_SIZE
+#define LUAT_HEAP_SIZE		200
+#endif
+
+#if (LUAT_HEAP_SIZE > 400) || (LUAT_HEAP_SIZE < 100)
+#undef LUAT_HEAP_SIZE
+#define LUAT_HEAP_SIZE 		200
+#endif
+
 static luat_bget_t luavm_pool;
-static uint64_t luavm_pool_data[25 * 1024];
+static uint64_t luavm_pool_data[LUAT_HEAP_SIZE / 8 * 1024];
 //------------------------------------------------
 //  管理系统内存
 

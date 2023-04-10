@@ -189,7 +189,7 @@
 #define LUAT_USE_LVGL_TILEVIEW   //平铺视图 依赖页面PAGE
 #define LUAT_USE_LVGL_WIN   //窗口 依赖容器CONT 按钮BTN 标签LABEL 图片IMG 页面PAGE
 
-
+#define LUAT_HEAP_SIZE              200         //luavm内存,单位KB
 #define LUAT_SCRIPT_SIZE            512         //脚本区大小,必须为64KB的倍数
 #define LUAT_FS_SIZE                512         //文件系统大小,必须为64KB的倍数
 
