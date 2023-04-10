@@ -201,7 +201,6 @@ target_end()
 target("miniz")
     set_kind("static")
     set_plat("cross")
-    set_arch("c-sky")
 
     add_files(luatos.."components/miniz/*.c")
     add_includedirs("application/include")
@@ -210,6 +209,21 @@ target("miniz")
     add_includedirs(luatos.."luat/include")
     add_includedirs(luatos.."components/miniz")
     set_targetdir("$(buildir)/lib")
+target_end()
+
+target("nes")
+    set_kind("static")
+    set_plat("cross")
+    set_optimize("fastest",{force = true})
+    set_targetdir("$(buildir)/lib")
+    add_includedirs("application/include")
+    add_includedirs(luatos.."lua/include")
+    add_includedirs(luatos.."luat/include")
+    add_includedirs(luatos.."components/lcd",{public = true})
+    add_includedirs(luatos.."components/u8g2",{public = true})
+    add_includedirs(luatos.."components/nes/inc")
+    add_includedirs(luatos.."components/nes/port")
+    add_files(luatos.."components/nes/**.c")
 target_end()
 
 ---//-----------------------------
@@ -272,7 +286,7 @@ if with_luatos then
 
     -- add_deps("tflm")
 end
-
+    add_deps("nes")
     -- add deps
     add_files("Third_Party/cm_backtrace/*.c",{public = true})
     --add_files("Third_Party/cm_backtrace/fault_handler/gcc/cmb_fault.S",{public = true})
