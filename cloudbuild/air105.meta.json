@@ -5,9 +5,9 @@
             "name": "air105",
             "io": 44,
             "memory": {
-                "min": 256,
-                "max": 256,
-                "dft": 256
+                "min": 640,
+                "max": 640,
+                "dft": 640
             },
             "layout": {
                 "total": 4096,
@@ -33,6 +33,11 @@
                 "max": 2048,
                 "dft": 512,
                 "unit": 64
+            },
+            "luamem": {
+                "min": 100,
+                "max": 400,
+                "dft": 200
             }
         },
         "sdk": {
@@ -197,13 +202,6 @@
                         "content": "64bit虚拟机(测试阶段,内存占用会增加,需要LuaTools 2.1.77)",
                         "rsize": 193240,
                         "fsize": 1024,
-                        "dft": false
-                    },
-                    {
-                        "name": "LUAT_USE_NES",
-                        "content": "nes模拟器",
-                        "rsize": 12,
-                        "fsize": 101586,
                         "dft": false
                     },
                     {
