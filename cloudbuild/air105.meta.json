@@ -200,6 +200,13 @@
                         "dft": false
                     },
                     {
+                        "name": "LUAT_USE_NES",
+                        "content": "nes模拟器",
+                        "rsize": 12,
+                        "fsize": 101586,
+                        "dft": false
+                    },
+                    {
                         "name": "cjson",
                         "content": "JSON序列化与反序列化",
                         "rsize": 5800,
