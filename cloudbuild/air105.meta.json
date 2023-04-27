@@ -193,6 +193,35 @@
                 "dft": false
             },
             {
+                "icon": "zmdi-puzzle-piece",
+                "name": "@MASTERS",
+                "content": "高级配置",
+                "rsize": 0,
+                "children": [
+                    {
+                        "name": "@master123",
+                        "content": "本小节的配置均有一定的风险,请慎重选择",
+                        "rsize": 0,
+                        "fsize": 1024,
+                        "dft": false
+                    },
+                    {
+                        "name": "LUAT_HEAP_SIZE_256K",
+                        "content": "Lua内存设置到256k字节, 默认是200k",
+                        "rsize": 0,
+                        "fsize": 1024,
+                        "dft": false
+                    },
+                    {
+                        "name": "LUAT_HEAP_SIZE_300K",
+                        "content": "Lua内存设置到300k字节, 默认是200k",
+                        "rsize": 0,
+                        "fsize": 1024,
+                        "dft": false
+                    }
+                ]
+            },
+            {
                 "icon": "zmdi-card-sd",
                 "name": "@LIB",
                 "content": "工具库",

@@ -189,7 +189,6 @@
 #define LUAT_USE_LVGL_TILEVIEW   //平铺视图 依赖页面PAGE
 #define LUAT_USE_LVGL_WIN   //窗口 依赖容器CONT 按钮BTN 标签LABEL 图片IMG 页面PAGE
 
-#define LUAT_HEAP_SIZE              200         //luavm内存,单位KB
 #define LUAT_SCRIPT_SIZE            512         //脚本区大小,必须为64KB的倍数
 #define LUAT_FS_SIZE                512         //文件系统大小,必须为64KB的倍数
 
@@ -200,6 +199,20 @@
 
 
 // 以下选项仅开发人员可修改, 一般用户切勿自行修改
+
+#ifdef LUAT_HEAP_SIZE_256K
+#define LUAT_HEAP_SIZE (256)
+#endif
+
+#ifdef LUAT_HEAP_SIZE_300K
+#undef LUAT_HEAP_SIZE
+#define LUAT_HEAP_SIZE (300)
+#endif
+
+#ifndef LUAT_HEAP_SIZE
+#define LUAT_HEAP_SIZE (200)
+#endif
+
 #define FLASH_FS_REGION_SIZE        (LUAT_FS_SIZE + LUAT_SCRIPT_SIZE)
 
 #define LUAT_GPIO_NUMS	32
