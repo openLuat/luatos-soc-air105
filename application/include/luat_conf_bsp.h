@@ -265,4 +265,7 @@ extern unsigned int gLVFlashTime;
 
 #define __LUAT_C_CODE_IN_RAM__ __attribute__((section (".RamFunc")))
 
+// 单纯为了生成文档的宏
+#define LUAT_USE_PIN 1
+
 #endif
