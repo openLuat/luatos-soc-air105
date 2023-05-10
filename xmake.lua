@@ -492,7 +492,7 @@ if with_luatos then
     add_files(luatos.."components/serialization/protobuf/*.c")
     
     -- rsa
-    add_includedirs(luatos.."components/rsa/inc")
+    -- add_includedirs(luatos.."components/rsa/inc")
     add_files(luatos.."components/rsa/**.c")
 
     -- 添加fskv
