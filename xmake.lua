@@ -3,6 +3,7 @@ set_xmakever("2.6.3")
 
 set_version("0.0.2", {build = "%Y%m%d%H%M"})
 add_rules("mode.debug", "mode.release")
+set_defaultmode("debug")
 
 local AIR105_VERSION = ""
 local VM_64BIT = nil
