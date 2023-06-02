@@ -547,20 +547,16 @@ end
             path7z = find_file("7z.exe", { "C:/Program Files/7-Zip/" })
         end
         if path7z then
+            import("core.base.json")
+            local info_table = json.loadfile("./project/air105/info.json")
             if VM_64BIT then
-                import("core.base.json")
-                local info_table = json.loadfile("./project/air105/info.json")
                 info_table["script"]["bitw"] = 64
-
-                info_table["rom"]["fs"]["script"]["size"] = LUAT_SCRIPT_SIZE
-                info_table["fs"]["total_len"] = LUAT_FS_SIZE
-                info_table["download"]["script_addr"] = script_addr
-                info_table["download"]["fs_addr"] = fs_addr
-
-                json.savefile("./build/out/info.json", info_table)
-            else
-                os.cp("./project/air105/info.json", "$(buildir)/out/info.json")
             end
+            info_table["rom"]["fs"]["script"]["size"] = LUAT_SCRIPT_SIZE
+            info_table["fs"]["total_len"] = LUAT_FS_SIZE
+            info_table["download"]["script_addr"] = script_addr
+            info_table["download"]["fs_addr"] = fs_addr
+            json.savefile("./build/out/info.json", info_table)
             os.cp("./application/include/luat_conf_bsp.h", "$(buildir)/out/luat_conf_bsp.h")
             os.cp("./project/air105/soc_download.exe", "$(buildir)/out/soc_download.exe")
             os.cd("$(buildir)/out")
