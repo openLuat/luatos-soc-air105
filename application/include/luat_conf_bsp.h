@@ -209,6 +209,11 @@
 #define LUAT_HEAP_SIZE (300)
 #endif
 
+#ifdef LUAT_HEAP_SIZE_400K
+#undef LUAT_HEAP_SIZE
+#define LUAT_HEAP_SIZE (400)
+#endif
+
 #ifndef LUAT_HEAP_SIZE
 #define LUAT_HEAP_SIZE (200)
 #endif
