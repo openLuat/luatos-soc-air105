@@ -506,6 +506,10 @@ if with_luatos then
     -- 国密算法, by chenxudong1208, 基于GMSSL
     add_includedirs(luatos.."components/gmssl/include")
     add_files(luatos.."components/gmssl/**.c")
+
+    -- REPL
+    add_includedirs(luatos.."components/repl")
+    add_files(luatos.."components/repl/**.c")
 else
 
     add_files("Third_Party/vsprintf/*.c",{public = true})

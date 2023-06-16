@@ -278,6 +278,9 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_BIT64
   {"bit64", luaopen_bit64},
 #endif
+#ifdef LUAT_USE_REPL
+  {"repl", luaopen_repl},
+#endif
   {NULL, NULL}
 };
 
@@ -369,7 +372,7 @@ void luat_base_init(void)
 {
 	luat_vm_pool_init();
 
-#ifdef LUAT_USE_SHELL
+#if defined(LUAT_USE_SHELL) || defined(LUAT_USE_REPL)
   luat_shell_poweron(0);
 #endif
 
