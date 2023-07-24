@@ -64,7 +64,7 @@
 // #define LUAT_CONF_VM_64bit
 
 
-
+// #define LUAT_USE_YMODEM
 
 
 // FDB 提供kv数据库, 与nvm库类似
