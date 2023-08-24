@@ -286,14 +286,14 @@
                     {
                         "name": "mqttcore",
                         "content": "MQTT协议解析与合成",
-                        "rsize": 0,
+                        "rsize": 3000,
                         "fsize": 287420,
                         "dft": false
                     },
                     {
                         "name": "libcoap",
                         "content": "coap数据包解析与合成",
-                        "rsize": 0,
+                        "rsize": 2000,
                         "fsize": 287420,
                         "dft": false
                     },
@@ -309,6 +309,20 @@
                         "content": "NMEA解析",
                         "rsize": 6232,
                         "fsize": 293652,
+                        "dft": false
+                    },
+                    {
+                        "name": "mqttcore",
+                        "content": "MQTT协议解析库,不含链接,也不依赖mqtt库",
+                        "rsize": 5200,
+                        "fsize": 357620,
+                        "dft": false
+                    },
+                    {
+                        "name": "libcoap",
+                        "content": "COAP协议解析库,仅含协议解析和合成",
+                        "rsize": 2200,
+                        "fsize": 357620,
                         "dft": false
                     },
                     {
