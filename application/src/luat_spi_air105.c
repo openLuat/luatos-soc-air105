@@ -24,6 +24,10 @@
 #include "luat_base.h"
 #include "luat_spi.h"
 #include "luat_lcd.h"
+#include "luat_timer.h"
+#include "luat_malloc.h"
+#include "stdlib.h"
+#include "string.h"
 #include "ff.h"			/* Obtains integer types */
 #include "diskio.h"		/* Declarations of disk functions */
 #include "app_interface.h"
@@ -217,7 +221,7 @@ int luat_spi_no_block_transfer(int spi_id, uint8_t *tx_buff, uint8_t *rx_buff, s
 
 }
 
-int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, luat_color_t* color, uint8_t last_flush)
+int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, int16_t x1, int16_t y1, int16_t x2, int16_t y2, luat_color_t* color, uint8_t last_flush)
 {
 	uint32_t retry_cnt = 0;
 	uint32_t cache_len = Core_LCDDrawCacheLen();
@@ -225,6 +229,9 @@ int luat_lcd_draw_no_block(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint
 //	{
 //		LLOGD("lcd flush done!");
 //	}
+	if (x1 < 0 || y1 < 0 || x2 > conf->w || y2 > conf->h) {
+		// 暂不支持屏幕外绘制
+	}
 
 	if (conf->port == LUAT_LCD_SPI_DEVICE){
 		while (Core_LCDDrawCacheLen() > (conf->buffer_size))
@@ -344,7 +351,7 @@ int luat_lcd_flush(luat_lcd_conf_t* conf) {
     return 0;
 }
 
-int luat_lcd_draw(luat_lcd_conf_t* conf, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, luat_color_t* color) {
+int luat_lcd_draw(luat_lcd_conf_t* conf, int16_t x1, int16_t y1, int16_t x2, int16_t y2, luat_color_t* color) {
     // 直接刷屏模式
     if (conf->buff == NULL) {
     	if (conf->is_init_done)
