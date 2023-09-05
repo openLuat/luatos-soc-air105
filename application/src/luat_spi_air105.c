@@ -352,33 +352,90 @@ int luat_lcd_flush(luat_lcd_conf_t* conf) {
 }
 
 int luat_lcd_draw(luat_lcd_conf_t* conf, int16_t x1, int16_t y1, int16_t x2, int16_t y2, luat_color_t* color) {
+    if (x1 >= conf->w || y1 >= conf->h || x2 < 0 || y2 < 0 || x2 < x1 || y2 < y1) {
+        // LLOGE("out of lcd buff range %d %d %d %d", x1, y1, x2, y2);
+        // LLOGE("out of lcd buff range %d %d %d %d %d", x1 >= conf->w, y1 >= conf->h, y2 < 0, x2 < x1, y2 < y1);
+        return 0;
+    }
+    if (y2 > conf->h) {
+        y2 = conf->h;
+    }
     // 直接刷屏模式
     if (conf->buff == NULL) {
-    	if (conf->is_init_done)
-    	{
-    		return luat_lcd_draw_no_block(conf, x1, y1, x2, y2, color, 0);
-    	}
-        uint32_t size = (x2 - x1 + 1) * (y2 - y1 + 1) * 2;
-        luat_lcd_set_address(conf, x1, y1, x2, y2);
-	    if (conf->port == LUAT_LCD_SPI_DEVICE){
-		    luat_spi_device_send((luat_spi_device_t*)(conf->lcd_spi_device), (const char*)color, size);
-	    }else{
-		    luat_spi_send(conf->port, (const char*)color, size);
-	    }
+        // 常规数据, 整体传输
+        if (x1 >= 0 && y1 >= 0 && x2 <= conf->w && y2 <= conf->h) {
+			if (conf->is_init_done) {
+				return luat_lcd_draw_no_block(conf, x1, y1, x2, y2, color, 0);
+			}
+            uint32_t size = (x2 - x1 + 1) * (y2 - y1 + 1);
+            // LLOGD("draw %dx%d %dx%d %d", x1, y1, x2, y2, size);
+            luat_lcd_set_address(conf, x1, y1, x2, y2);
+	        if (conf->port == LUAT_LCD_SPI_DEVICE){
+		        luat_spi_device_send((luat_spi_device_t*)(conf->lcd_spi_device), (const char*)color, size* sizeof(luat_color_t));
+	        }else{
+		        luat_spi_send(conf->port, (const char*)color, size * sizeof(luat_color_t));
+	        }
+        }
+        // 超出边界的数据, 按行传输
+        else {
+            int line_size = (x2 - x1 + 1);
+            // LLOGD("want draw %dx%d %dx%d %d", x1, y1, x2, y2, line_size);
+            luat_color_t* ptr = (luat_color_t*)color;
+            for (int i = y1; i <= y2; i++)
+            {
+                if (i < 0) {
+                    ptr += line_size;
+                    continue;
+                }
+                luat_color_t* line = ptr;
+                int lsize = line_size;
+                int tmp_x1 = x1;
+                int tmp_x2 = x2;
+                if (x1 < 0) {
+                    line += ( - x1);
+                    lsize += (x1);
+                    tmp_x1 = 0;
+                }
+                if (x2 > conf->w) {
+                    lsize -= (conf->w - x2);
+                    tmp_x2 = conf->w;
+                }
+				// LLOGD("action draw %dx%d %dx%d %d", tmp_x1, i, tmp_x2, i, lsize);
+				if (conf->is_init_done) {
+					luat_lcd_draw_no_block(conf, tmp_x1, i, tmp_x2, i, line, 0);
+				}
+				else {
+                	luat_lcd_set_address(conf, tmp_x1, i, tmp_x2, i);
+	            	if (conf->port == LUAT_LCD_SPI_DEVICE){
+		            	luat_spi_device_send((luat_spi_device_t*)(conf->lcd_spi_device), (const char*)line, lsize * sizeof(luat_color_t));
+	            	} else{
+		            	luat_spi_send(conf->port, (const char*)line, lsize * sizeof(luat_color_t));
+	            	}
+				}
+                ptr += line_size;
+            }
+        }
         return 0;
     }
     // buff模式
-    if (x1 > conf->w || y1 > conf->h) {
-        LLOGE("out of lcd range");
-        return -1;
-    }
-    uint16_t x_end = x2 > conf->w?conf->w:x2;
-    uint16_t y_end = y2 > conf->h?conf->h:y2;
+    int16_t x_end = x2 > conf->w?conf->w:x2;
+    int16_t y_end = y2 > conf->h?conf->h:y2;
     luat_color_t* dst = (conf->buff + x1 + conf->w * y1);
     luat_color_t* src = (color);
     size_t lsize = (x_end - x1 + 1);
-    for (size_t i = y1; i <= y_end; i++) {
-        memcpy(dst, src, lsize * sizeof(luat_color_t));
+    for (int16_t i = y1; i <= y_end; i++) {
+        if (i > 0 && i < conf->h) {
+            int tmp_lsize = lsize;
+            luat_color_t* tmp = src;
+            if (x1 < 0) {
+                tmp += ( - x1);
+                tmp_lsize += (x1);
+            }
+            if (x2 > conf->w) {
+                tmp_lsize -= (conf->w - x2);
+            }
+            memcpy(dst, tmp, tmp_lsize * sizeof(luat_color_t));
+        }
         dst += conf->w;  // 移动到下一行
         src += lsize;    // 移动数据
         if (x2 > conf->w){
@@ -386,8 +443,12 @@ int luat_lcd_draw(luat_lcd_conf_t* conf, int16_t x1, int16_t y1, int16_t x2, int
         }
     }
     // 存储需要刷新的区域
-    if (y1 < conf->flush_y_min)
-        conf->flush_y_min = y1;
+    if (y1 < conf->flush_y_min) {
+        if (y1 >= 0)
+            conf->flush_y_min = y1;
+        else
+            conf->flush_y_min = 0;
+    }
     if (y_end > conf->flush_y_max)
         conf->flush_y_max = y_end;
     return 0;
