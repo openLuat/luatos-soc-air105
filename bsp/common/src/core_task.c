@@ -293,6 +293,16 @@ int32_t Task_GetEventByMS(HANDLE TaskHandle, uint32_t TargetEventID, OS_EVENT *O
 	}
 }
 
+uint32_t Task_GetEventCnt(HANDLE TaskHandle)
+{
+	Core_TaskStruct *Handle = (void *)TaskHandle;
+	if (!Handle)
+	{
+		Handle = (Core_TaskStruct *)xTaskGetCurrentTaskHandle();
+	}
+	return Handle->EventCnt;
+}
+
 HANDLE Task_GetCurrent(void)
 {
 	return vTaskGetCurrent();
