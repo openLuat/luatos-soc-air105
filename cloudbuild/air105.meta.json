@@ -725,10 +725,17 @@
                         "dft": false
                     },
                     {
-                        "name": "lvgl",
+                        "name": "@lvgl",
                         "content": "轻量级图形化库",
-                        "rsize": 288784,
+                        "rsize": 0,
                         "children": [
+                            {
+                                "name": "lvgl",
+                                "content": "基础功能",
+                                "rsize": 188784,
+                                "fsize": 576204,
+                                "dft": false
+                            },
                             {
                                 "name": "lvgl_anim",
                                 "content": "自定义动画",
