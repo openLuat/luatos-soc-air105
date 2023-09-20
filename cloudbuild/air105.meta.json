@@ -187,6 +187,13 @@
                         "rsize": 5528,
                         "fsize": 292948,
                         "dft": false
+                    },
+                    {
+                        "name": "pm",
+                        "content": "功耗管理,电源管理",
+                        "rsize": 5528,
+                        "fsize": 292948,
+                        "dft": false
                     }
                 ],
                 "fsize": 287420,
