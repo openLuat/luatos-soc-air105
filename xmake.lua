@@ -254,6 +254,7 @@ target_end()
 
 -- target_end()
 ---//-----------------------------
+add_includedirs(luatos.."components/printf",{public = true})
 
 target("app.elf")
     -- set kind
@@ -287,6 +288,11 @@ if with_luatos then
 
     -- add_deps("tflm")
 end
+
+    -- printf
+    add_includedirs(luatos.."components/printf",{public = true})
+    add_files(luatos.."components/printf/*.c")
+
     add_deps("nes")
     -- add deps
     add_files("Third_Party/cm_backtrace/*.c",{public = true})
@@ -344,7 +350,7 @@ if with_luatos then
     add_files("application/src/*.c")
 
     add_files(luatos.."lua/src/*.c")
-    remove_files(luatos.."lua/src/printf.c")
+    remove_files(luatos.."components/printf/*.c")
     remove_files(luatos.."lua/src/bget.c")
     add_files(luatos.."luat/modules/*.c")
     remove_files(luatos.."luat/modules/luat_lib_http.c")
