@@ -288,4 +288,8 @@ extern unsigned int gLVFlashTime;
 // 单纯为了生成文档的宏
 #define LUAT_USE_PIN 1
 
+#ifdef LUAT_USE_SHELL
+#undef LUAT_USE_REPL
+#endif
+
 #endif
