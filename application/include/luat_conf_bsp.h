@@ -165,7 +165,6 @@
 #define LV_FONT_OPPOSANS_M_16
 //---------------------
 // LVGL
-#define LUAT_USE_LCD
 #define LUAT_USE_LVGL
 
 // #define LV_USE_LOG 1
