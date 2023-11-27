@@ -278,7 +278,7 @@ CMD_PROC_END:
 
 static void prvUSB_SCSIHandleToDeviceData(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
 {
-	int32_t Result;
+	int32_t Result = 0;
 	USB_StorageSCSITypeDef *pUserFun = (USB_StorageSCSITypeDef *)pMSC->pSCSIUserFunList;
 	if (pEpData->Len)
 	{
@@ -630,10 +630,10 @@ static int32_t prvSCSI_AllowPreventRemovable(USB_EndpointDataStruct *pEpData, MS
   */
 static int32_t prvSCSI_Read(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
 {
-	uint32_t BlockNum, BlockSize;
+	uint32_t BlockNum = 0, BlockSize;
 	USB_StorageSCSITypeDef *pUserFun = (USB_StorageSCSITypeDef *)pMSC->pSCSIUserFunList;
 	int ret = pUserFun->GetCapacity(pMSC->CBW.bLUN, &BlockNum, &BlockSize, pMSC->pUserData);
-	uint32_t BlockNums, CurBLKAddress;
+	uint32_t BlockNums = 0, CurBLKAddress;
 	CurBLKAddress = BytesGetBe32(&pMSC->CBW.CB[2]);
 	if (!pMSC->ReadTimer) pMSC->ReadTimer = Timer_Create(prvUSB_MSCTimeout, pMSC, NULL);
 	switch(pMSC->CBW.CB[0])
@@ -711,10 +711,10 @@ static int32_t prvSCSI_Read(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct 
   */
 static int32_t prvSCSI_Write(USB_EndpointDataStruct *pEpData, MSC_SCSICtrlStruct *pMSC)
 {
-	uint32_t BlockNum, BlockSize;
+	uint32_t BlockNum = 0, BlockSize;
 	USB_StorageSCSITypeDef *pUserFun = (USB_StorageSCSITypeDef *)pMSC->pSCSIUserFunList;
 	int ret = pUserFun->GetCapacity(pMSC->CBW.bLUN, &BlockNum, &BlockSize, pMSC->pUserData);
-	uint32_t BlockNums, CurBLKAddress;
+	uint32_t BlockNums = 0, CurBLKAddress;
 	CurBLKAddress = BytesGetBe32(&pMSC->CBW.CB[2]);
 	switch(pMSC->CBW.CB[0])
 	{

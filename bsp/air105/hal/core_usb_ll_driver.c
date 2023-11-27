@@ -1439,7 +1439,7 @@ static int prvUSB_SetupEPFifo(HANDLE hUSB)
 {
 	USB_HWCtrlStruct *hwUSB = (USB_HWCtrlStruct *)hUSB;
 	uint8_t i;
-	uint8_t Len;
+	uint8_t Len = 0;
 	uint16_t FifoStart = (64 >> 3);
 	uint16_t UseFifo = 64;
 	//ep0使用默认的64byte

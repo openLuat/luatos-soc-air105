@@ -76,7 +76,7 @@ add_asflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","
 add_cxflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-c","--specs=nano.specs","-ffunction-sections","-fdata-sections","-fstack-usage","-DTRACE_LEVEL=4",{force = true})
 
 add_ldflags("-mcpu=cortex-m4","-mfpu=fpv4-sp-d16","-mfloat-abi=hard","-mthumb","-static","--specs=nano.specs","-Wl,--gc-sections","-Wl,--check-sections","-Wl,--cref","-Wl,--no-whole-archive","-lc_nano","-Wl,--no-whole-archive",{force = true})
-
+add_cxflags("-Werror=maybe-uninitialized")
 
 add_ldflags(" -Wl,--wrap=malloc ",{force = true})
 add_ldflags(" -Wl,--wrap=free ",{force = true})
