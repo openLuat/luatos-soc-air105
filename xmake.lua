@@ -478,7 +478,8 @@ if with_luatos then
     add_files(luatos.."components/network/libhttp/*.c")
 
     -- iotauth
-    add_files(luatos.."components/iotauth/luat_lib_iotauth.c")
+    add_includedirs(luatos.."components/iotauth", {public = true})
+    add_files(luatos.."components/iotauth/*.c")
 
     -- qrcode
     add_includedirs(luatos.."components/qrcode",{public = true})
