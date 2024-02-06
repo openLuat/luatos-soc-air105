@@ -151,7 +151,7 @@ int32_t luat_audio_app_cb(void *pData, void *pParam)
 {
     rtos_msg_t msg = {0};
 	msg.handler = l_multimedia_raw_handler;
-	msg.arg1 = (pParam == INVALID_HANDLE_VALUE)?MULTIMEDIA_CB_AUDIO_DONE:MULTIMEDIA_CB_AUDIO_NEED_DATA;
+	msg.arg1 = (pParam == INVALID_HANDLE_VALUE)?LUAT_MULTIMEDIA_CB_AUDIO_DONE:LUAT_MULTIMEDIA_CB_AUDIO_NEED_DATA;
 	msg.arg2 = prvAudioStream.pParam;
 	luat_msgbus_put(&msg, 1);
 	return 0;
@@ -164,7 +164,7 @@ int32_t luat_audio_play_cb(void *pData, void *pParam)
 	{
 	    rtos_msg_t msg = {0};
 		msg.handler = l_multimedia_raw_handler;
-		msg.arg1 = MULTIMEDIA_CB_AUDIO_DONE;
+		msg.arg1 = LUAT_MULTIMEDIA_CB_AUDIO_DONE;
 		msg.arg2 = prvAudioStream.pParam;
 		luat_msgbus_put(&msg, 1);
 	}
@@ -307,7 +307,7 @@ int luat_audio_play_file(uint8_t multimedia_id, const char *path)
 	uint8_t temp[16];
 	void *mp3_decoder;
 	int result;
-	int audio_format = MULTIMEDIA_DATA_TYPE_PCM;
+	int audio_format = LUAT_MULTIMEDIA_DATA_TYPE_PCM;
 	uint8_t num_channels;
 	uint32_t sample_rate;
 	int bits_per_sample = 16;
