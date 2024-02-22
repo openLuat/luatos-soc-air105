@@ -242,6 +242,9 @@ static const luaL_Reg loadedlibs[] = {
 #ifdef LUAT_USE_LORA
   {"lora", luaopen_lora},
 #endif
+#ifdef LUAT_USE_LORA2
+  {"lora2", luaopen_lora2},
+#endif
 #ifdef LUAT_USE_FONTS
   {"fonts", luaopen_fonts},
 #endif
