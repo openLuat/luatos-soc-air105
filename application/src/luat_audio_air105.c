@@ -24,11 +24,12 @@
 #include "luat_msgbus.h"
 #include "luat_fs.h"
 #include <stdlib.h>
-#include "luat_multimedia.h"
 #include "app_interface.h"
+#include "luat_multimedia.h"
+
 #define LUAT_LOG_TAG "audio"
 #include "luat_log.h"
-#include "luat_audio.h"
+
 //#define __DECODE_DEBUG__
 #ifdef __DECODE_DEBUG__
 #define STEP(X)	Stream->DecodeStep=X
