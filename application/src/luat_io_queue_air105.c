@@ -20,8 +20,8 @@
  */
 #include "luat_base.h"
 #include "luat_msgbus.h"
-#include "luat_lib_io_queue.h"
 #include "app_interface.h"
+#include "luat_lib_io_queue.h"
 
 #define LUAT_LOG_TAG "ioqueue"
 #include "luat_log.h"
