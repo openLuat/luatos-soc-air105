@@ -237,8 +237,6 @@
 
 #define LUAT_GPIO_NUMS	32
 #define LUAT__UART_TX_NEED_WAIT_DONE
-// 内存优化: 减少内存消耗, 会稍微减低性能
-#define LUAT_USE_MEMORY_OPTIMIZATION_CODE_MMAP 1
 
 //----------------------------------
 // 使用VFS(虚拟文件系统)和内置库文件, 必须启用
