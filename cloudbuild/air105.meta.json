@@ -803,6 +803,20 @@
                                         "rsize": 1072664,
                                         "fsize": 1648868,
                                         "dft": false
+                                    },
+                                    {
+                                        "name": "LV_FONT_OPPOSANS_M_18",
+                                        "content": "OPPO宋体18pix ",
+                                        "rsize": 1072664,
+                                        "fsize": 1648868,
+                                        "dft": false
+                                    },
+                                    {
+                                        "name": "LV_FONT_OPPOSANS_M_20",
+                                        "content": "OPPO宋体20pix ",
+                                        "rsize": 1072664,
+                                        "fsize": 1648868,
+                                        "dft": false
                                     }
                                 ],
                                 "fsize": 576204,
