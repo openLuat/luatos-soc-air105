@@ -291,20 +291,6 @@
                         "dft": false
                     },
                     {
-                        "name": "mqttcore",
-                        "content": "MQTT协议解析与合成",
-                        "rsize": 3000,
-                        "fsize": 287420,
-                        "dft": false
-                    },
-                    {
-                        "name": "libcoap",
-                        "content": "coap数据包解析与合成",
-                        "rsize": 2000,
-                        "fsize": 287420,
-                        "dft": false
-                    },
-                    {
                         "name": "zbuff",
                         "content": "C风格的内存数组操作库",
                         "rsize": 15632,
