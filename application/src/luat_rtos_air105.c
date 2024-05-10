@@ -179,3 +179,8 @@ int luat_rtos_queue_recv(luat_rtos_queue_t queue_handle, void *item, uint32_t it
 	}
 	return 0;
 }
+
+
+uint32_t luat_rtos_entry_critical(void) {return OS_EnterCritical();}
+
+void luat_rtos_exit_critical(uint32_t critical) {OS_ExitCritical(critical);}
