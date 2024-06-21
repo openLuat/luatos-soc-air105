@@ -92,7 +92,6 @@
 #define LUAT_USE_DNS  1
 #define LUAT_USE_NETWORK 1
 #define LUAT_USE_TLS 1
-#define LUAT_USE_SNTP 1
 #define LUAT_USE_FTP 1
 
 #define LUAT_USE_IOTAUTH 1
@@ -288,6 +287,10 @@ extern unsigned int gLVFlashTime;
 
 #ifdef LUAT_USE_SHELL
 #undef LUAT_USE_REPL
+#endif
+
+#ifdef LUAT_USE_NETWORK
+#define LUAT_USE_SNTP 1
 #endif
 
 #endif
